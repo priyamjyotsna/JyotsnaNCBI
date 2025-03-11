@@ -4,82 +4,22 @@
     <title>Login - NCBI Tools</title>
     <link rel="stylesheet" href="/styles/main.css">
     <link rel="stylesheet" href="/styles/auth.css">
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <!-- Custom auth script -->
+    <script src="/js/auth.js"></script>
 </head>
 <body>
     <div class="auth-container">
         <h2>Login to NCBI Tools</h2>
-        <h3>You need to login before access NCBI tools</h3>
+        <h3>You need to login before accessing NCBI tools</h3>
         <button id="googleSignIn" class="google-btn">
             <img src="https://www.google.com/favicon.ico" width="20" height="20" alt="Google">
             Sign in with Google
         </button>
-        <div id="loading" class="loading">Authenticating...</div>
+        <div id="loading" style="display: none;">Authenticating...</div>
+        <div id="errorMessage" style="display: none;" class="error-message"></div>
     </div>
-
-    <script>
-        // Load Firebase config from server
-        fetch('/api/firebase-config')
-            .then(response => response.json())
-            .then(firebaseConfig => {
-                // Initialize Firebase
-                if (!firebase.apps || !firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-                
-                const auth = firebase.auth();
-                const signInBtn = document.getElementById('googleSignIn');
-                const loading = document.getElementById('loading');
-
-                signInBtn.addEventListener('click', async () => {
-                    try {
-                        signInBtn.disabled = true;
-                        loading.classList.add('active');
-                        console.log('Google sign-in button clicked');
-
-                        const provider = new firebase.auth.GoogleAuthProvider();
-                        const result = await auth.signInWithPopup(provider);
-                        const user = result.user;
-                        const token = await user.getIdToken();
-                        
-                        console.log('Google sign-in successful, sending to server...');
-
-                        const response = await fetch('/auth/google-signin', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                token,
-                                userData: {
-                                    name: user.displayName,
-                                    email: user.email,
-                                    photo: user.photoURL
-                                }
-                            }),
-                            credentials: 'include'
-                        });
-
-                        const data = await response.json();
-                        if (data.success) {
-                            window.location.href = data.redirect || '/auth/welcome';
-                        } else {
-                            throw new Error(data.error || 'Authentication failed');
-                        }
-                    } catch (error) {
-                        console.error('Login error:', error);
-                        alert('Login failed: ' + error.message);
-                    } finally {
-                        signInBtn.disabled = false;
-                        loading.classList.remove('active');
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('Error loading Firebase config:', error);
-                alert('Failed to initialize authentication. Please try again later.');
-            });
-    </script>
 </body>
 </html>
