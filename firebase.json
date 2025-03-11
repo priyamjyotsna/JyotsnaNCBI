@@ -8,6 +8,10 @@
     ],
     "rewrites": [
       {
+        "source": "/__/auth/**",
+        "destination": "/auth/handler.html"
+      },
+      {
         "source": "**",
         "function": "api"
       }

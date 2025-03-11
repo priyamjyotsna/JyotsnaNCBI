@@ -1,5 +1,16 @@
 // Firebase Authentication Handler
 function initializeAuth() {
+    // Check for error parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorMsg = urlParams.get('error');
+    if (errorMsg) {
+        const errorMessage = document.getElementById('errorMessage');
+        if (errorMessage) {
+            errorMessage.textContent = 'Login failed: ' + errorMsg;
+            errorMessage.style.display = 'block';
+        }
+    }
+
     // Load Firebase config from server
     return fetch('/api/firebase-config')
         .then(response => response.json())
@@ -19,30 +30,42 @@ function initializeAuth() {
                 .then(async (result) => {
                     if (result.user) {
                         console.log('Google sign-in successful:', result.user);
-                        const token = await result.user.getIdToken();
+                        loading.style.display = 'block';
+                        signInBtn.disabled = true;
 
-                        const response = await fetch('/auth/google-signin', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                token,
-                                userData: {
-                                    uid: result.user.uid,
-                                    name: result.user.displayName,
-                                    email: result.user.email,
-                                    photo: result.user.photoURL
-                                }
-                            }),
-                            credentials: 'include'
-                        });
+                        try {
+                            const token = await result.user.getIdToken();
+                            const response = await fetch('/auth/google-signin', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    token,
+                                    userData: {
+                                        uid: result.user.uid,
+                                        name: result.user.displayName,
+                                        email: result.user.email,
+                                        photo: result.user.photoURL
+                                    }
+                                }),
+                                credentials: 'include'
+                            });
 
-                        const data = await response.json();
-                        if (data.success) {
-                            window.location.href = data.redirect || '/auth/welcome';
-                        } else {
-                            throw new Error(data.error || 'Authentication failed');
+                            const data = await response.json();
+                            if (data.success) {
+                                window.location.href = data.redirect || '/auth/welcome';
+                            } else {
+                                throw new Error(data.error || 'Authentication failed');
+                            }
+                        } catch (error) {
+                            console.error('Server authentication error:', error);
+                            if (errorMessage) {
+                                errorMessage.textContent = 'Server authentication failed: ' + error.message;
+                                errorMessage.style.display = 'block';
+                            }
+                            signInBtn.disabled = false;
+                            loading.style.display = 'none';
                         }
                     }
                 })
@@ -52,6 +75,8 @@ function initializeAuth() {
                         errorMessage.textContent = 'Login failed: ' + error.message;
                         errorMessage.style.display = 'block';
                     }
+                    signInBtn.disabled = false;
+                    loading.style.display = 'none';
                 });
 
             // Set persistence to LOCAL
@@ -85,7 +110,7 @@ function initializeAuth() {
                                 auth_type: 'reauthenticate'
                             });
 
-                            // Just start the redirect - the result will be handled when the page reloads
+                            // Start the redirect flow
                             await auth.signInWithRedirect(provider);
                         } catch (error) {
                             console.error('Authentication error:', error);
@@ -109,7 +134,6 @@ function initializeAuth() {
                             } else {
                                 alert(errorMsg);
                             }
-                        } finally {
                             signInBtn.disabled = false;
                             loading.style.display = 'none';
                         }
@@ -118,7 +142,13 @@ function initializeAuth() {
         })
         .catch(error => {
             console.error('Error loading Firebase config:', error);
-            alert('Failed to initialize authentication. Please try again later.');
+            const errorMessage = document.getElementById('errorMessage');
+            if (errorMessage) {
+                errorMessage.textContent = 'Failed to initialize authentication. Please try again later.';
+                errorMessage.style.display = 'block';
+            } else {
+                alert('Failed to initialize authentication. Please try again later.');
+            }
         });
 }
 
