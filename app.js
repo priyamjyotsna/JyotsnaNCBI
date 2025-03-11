@@ -5,7 +5,6 @@ const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const admin = require('firebase-admin');
-const FirebaseStore = require('connect-session-firebase')(session);
 
 // Initialize Firebase Admin
 try {
@@ -37,11 +36,8 @@ app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session middleware with Firebase store
+// Session middleware
 app.use(session({
-    store: new FirebaseStore({
-        database: admin.database(),
-    }),
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
