@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NCBI Nucleotide Sequence Download</title>
+    <link rel="stylesheet" href="styles/nucleotide-download.css">
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Tools</a>
+        <h1>NCBI Nucleotide Sequence Download</h1>
+        
+        <div class="input-section">
+            <div class="range-input">
+                <label for="startId">Start Accession:</label>
+                <input type="text" id="startId" value="MN223758">
+                
+                <label for="endId">End Accession:</label>
+                <input type="text" id="endId" value="MN223767">
+            </div>
+            
+            <button id="downloadBtn" class="primary-button">Download Sequences</button>
+        </div>
+        
+        <div id="status" class="status-section"></div>
+        
+        <div id="preview" class="preview-section">
+            <h2>Preview</h2>
+            <table id="previewTable">
+                <thead>
+                    <tr>
+                        <th>Accession ID</th>
+                        <th>Sequence (first 50 bp)</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    <script src="js/nucleotide-download.js"></script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+.tool-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.input-section {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.input-group input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.input-group button {
+    padding: 10px 20px;
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.input-group button:hover {
+    background-color: #3367d6;
+}
+
+.loading-spinner {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.report-container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.report-table th,
+.report-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.report-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.report-table tr:last-child td {
+    border-bottom: none;
+}
+
+.sequence-upload {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #eee;
+}
+
+.drag-drop-zone {
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+}
+
+.drag-drop-zone.dragover {
+    border-color: #4285f4;
+    background-color: rgba(66, 133, 244, 0.05);
+}
+
+.drag-drop-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.drag-drop-content i {
+    font-size: 2.5rem;
+    color: #4285f4;
+    margin-bottom: 1rem;
+}
+
+.drag-drop-content p {
+    margin: 0;
+    color: #666;
+}
+
+.file-info {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+/* Remove the old file input styling since it's now hidden */
+#sequenceFile {
+    display: none;
+}
+
+.chart-section {
+    margin-top: 2rem;
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.chart-container {
+    position: relative;
+    height: 400px;
+    width: 100%;
+    padding: 1rem;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chart-download-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 8px 16px;
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    z-index: 10;
+}
+
+.chart-download-btn:hover {
+    background-color: #3367d6;
+}
+
+.export-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    margin-top: 1rem;
+}
+
+.export-btn:hover {
+    background-color: #3367d6;
+}
+
+#nucleotideChart {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.export-btn {
+    margin-top: 1rem;
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.export-btn:hover {
+    background-color: #218838;
+}
+
+.gc-content-row {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.gc-content-row td {
+    border-top: 2px solid #dee2e6;
+}
+
+.pdf-container {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+/* Add these new styles */
+#chartSection, #exportButton {
+    display: none;
+}
+
+.results-container {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.results-container.visible {
+    opacity: 1;
+}

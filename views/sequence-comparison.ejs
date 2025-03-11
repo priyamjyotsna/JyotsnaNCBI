@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Add these meta tags -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sequence Comparison Tool - Jyotsna's NCBI Tools</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/styles/sequence-comparison.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FileSaver.js for saving files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF with proper UMD format -->
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <!-- html2canvas for PDF screenshots -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <!-- Add this in the head section -->
+    <link rel="stylesheet" href="/styles/modal.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>Sequence Comparison Tool</h1>
+                <p class="header-subtitle">Identify mutations between reference and query sequences</p>
+                <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
+            </div>
+        </header>
+
+        <div class="tool-container">
+            <div class="input-section">
+                <div class="sequence-panel reference-panel">
+                    <h3>Reference Sequence</h3>
+                    <div class="input-methods">
+                        <div class="input-method">
+                            <h4>Upload FASTA/TXT</h4>
+                            <div class="dropzone" id="referenceDropzone">
+                                <i class="fas fa-file-upload"></i>
+                                <p>Drag & drop your file here or click to browse</p>
+                                <input type="file" id="referenceFileInput" accept=".fasta,.txt" hidden>
+                            </div>
+                        </div>
+                        <div class="input-method">
+                            <h4>NCBI Accession ID</h4>
+                            <div class="accession-input">
+                                <input type="text" id="referenceAccession" placeholder="e.g., NC_045512.2">
+                                <button id="fetchReferenceBtn">Fetch</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sequence-status" id="referenceStatus">No sequence loaded</div>
+                </div>
+
+                <div class="sequence-panel query-panel">
+                    <h3>Query Sequence</h3>
+                    <div class="input-methods">
+                        <div class="input-method">
+                            <h4>Upload FASTA/TXT</h4>
+                            <div class="dropzone" id="queryDropzone">
+                                <i class="fas fa-file-upload"></i>
+                                <p>Drag & drop your file here or click to browse</p>
+                                <input type="file" id="queryFileInput" accept=".fasta,.txt" hidden>
+                            </div>
+                        </div>
+                        <div class="input-method">
+                            <h4>NCBI Accession ID</h4>
+                            <div class="accession-input">
+                                <input type="text" id="queryAccession" placeholder="e.g., MT012098.1">
+                                <button id="fetchQueryBtn">Fetch</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sequence-status" id="queryStatus">No sequence loaded</div>
+                </div>
+            </div>
+
+            <div class="action-section">
+                <div class="mutation-filters" style="text-align: center; margin-bottom: 20px;">
+                    <label class="filter-checkbox">
+                        <input type="checkbox" id="allMutations" checked>
+                        <span>All Mutations</span>
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" id="substitutionMutations">
+                        <span>Substitutions</span>
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" id="insertionMutations">
+                        <span>Insertions</span>
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" id="deletionMutations">
+                        <span>Deletions</span>
+                    </label>
+                </div>
+                
+            </div>
+            <div class="button-row" style="display: flex; justify-content: center; gap: 10px;">
+                <button id="compareBtn" class="primary-btn" disabled>
+                    <i class="fas fa-exchange-alt"></i> Compare Sequences
+                </button>
+                <button id="clearBtn" class="secondary-btn">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
+            </div>
+            <!-- Remove this duplicate button container -->
+            <!-- <div class="button-container">...</div> -->
+
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="results-header">
+                    <h2>Comparison Results</h2>
+                    <div class="export-options">
+                        <button id="exportExcel" class="export-btn">
+                            <i class="fas fa-file-excel"></i> Export to Excel
+                        </button>
+                        <button id="exportPDF" class="export-btn">
+                            <i class="fas fa-file-pdf"></i> Export to PDF
+                        </button>
+                        <button id="exportCSV" class="export-btn">
+                            <i class="fas fa-file-csv"></i> Export to CSV
+                        </button>
+                    </div>
+                </div>
+
+                <div class="summary-stats">
+                    <div class="stat-card">
+                        <h4>Total Mutations</h4>
+                        <div class="stat-value" id="totalMutations">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Sequence Length</h4>
+                        <div class="stat-value" id="sequenceLength">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Mutation Rate</h4>
+                        <div class="stat-value" id="mutationRate">0%</div>
+                    </div>
+                </div>
+
+                <div class="sequence-metadata">
+                    <div class="metadata-card">
+                        <h4>Reference Sequence</h4>
+                        <div id="referenceMetadata"></div>
+                    </div>
+                    <div class="metadata-card">
+                        <h4>Query Sequence</h4>
+                        <div id="queryMetadata"></div>
+                    </div>
+                </div>
+
+                <div class="visualization-section">
+                    <div class="chart-container">
+                        <h4>Mutation Distribution</h4>
+                        <canvas id="mutationChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="sequence-display">
+                    <h4>Sequence Alignment with Mutations Highlighted</h4>
+                    <div class="sequence-viewer" id="sequenceViewer">
+                        <!-- Sequence alignment will be displayed here -->
+                    </div>
+                </div>
+
+                <div class="mutation-list">
+                    <h4>Detailed Mutation List</h4>
+                    <table id="mutationTable">
+                        <thead>
+                            <tr>
+                                <th>Position</th>
+                                <th>Reference</th>
+                                <th>Query</th>
+                                <th>Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Mutation details will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/sequence-comparison.js"></script>
+</body>
+</html>

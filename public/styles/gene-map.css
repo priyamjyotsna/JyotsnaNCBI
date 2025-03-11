@@ -1,0 +1,361 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f7fa;
+    color: #2d3748;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Navigation */
+.top-nav {
+    margin-bottom: 2rem;
+}
+
+.back-link {
+    color: #4a5568;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.back-link:hover {
+    color: #2d3748;
+}
+
+/* Header */
+header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    color: #718096;
+    font-size: 1.1rem;
+}
+
+/* Input Section */
+.input-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.file-upload {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.file-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background-color: #4299e1;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.file-label:hover {
+    background-color: #3182ce;
+}
+
+.file-input {
+    display: none;
+}
+
+.file-name {
+    margin-top: 0.5rem;
+    color: #718096;
+}
+
+/* Visualization Options */
+.visualization-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-select {
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    width: 100%;
+}
+
+input[type="range"] {
+    width: 100%;
+}
+
+/* Buttons */
+.primary-button, .secondary-button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s;
+}
+
+.primary-button {
+    background-color: #4299e1;
+    color: white;
+    width: 100%;
+    justify-content: center;
+}
+
+.primary-button:hover {
+    background-color: #3182ce;
+}
+
+.primary-button:disabled {
+    background-color: #cbd5e0;
+    cursor: not-allowed;
+}
+
+.secondary-button {
+    background-color: #edf2f7;
+    color: #4a5568;
+}
+
+.secondary-button:hover {
+    background-color: #e2e8f0;
+}
+
+/* Status Section */
+.status-section {
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 6px;
+    display: none;
+}
+
+.status-section.info {
+    background-color: #ebf8ff;
+    color: #2b6cb0;
+    display: block;
+}
+
+.status-section.success {
+    background-color: #f0fff4;
+    color: #2f855a;
+    display: block;
+}
+
+.status-section.error {
+    background-color: #fff5f5;
+    color: #c53030;
+    display: block;
+}
+
+/* Visualization Section */
+.visualization-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-top: 2rem;
+}
+
+#geneMap {
+    width: 100%;
+    min-height: 600px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.download-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.secondary-button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    background-color: #edf2f7;
+    color: #4a5568;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.secondary-button:hover {
+    background-color: #e2e8f0;
+}
+
+.secondary-button i {
+    font-size: 1.1rem;
+}
+.controls-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.visualization-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+#markerSizeValue {
+    text-align: center;
+    color: #4a5568;
+    font-size: 0.9rem;
+}
+
+.zoom-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.primary-button {
+    min-width: 200px;
+}
+.control-button {
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.control-button:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+}
+
+.control-button i {
+    font-size: 1.1rem;
+    color: #4a5568;
+}
+.help-section {
+    margin: 1rem 0;
+    text-align: right;
+}
+
+.help-button {
+    background: #4A5568;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.help-button:hover {
+    background: #2D3748;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #000;
+}
+
+.guide-content {
+    margin-top: 1.5rem;
+}
+
+.guide-content h3 {
+    color: #2D3748;
+    margin: 1.5rem 0 0.5rem;
+}
+
+.guide-content ul, .guide-content ol {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.example-data {
+    background: #F7FAFC;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: monospace;
+    margin: 1rem 0;
+    white-space: pre;
+}

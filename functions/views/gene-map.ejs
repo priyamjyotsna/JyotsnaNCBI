@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gene Map Visualizer - Jyotsna's NCBI Tools</title>
+    <link rel="stylesheet" href="/styles/gene-map.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Replace the old Plotly script with this -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <nav class="top-nav">
+            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
+        </nav>
+
+        <header>
+            <h1>Gene Map Visualizer</h1>
+            <p class="subtitle">Visualize variant locations and amino acid changes</p>
+            
+            <!-- Add help section -->
+            <div class="help-section">
+                <button class="help-button" onclick="document.getElementById('helpModal').style.display='block'">
+                    <i class="fas fa-question-circle"></i> Input File Guide
+                </button>
+            </div>
+        </header>
+
+        <!-- Add modal for help content -->
+        <div id="helpModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="document.getElementById('helpModal').style.display='none'">&times;</span>
+                <h2>Input File Guide</h2>
+                <div class="guide-content">
+                    <h3>File Format Requirements:</h3>
+                    <ul>
+                        <li>File must be in TSV (Tab-Separated Values) format</li>
+                        <li>First row should contain headers</li>
+                        <li>Each row represents one variant</li>
+                    </ul>
+    
+                    <h3>Required Columns (in order):</h3>
+                    <ol>
+                        <li>Variant ID</li>
+                        <li>Chromosomal Location</li>
+                        <li>Variant Type</li>
+                        <li>Gene Name</li>
+                        <li>Impact Level</li>
+                        <li>Clinical Significance</li>
+                    </ol>
+    
+                    <h3>Example Data:</h3>
+                    <pre class="example-data">
+    ID      Location    Type    Gene    Impact  Significance
+    var1    42.1265    SNV     BRCA1   high    pathogenic
+    var2    42.1270    deletion    BRCA1   moderate    likely_pathogenic
+    var3    42.1275    insertion   BRCA1   low benign</pre>
+    
+                    <h3>Notes:</h3>
+                    <ul>
+                        <li>Location should be a numeric value</li>
+                        <li>Empty fields will be marked as "unknown"</li>
+                        <li>Supported variant types: SNV, deletion, insertion, substitution, indel</li>
+                        <li>Impact levels: high, moderate, low, modifier</li>
+                        <li>Clinical significance: pathogenic, likely_pathogenic, uncertain_significance, likely_benign, benign</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div class="file-upload">
+                <label for="variantFile" class="file-label">
+                    <i class="fas fa-upload"></i>
+                    <span>Choose TSV File</span>
+                </label>
+                <input type="file" id="variantFile" accept=".tsv,.csv,.txt" class="file-input">
+                <p class="file-name" id="fileName">No file chosen</p>
+            </div>
+            
+            <!-- Remove this duplicate controls-section -->
+            <div class="visualization-options">
+                <div class="option-group">
+                    <label for="viewMode">View Mode:</label>
+                    <select id="viewMode" class="form-select">
+                        <option value="linear">Linear View</option>
+                        <option value="circular">Circular View</option>
+                    </select>
+                </div>
+            
+                <div class="option-group">
+                    <label for="colorBy">Color By:</label>
+                    <select id="colorBy" class="form-select">
+                        <option value="type">Variant Type</option>
+                        <option value="significance">Clinical Significance</option>
+                        <option value="impact">Impact Level</option>
+                    </select>
+                </div>
+            
+                <div class="option-group">
+                    <label for="markerSize">Marker Size:</label>
+                    <input type="range" id="markerSize" min="5" max="15" value="8">
+                    <span id="markerSizeValue">8</span>
+                </div>
+            </div>
+            
+            <!-- Remove this duplicate section -->
+            <!-- <div class="controls-section">
+                <div class="zoom-controls">...</div>
+            </div> -->
+            
+            <button id="visualizeBtn" class="primary-button" disabled>
+                <i class="fas fa-chart-bar"></i> Generate Visualization
+            </button>
+        </div>
+
+        <div id="status" class="status-section"></div>
+
+        <div class="visualization-section">
+            <div id="geneMap"></div>
+            <div class="controls">
+                <div class="zoom-controls">
+                    <button id="zoomIn" class="control-button" title="Zoom In">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button id="zoomOut" class="control-button" title="Zoom Out">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button id="resetZoom" class="control-button" title="Reset Zoom">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                </div>
+                <div class="download-buttons">
+                    <button id="downloadPNG" class="secondary-button">
+                        <i class="fas fa-download"></i> Download PNG
+                    </button>
+                    <button id="downloadSVG" class="secondary-button">
+                        <i class="fas fa-download"></i> Download SVG
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/gene-map.js"></script>
+</body>
+</html>

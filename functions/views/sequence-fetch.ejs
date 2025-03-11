@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sequence Fetch Tool - Jyotsna's NCBI Tools</title>
+    <link rel="stylesheet" href="/styles/sequence-fetch.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <nav class="top-nav">
+            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
+        </nav>
+
+        <header>
+            <h1>Sequence Fetch Tool</h1>
+            <p class="subtitle">Fetch and analyze nucleotide sequences from NCBI database</p>
+        </header>
+
+        <div class="input-section">
+            <div class="range-input">
+                <div class="input-group">
+                    <label for="startId">Start Accession:</label>
+                    <input type="text" id="startId" placeholder="e.g., GU339067">
+                </div>
+                
+                <div class="input-group">
+                    <label for="endId">End Accession:</label>
+                    <input type="text" id="endId" placeholder="e.g., GU339071">
+                </div>
+
+                <div class="input-group">
+                    <label for="previewLength">Preview Length:</label>
+                    <select id="previewLength" class="form-select">
+                        <option value="50">50 bp</option>
+                        <option value="100">100 bp</option>
+                        <option value="200">200 bp</option>
+                        <option value="500">500 bp</option>
+                        <option value="1000">1000 bp</option>
+                        <option value="-1">Full Sequence</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="additional-fields">
+                <label>Additional Fields:</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-label"><input type="checkbox" value="organism" checked> Organism</label>
+                    <label class="checkbox-label"><input type="checkbox" value="length" checked> Sequence Length</label>
+                    <label class="checkbox-label"><input type="checkbox" value="moltype" checked> Molecule Type</label>
+                    <label class="checkbox-label"><input type="checkbox" value="update_date" checked> Update Date</label>
+                </div>
+            </div>
+            
+            <button id="fetchBtn" class="primary-button">
+                <i class="fas fa-download"></i> Fetch Sequences
+            </button>
+        </div>
+        
+        <div id="status" class="status-section"></div>
+        
+        <div class="preview-section">
+            <h2>Results Preview</h2>
+            <div class="table-container">
+                <table id="previewTable">
+                    <thead>
+                        <tr>
+                            <th>Accession ID</th>
+                            <th>Sequence</th>
+                            <th>Organism</th>
+                            <th>Length</th>
+                            <th>Molecule Type</th>
+                            <th>Update Date</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/js/sequence-fetch.js"></script>
+</body>
+</html>

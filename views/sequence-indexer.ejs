@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sequence Character Indexer</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <style>
+        body {
+            background: linear-gradient(120deg, #8ab6ff 0%, #ffa3b1 100%);
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .back-link {
+            color: white;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .input-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-family: monospace;
+        }
+        .analyze-btn {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        #results {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f5f5f5;
+        }
+        .export-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sequence Character Indexer</h1>
+        <p><a href="/" class="back-link">← Back to Tools</a></p>
+        
+        <div class="input-section">
+            <textarea id="inputSequence" rows="10" cols="50" placeholder="Enter Sequence..."></textarea>
+            <button onclick="analyzeSequence()" class="analyze-btn">Analyze Sequence</button>
+        </div>
+
+        <div id="results" style="display: none;">
+            <h2>Character Sequence Report</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Serial No</th>
+                        <th>Character</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+            <button onclick="exportToCSV()" class="export-btn">Export as CSV</button>
+        </div>
+    </div>
+
+    <script>
+        function analyzeSequence() {
+            const sequence = document.getElementById('inputSequence').value;
+            if (!sequence) return;
+
+            const tbody = document.getElementById('resultsBody');
+            tbody.innerHTML = '';
+
+            [...sequence].forEach((char, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${char}</td>
+                `;
+            });
+
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function exportToCSV() {
+            const sequence = document.getElementById('inputSequence').value;
+            let csv = 'Serial No,Character\n';
+            
+            [...sequence].forEach((char, index) => {
+                csv += `${index + 1},${char}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sequence_index.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

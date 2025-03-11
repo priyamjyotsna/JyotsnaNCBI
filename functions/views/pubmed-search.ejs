@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced PubMed Search</title>
+    <link rel="stylesheet" href="/styles/pubmed-search.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <a href="/" class="back-to-tools">← Back to Tools</a>
+            <h1>Advanced PubMed Search</h1>
+        </header>
+
+        <form id="searchForm" class="search-form">
+            <section class="search-builder">
+                <h2>Search Builder</h2>
+                <div id="searchTerms">
+                    <div class="search-row">
+                        <select class="operator">
+                            <option value="AND">AND</option>
+                            <option value="OR">OR</option>
+                            <option value="NOT">NOT</option>
+                        </select>
+                        <input type="text" class="search-term" placeholder="Enter search terms...">
+                        <button type="button" class="remove-term">×</button>
+                    </div>
+                </div>
+                <button type="button" id="addTerm" class="add-term-btn">Add Another Term</button>
+            </section>
+
+            <section class="filters">
+                <h2>Advanced Filters</h2>
+                <div class="filters-grid">
+                    <!-- Column 1 -->
+                    <div class="filter-section">
+                        <div class="filter-group">
+                            <label>Publication Date</label>
+                            <div class="date-inputs">
+                                <input type="date" name="dateFrom" class="date-input">
+                                <span>to</span>
+                                <input type="date" name="dateTo" class="date-input">
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <label>Quick Date Range</label>
+                            <select name="dateRange" class="quick-date">
+                                <option value="">Custom Range</option>
+                                <option value="1">Last Year</option>
+                                <option value="5">Last 5 Years</option>
+                                <option value="10">Last 10 Years</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Column 2 -->
+                    <div class="filter-section">
+                        <div class="filter-group">
+                            <label>Article Types</label>
+                            <div class="checkbox-grid">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="articleType" value="Clinical Trial">
+                                    Clinical Trial
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="articleType" value="Review">
+                                    Review
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="articleType" value="Meta-Analysis">
+                                    Meta-Analysis
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="articleType" value="RCT">
+                                    RCT
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Column 3 -->
+                    <div class="filter-section">
+                        <div class="filter-group">
+                            <label>Languages</label>
+                            <select name="language" multiple class="multi-select">
+                                <option value="eng">English</option>
+                                <option value="fre">French</option>
+                                <option value="ger">German</option>
+                                <option value="spa">Spanish</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Access Type</label>
+                            <div class="radio-group">
+                                <label class="radio-item">
+                                    <input type="radio" name="access" value="all" checked>
+                                    All Articles
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="access" value="free">
+                                    Free Full Text
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="action-buttons">
+                <button type="button" id="saveConfig" class="save-config">Save Configuration</button>
+                <button type="submit" class="search-button">Search PubMed</button>
+            </div>
+        </form>
+
+        <div id="results" class="results-container">
+            <!-- Search results will appear here -->
+        </div>
+    </div>
+
+    <script src="/js/pubmed-search.js"></script>
+</body>
+</html>

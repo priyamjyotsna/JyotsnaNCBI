@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNP Primer Designer - Jyotsna's NCBI Tools</title>
+    <link rel="stylesheet" href="/styles/design-primers.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <nav class="top-nav">
+            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
+        </nav>
+
+        <header>
+            <h1>SNP Primer Designer</h1>
+            <p class="subtitle">Design PCR primers for SNP genotyping</p>
+        </header>
+
+        <div class="input-section">
+            <div class="form-group">
+                <label for="sequence">DNA Sequence:</label>
+                <textarea id="sequence" rows="4" placeholder="Enter DNA sequence (A, T, G, C only)"></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="snpPosition">SNP Position:</label>
+                    <input type="number" id="snpPosition" min="0" placeholder="0-based index">
+                </div>
+
+                <div class="form-group">
+                    <label for="ampliconLength">Amplicon Length:</label>
+                    <input type="number" id="ampliconLength" min="50" value="200">
+                </div>
+
+                <div class="form-group">
+                    <label for="primerLength">Primer Length:</label>
+                    <input type="number" id="primerLength" min="15" max="30" value="20">
+                </div>
+            </div>
+
+            <button id="designBtn" class="primary-button">
+                <i class="fas fa-dna"></i> Design Primers
+            </button>
+        </div>
+
+        <div id="status" class="status-section"></div>
+
+        <div id="results" class="results-section" style="display: none;">
+            <h2>Primer Design Results</h2>
+            
+            <div class="primer-results">
+                <div class="primer-group">
+                    <h3>Forward Primer</h3>
+                    <div class="sequence" id="forwardPrimer"></div>
+                    <div class="properties">
+                        <div>Tm: <span id="forwardTm"></span>°C</div>
+                        <div>GC: <span id="forwardGc"></span>%</div>
+                    </div>
+                </div>
+
+                <div class="primer-group">
+                    <h3>Reverse Primer</h3>
+                    <div class="sequence" id="reversePrimer"></div>
+                    <div class="properties">
+                        <div>Tm: <span id="reverseTm"></span>°C</div>
+                        <div>GC: <span id="reverseGc"></span>%</div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="copyBtn" class="secondary-button">
+                <i class="fas fa-copy"></i> Copy Results
+            </button>
+        </div>
+    </div>
+
+    <script src="/js/design-primers.js"></script>
+</body>
+</html>

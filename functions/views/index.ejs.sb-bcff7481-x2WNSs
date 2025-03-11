@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jyotsna's NCBI Tools</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Keep the header auth-links and remove the duplicate at the bottom -->
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>Jyotsna's NCBI Tools</h1>
+                <p class="header-subtitle">Comprehensive Biotech Analysis Suite</p>
+                <div class="auth-links">
+                    <% if (typeof user !== 'undefined' && user) { %>
+                        <div class="user-info">
+                            <% if (user.photo) { %>
+                                <img src="<%= user.photo %>" alt="Profile" class="profile-pic">
+                            <% } %>
+                            <span class="user-email"><%= user.email %></span>
+                            <a href="/auth/welcome" class="auth-btn">NCBI credentials</a>
+                            <a href="/auth/logout" class="auth-btn">Sign Out</a>
+                        </div>
+                    <% } else { %>
+                        <a href="/auth/login" class="auth-btn">Login</a>
+                        <a href="/auth/signup" class="auth-btn">Sign Up</a>
+                    <% } %>
+                </div>
+            </div>
+        </header>
+        
+        <div class="tools-grid">
+            <!-- Active Tools Group -->
+            <div class="tool-box pubmed-search">
+                <div class="tool-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3>Advanced PubMed Search</h3>
+                <p>Powerful literature search tool with custom filters, export options, and saved searches.</p>
+                <a href="/pubmed-search" class="tool-link">Launch Tool <i class="fas fa-arrow-right"></i></a>
+            </div>
+
+            <div class="tool-box nucleotide-download">
+                <div class="tool-icon">
+                    <i class="fas fa-dna"></i>
+                </div>
+                <h3>Nucleotide Sequence Downloads</h3>
+                <p>Efficiently download and export nucleotide sequences from NCBI.</p>
+                <a href="/nucleotide-download" class="tool-link">Launch Tool <i class="fas fa-arrow-right"></i></a>
+            </div>
+
+            <div class="tool-box sequence-fetch">
+                <div class="tool-icon">
+                    <i class="fas fa-dna"></i>
+                </div>
+                <h3>Sequence Fetch Tool</h3>
+                <p>Fetch and analyze nucleotide sequences from NCBI database.</p>
+                <a href="/sequence-fetch" class="tool-link">Launch Tool <i class="fas fa-arrow-right"></i></a>
+            </div>
+
+            <div class="tool-box variant-analysis">
+                <div class="tool-icon">
+                    <i class="fas fa-dna"></i>
+                </div>
+                <h3>Variant Analysis Tool</h3>
+                <p>Analyze genetic variants using Ensembl REST API.</p>
+                <a href="/variant-analysis" class="tool-link">Launch Tool <i class="fas fa-arrow-right"></i></a>
+            </div>
+
+            <div class="tool-box">
+                <div class="tool-icon">
+                    <i class="fas fa-dna"></i>
+                </div>
+                <h3>SNP Primer Designer</h3>
+                <p>Design PCR primers for SNP genotyping with optimized parameters.</p>
+                <a href="/design-primers" class="tool-link">Launch Tool <i class="fas fa-arrow-right"></i></a>
+            </div>
+
+            <div class="tool-box">
+                <div class="tool-icon">
+                    <i class="fas fa-sort-numeric-up"></i>
+                </div>
+                <h3>Sequence Character Indexer</h3>
+                <p>Index and analyze character distribution in sequences.</p>
+                <a href="/sequence-indexer" class="tool-link">Launch Tool <i class="fas fa-arrow-right"></i></a>
+            </div>
+
+            <div class="tool-box sequence-comparison">
+                <div class="tool-icon">
+                    <i class="fas fa-dna"></i>
+                </div>
+                <h3>Sequence Comparison Tool</h3>
+                <p>Compare DNA/RNA sequences to identify mutations.</p>
+                <a href="/sequence-comparison" class="tool-link">Launch Tool <i class="fas fa-arrow-right"></i></a>
+            </div>
+
+            <!-- Add DNA Analysis Tool -->
+            <div class="tool-box">
+                <div class="tool-icon">
+                    <i class="fas fa-microscope"></i>
+                </div>
+                <h3>DNA Sequence Analysis</h3>
+                <p>Analyze nucleotide composition of DNA sequences from NCBI.</p>
+                <a href="/dna-analysis" class="tool-link">Launch Tool <i class="fas fa-arrow-right"></i></a>
+            </div>
+
+            <!-- Placeholder Tools (Coming Soon) -->
+            <div class="tool-box disabled">
+                <div class="tool-icon">
+                    <i class="fas fa-flask"></i>
+                </div>
+                <h3>Coming Soon</h3>
+                <p>New tool under development</p>
+                <span class="tool-link disabled">Coming Soon</span>
+            </div>
+
+            <!-- Add more placeholder boxes as needed -->
+        </div>
+        
+        <footer class="quote-footer">
+            <p class="quote-text">"Biotech and coding: where the poetry of life 🧬 meets the logic of machines 💻, crafting tomorrow's miracles ✨ with a keyboard ⌨️ and a gene 🔬"</p>
+        </footer>
+    </div>
+    <!-- Remove this duplicate section -->
+    <!-- <div class="auth-links"> ... </div> -->
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Variant Analysis Tool - Jyotsna's NCBI Tools</title>
+    <link rel="stylesheet" href="/styles/variant-analysis.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <nav class="top-nav">
+            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
+        </nav>
+
+        <header>
+            <h1>Variant Analysis Tool</h1>
+            <p class="subtitle">Analyze genetic variants using Ensembl REST API</p>
+        </header>
+
+        <div class="input-section">
+            <div class="file-upload">
+                <label for="variantFile" class="file-label">
+                    <i class="fas fa-upload"></i>
+                    <span>Choose TSV File</span>
+                </label>
+                <input type="file" id="variantFile" accept=".tsv" class="file-input">
+                <p class="file-name" id="fileName">No file chosen</p>
+            </div>
+
+            <div class="options-section">
+                <div class="option-group">
+                    <label>Processing Options:</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="clinical_significance" checked>
+                            Clinical Significance
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="population_frequency" checked>
+                            Population Frequency
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="protein_impact" checked>
+                            Protein Impact
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="publications" checked>
+                            Publications
+                        </label>
+                    </div>
+                </div>
+
+                <div class="batch-settings">
+                    <label for="batchSize">Batch Size:</label>
+                    <select id="batchSize" class="form-select">
+                        <option value="10">10 variants</option>
+                        <option value="25">25 variants</option>
+                        <option value="50">50 variants</option>
+                        <option value="100">100 variants</option>
+                    </select>
+                </div>
+            </div>
+
+            <button id="analyzeBtn" class="primary-button" disabled>
+                <i class="fas fa-dna"></i> Analyze Variants
+            </button>
+        </div>
+
+        <div id="status" class="status-section"></div>
+
+        <div class="results-section">
+            <h2>Analysis Results</h2>
+            <div class="table-container">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Variant ID</th>
+                            <th>Location</th>
+                            <th>Type</th>
+                            <th>Gene</th>
+                            <th>Clinical Significance</th>
+                            <th>Population MAF</th>
+                            <th>Protein Impact</th>
+                            <th>Publications</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/variant-analysis.js"></script>
+</body>
+</html>

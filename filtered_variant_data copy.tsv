@@ -1,0 +1,689 @@
+Variant ID	Location	Variant type	Gene	Molecular consequences	Most severe clinical significance	1000G MAF	GO-ESP MAF	ExAC MAF	Publications (PMIDs)
+rs765528990	42126574	single nucleotide variant	CYP2D6 and 2 more	stop lost,	not-provided			G=9.52381e-06	
+rs1440526469	42126578	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs370580423	42126579	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=4.68068e-05	
+rs763143537	42126582	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=9.28264e-06	
+rs566833518	42126584	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	G=0.000156152		G=0.000138274	
+rs2146927953	42126585	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs755325763	42126587	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			C=1.83033e-05	
+rs2146927979	42126588	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1930933637	42126594	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs767815488	42126597	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=8.98424e-06	
+rs199722016	42126599	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	C=0.000156152		C=0.00039399	
+rs1930935351	42126600	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1247064924	42126602	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs568495591	42126605	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided	A=0.000312305			
+rs2146928073	42126606	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1602564741	42126608	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1201776035	42126609	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1135840	42126611	single nucleotide variant	CYP2D6 and 3 more	,missense variant	drug-response	C=0.404122			7903454,7927337,18698231,20548328,21154707,21790905,22424094,22482072,22552919,22722500,23133420,23207012,24798984,24868171,24944790,25419701,26316040,26793106,26858644,27110117,27228982,27636550,27785397,28346059,28603633,29071720,29193749,30093869,30344693,30360443,31019283,31609742,32219146,32483134,33519226,33688237,33875422,34621706,34823523,35401003,36013302
+rs1930938854	42126612	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs147943410	42126615	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			G=8.796e-06	
+rs267608312	42126617	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				20520586
+rs776502156	42126621	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=2.65506e-05	
+rs75467367	42126623	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs74478221	42126624	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1135839	42126625	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1406400705	42126626	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1135838	42126627	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs1370926951	42126630	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs773525784	42126632	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			T=1.80773e-05	
+rs1135837	42126633	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=9.06766e-06	
+rs766507177	42126635	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			G=9.12109e-06	
+rs28371735	42126636	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=9.15835e-06	
+rs1337445500	42126638	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1213908523	42126639	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1290348511	42126641	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs973966643	42126645	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs141756339	42126647	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=0.000182907	
+rs761146705	42126650	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=9.72195e-06	
+rs1490238757	42126651	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1194554904	42126653	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146928366	42126654	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided				
+rs1244824232	42126657	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1135835	42126660	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	C=0.00062461		C=0.000103909	
+rs1930952604	42126662	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1135833	42126663	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	C=0.00062461		C=0.000108134	
+rs370012110	42126668	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=5.5836e-05	
+rs2146928448	42126672	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs769697623	42126674	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			G=5.91506e-05	
+rs2146928457	42126675	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs138229048	42126682	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	G=0.000468457		G=0.000141961	
+rs1930956881	42126683	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1284658369	42126684	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided				
+rs774378149	42126686	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			G=4.07266e-05	
+rs1445316280	42126695	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs375715419	42126696	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			C=1.58927e-05	
+rs1283832855	42126702	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1446946400	42126705	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs267608316	42126708	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				20520586
+rs760940331	42126715	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	T=0.00062461		T=5.62335e-05	
+rs1930962810	42126716	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1930963279	42126717	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs369177208	42126719	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	T=0.00124922		T=0.000288573	
+rs754164689	42126720	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			A=0.0	
+rs79392742	42126722	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	T=0.00421611		T=0.00244175	33688237
+rs1399662939	42126729	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs267608318	42126734	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=0.0	19164093
+rs751092905	42126735	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			T=0.000160137	
+rs1450335489	42126741	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1314121486	42126744	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs532668079	42126746	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	T=0.000312305		T=0.000193573	
+rs730882251	42126747	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response			A=0.000261267	17460029
+rs267608319	42126749	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response	T=0.00124922		T=0.000198913	9241659,15726636,17460029,20473659
+rs777560972	42126750	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=0.0	
+rs569439709	42126752	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	T=0.00171768		T=0.00241255	
+rs1602565522	42126753	single nucleotide variant	CYP2D6 and 1 more	splice acceptor variant	drug-response				
+rs1232498258	42126754	single nucleotide variant	CYP2D6 and 1 more	splice acceptor variant	not-provided				
+rs1446604805	42126849	single nucleotide variant	CYP2D6 and 1 more	splice donor variant	not-provided				
+rs1303946678	42126851	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1385634315	42126853	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1182827873	42126862	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs979622353	42126863	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1602566009	42126865	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs2146929099	42126867	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146929107	42126871	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146929111	42126872	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1930996069	42126873	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs3021084	42126877	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	A=0.000156152		A=0.000353786	
+rs1308656599	42126878	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs766996977	42126880	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=4.91352e-05	
+rs1602566050	42126881	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs1249980577	42126884	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs752156313	42126886	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			G=0.0	
+rs1222796780	42126892	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs538036869	42126895	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	G=0.000312305		G=0.0	
+rs763964554	42126896	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided			A=4.26548e-05	
+rs72549345	42126904	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1263258603	42126907	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs753603622	42126909	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			C=3.41717e-05	
+rs1168156089	42126910	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1372322657	42126911	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs757081096	42126913	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			G=2.95107e-05	
+rs28371733	42126914	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	T=0.00421611			
+rs1309819482	42126916	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1569018381	42126918	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs746144777	42126919	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			C=0.000107852	
+rs758560713	42126920	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=2.0656e-05	
+rs574629217	42126925	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	T=0.000312305		T=6.90489e-05	
+rs747089665	42126926	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=0.000116889	
+rs1439358432	42126928	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1602566282	42126931	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs1366490783	42126932	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1304125636	42126935	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs769157652	42126938	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	T=0.00312305		T=0.000178827	
+rs1247226798	42126939	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided				
+rs1931010323	42126943	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs78762568	42126944	single nucleotide variant	CYP2D6 and 2 more	,missense variant	drug-response	T=0.000312305		T=0.000421279	
+rs748519122	42126946	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=1.43312e-05	
+rs1201047490	42126950	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931012442	42126953	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931013246	42126956	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1602566413	42126962	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs377332667	42126964	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=2.59572e-05	
+rs1445160365	42126967	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1262800226	42126968	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146929556	42126973	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs760156464	42126976	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=1.27753e-05	
+rs1455454907	42126983	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1287160098	42126985	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1931019123	42126986	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs757030056	42126988	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=8.14226e-05	
+rs1317628352	42126989	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1244836219	42126991	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1307208772	42126993	single nucleotide variant	CYP2D6 and 2 more	splice acceptor variant	not-provided				
+rs781356352	42127445	single nucleotide variant	CYP2D6 and 2 more	splice donor variant	not-provided			C=8.32335e-06	
+rs752858790	42127446	single nucleotide variant	CYP2D6 and 2 more	splice donor variant	not-provided			A=1.66442e-05	
+rs1931105676	42127448	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931105973	42127449	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1202725674	42127455	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs77312092	42127457	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=0.000232794	
+rs146271511	42127458	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=4.98637e-05	
+rs1931109051	42127469	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931109351	42127470	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs75386357	42127473	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	T=0.000798722		T=0.000763207	
+rs1263046009	42127476	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1422120771	42127478	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs575708064	42127479	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	T=0.000312305		T=8.29215e-06	
+rs61731586	42127481	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=0.000348658	
+rs141739595	42127482	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=8.2916e-06	
+rs544811063	42127487	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	A=0.000312305		A=8.28899e-06	
+rs773062931	42127490	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=8.28693e-06	
+rs1329937357	42127491	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs762795899	42127493	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			C=8.28555e-06	
+rs1931114091	42127496	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs368258647	42127497	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			C=8.28542e-06	
+rs1931114738	42127499	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1065569	42127500	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1001296663	42127502	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs61737946	42127503	single nucleotide variant	CYP2D6 and 2 more	,missense variant	drug-response			T=0.0170855	
+rs752805806	42127505	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			C=8.28089e-06	
+rs778415243	42127508	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	A=0.000156152		A=3.31192e-05	
+rs1385816062	42127509	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146931151	42127511	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs61745683	42127512	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=0.0138673	33875422
+rs1555888899	42127514	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs267608293	42127515	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				9241659
+rs1250223869	42127518	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1569019676	42127521	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1474709775	42127522	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1555888910	42127523	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1058172	42127526	single nucleotide variant	CYP2D6 and 2 more	,missense variant	drug-response				21107304,24200957,24528284,24934312,26858644,28158543,28803404
+rs769351604	42127527	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=8.27486e-06	
+rs1602568885	42127529	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs1569019727	42127530	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	drug-response				
+rs749112120	42127532	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=8.27349e-06	
+rs770930850	42127533	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=8.27308e-06	
+rs773966528	42127536	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			G=8.27431e-06	
+rs767813692	42127539	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=8.27513e-06	
+rs1931127097	42127541	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146931331	42127544	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs79489631	42127545	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=1.65511e-05	
+rs367922258	42127547	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=8.27595e-06	
+rs1355869917	42127548	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146931371	42127550	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146931378	42127551	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs757667035	42127553	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=2.48307e-05	
+rs2146931393	42127554	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs202102799	42127556	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided	C=0.000780762		C=0.00769724	
+rs750732257	42127557	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			C=1.6561e-05	
+rs139441693	42127559	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=8.28034e-06	
+rs1182114413	42127560	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs780818247	42127561	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			G=8.27993e-06	
+rs747740702	42127562	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			C=8.27952e-06	
+rs61736517	42127565	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	C=0.000936914		C=0.00241518	26858644
+rs1931134245	42127566	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146931478	42127568	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146931483	42127569	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs748850584	42127572	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided			A=8.285e-06	
+rs770748642	42127573	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=8.28459e-06	
+rs774382844	42127575	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=8.28487e-06	
+rs542114265	42127579	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	T=0.000156152		T=8.28899e-06	
+rs1450231864	42127580	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs144982467	42127581	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			C=4.14401e-05	
+rs1340155817	42127584	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146931559	42127586	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1239960308	42127587	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs76088846	42127589	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=2.48793e-05	
+rs72549347	42127590	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided	A=0.000156152		A=0.00019078	34621706
+rs764411864	42127592	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=8.29545e-05	
+rs765632259	42127595	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			G=0.000772156	
+rs750996195	42127596	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			T=8.29614e-06	
+rs1931141853	42127598	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1230699203	42127599	single nucleotide variant	CYP2D6 and 2 more	,missense variant,nonsense (stop gained)	not-provided				
+rs1041305578	42127601	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs566108360	42127602	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1431441389	42127604	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs141824015	42127605	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	G=0.000156152		G=4.15151e-05	
+rs2146931711	42127607	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs59421388	42127608	single nucleotide variant	CYP2D6 and 2 more	,missense variant	other	T=0.0309182		T=0.00837488	22482072,23133420,25266489,26091847,27233804,27467145,30093869,33519226,33875422,34621706,34958284
+rs748712690	42127610	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			C=9.96777e-05	
+rs78209835	42127611	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	T=0.00062461		T=0.00338163	
+rs1204637685	42127613	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs745746329	42127614	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=8.30841e-06	
+rs1931148131	42127618	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs72549348	42127619	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931149138	42127620	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1231640905	42127621	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs772143589	42127622	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			C=8.31324e-06	
+rs779957833	42127623	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided			A=8.31449e-06	
+rs746824661	42127626	single nucleotide variant	CYP2D6 and 3 more	,missense variant,nonsense (stop gained)	not-provided			A=8.31836e-06	
+rs2146931839	42127628	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs141009491	42127631	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs761795361	42127632	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=8.33028e-06	
+rs3915951	42127634	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=0.0756407	
+rs1931152316	42127635	single nucleotide variant	CYP2D6 and 2 more	splice acceptor variant	not-provided				
+rs72549349	42127841	single nucleotide variant	CYP2D6 and 2 more	splice donor variant	not-provided			T=2.48917e-05	29681089,33519226,34621706
+rs150216909	42127842	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	A=0.000156152		A=0.000157577	
+rs2146932614	42127845	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided				
+rs2146932631	42127848	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs953106263	42127850	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs372910785	42127851	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=8.28199e-06	
+rs140513104	42127853	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	A=0.000156152		A=0.000298102	
+rs1931189498	42127854	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs5030867	42127856	single nucleotide variant	CYP2D6 and 1 more	,missense variant	other	G=0.00140537		G=0.00134903	18547414,21480951,23226064,24944790,26785747,26793106,27108086,29193749,33519226,34385834,34621706
+rs775904145	42127857	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=8.27472e-06	
+rs1931191568	42127859	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931192274	42127862	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs200234159	42127865	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	G=0.000156152		G=1.65388e-05	
+rs141289473	42127869	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	A=0.000156152		A=3.30699e-05	
+rs773889591	42127874	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=8.26569e-06	
+rs767483427	42127877	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			T=8.26542e-06	
+rs965370012	42127878	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1287140450	42127879	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided				
+rs2146932792	42127880	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146932794	42127881	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931196332	42127884	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1602570688	42127886	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs143145507	42127889	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=4.13087e-05	
+rs2146932836	42127890	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs753667915	42127892	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=8.26009e-06	
+rs2146932851	42127893	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1135830	42127895	single nucleotide variant	CYP2D6 and 2 more	,missense variant,nonsense (stop gained)	not-provided	A=0.000156152			
+rs2146932884	42127898	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1180181277	42127901	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146932910	42127902	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs758475046	42127906	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=8.25791e-06	
+rs1481054852	42127907	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs780599247	42127908	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			C=8.2575e-06	
+rs1931202269	42127910	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs747462046	42127911	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			T=8.25696e-06	
+rs967434863	42127913	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1931203893	42127914	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs748572154	42127916	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=1.65134e-05	
+rs770674043	42127917	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			G=1.65134e-05	
+rs937293741	42127919	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1406719554	42127922	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146933037	42127924	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146933048	42127925	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1058171	42127926	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1058170	42127928	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146933071	42127929	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs771422993	42127932	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=4.1278e-05	
+rs775065145	42127934	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			G=8.25573e-06	
+rs1931209794	42127935	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1274057279	42127936	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs760561802	42127937	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			G=8.25573e-06	
+rs949717872	42127938	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs753611758	42127940	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=8.25587e-06	
+rs16947	42127941	single nucleotide variant	CYP2D6 and 3 more	,missense variant	drug-response	A=0.367583			7903454,7927337,18547414,18698231,20847277,21071160,21480951,21790905,21840870,22482072,22552919,22688145,23130019,23133420,23207012,23985325,24798984,24868171,24944790,25266489,25419701,26091847,26369774,26793106,26858644,27108086,27110117,27233804,27540311,27636550,27738374,27785397,28178648,28343093,28603633,29193749,29279099,30068618,30093869,30360443,30520769,31019283,32047265,32187157,32639515,33519226,33688237,33875422,34115022,34366834,34385834,34434063,34621706,34823523,34958284,35078561,35401003,35597526,36013302
+rs2146933187	42127946	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1392337481	42127947	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146933207	42127949	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1602571142	42127953	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs1167516686	42127955	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931215565	42127956	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs139519709	42127959	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1569021100	42127960	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931217088	42127964	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1406642817	42127965	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146933288	42127967	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1349287719	42127970	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs567340138	42127971	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	T=0.000156152		T=8.26282e-06	
+rs1135829	42127973	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			C=0.00051249	
+rs994533704	42127974	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1236973749	42127977	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146933366	42127982	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146933372	42127983	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1438292491	42127984	single nucleotide variant	CYP2D6 and 1 more	splice acceptor variant	not-provided				
+rs1931221495	42127985	single nucleotide variant	CYP2D6 and 2 more	splice acceptor variant	not-provided				
+rs1569021782	42128173	single nucleotide variant	CYP2D6 and 1 more	splice donor variant	not-provided				
+rs1734024989	42128175	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1271161207	42128176	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs770790629	42128180	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=1.14516e-05	
+rs1135828	42128181	single nucleotide variant	CYP2D6 and 3 more	,missense variant	drug-response	T=0.00437227		T=0.00228233	
+rs759788437	42128183	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=2.23839e-05	
+rs77913725	42128185	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response	T=0.00405996		T=0.000740462	
+rs1302632750	42128187	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1333309565	42128188	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931268543	42128190	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs754429969	42128196	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=2.03227e-05	
+rs1931270249	42128197	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1482466824	42128199	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1931271932	42128200	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs534682262	42128202	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	A=0.000312305		A=1.96618e-05	
+rs1602573074	42128205	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs1370977049	42128208	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1324411980	42128209	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs565013903	42128211	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	T=0.000399361		T=0.000105877	
+rs749182114	42128214	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1473203326	42128215	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs148769737	42128217	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided	T=0.00062461			
+rs1323341780	42128218	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1231035738	42128220	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1931283455	42128221	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided				
+rs1341003897	42128223	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs1170287893	42128224	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1602573439	42128226	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs142378906	42128227	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=2.69692e-05	
+rs768726712	42128229	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			G=2.69126e-05	
+rs1487471935	42128230	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1209113909	42128231	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided				
+rs776579446	42128233	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			G=8.91202e-06	
+rs267608297	42128235	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=7.10783e-05	16141609,18784265
+rs1186415937	42128236	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs765757568	42128238	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			C=8.83096e-06	
+rs2146934436	42128241	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1456870782	42128245	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs558523758	42128248	single nucleotide variant	CYP2D6 and 2 more	,missense variant,nonsense (stop gained)	not-provided	G=0.000156152		G=8.69671e-06	
+rs1931293008	42128250	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146934499	42128251	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1163232055	42128253	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1602573718	42128256	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs2146934578	42128260	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided				
+rs375279205	42128261	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=8.52181e-06	
+rs1602573795	42128262	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs1243391823	42128263	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs757236950	42128271	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			C=8.41878e-06	
+rs2146934648	42128272	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146934669	42128280	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146934683	42128283	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931301402	42128287	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided				
+rs1931302274	42128289	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931302727	42128290	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs779730092	42128292	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=8.31725e-06	
+rs146819268	42128293	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	A=0.000312305		A=4.9877e-05	
+rs1413433837	42128295	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1184295054	42128299	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146934765	42128301	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146934780	42128304	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1237727711	42128305	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs28371717	42128308	single nucleotide variant	CYP2D6 and 3 more	,missense variant	drug-response	A=0.00218613			18547414
+rs1602573997	42128310	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs763462589	42128313	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			C=8.28157e-06	
+rs894588878	42128314	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs766700125	42128316	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=1.65585e-05	
+rs1352254612	42128319	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs574057781	42128320	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	G=0.000156152		G=8.27705e-06	
+rs1312603458	42128322	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs17002853	42128325	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response	G=0.000399361		G=0.000207087	
+rs373813287	42128329	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=0.000264914	
+rs1252557189	42128331	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs993385303	42128332	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1569022724	42128334	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs750332098	42128335	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=8.2802e-06	
+rs140900383	42128340	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	A=0.000312305		A=1.65667e-05	
+rs746803316	42128341	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=0.000165667	
+rs755207088	42128343	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			G=8.28391e-06	
+rs1308119434	42128346	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs748211488	42128349	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			C=8.29201e-06	
+rs544790460	42128350	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	A=0.000156152			
+rs377725912	42128351	single nucleotide variant	CYP2D6 and 1 more	splice acceptor variant	not-provided	T=0.000312305		T=8.29421e-06	
+rs1031847205	42128782	single nucleotide variant	CYP2D6 and 1 more	splice donor variant	not-provided				
+rs368132174	42128783	single nucleotide variant	CYP2D6 and 1 more	splice donor variant	not-provided			T=1.00478e-05	
+rs1482345267	42128784	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs753945541	42128786	single nucleotide variant	CYP2D6 and 3 more	,missense variant,nonsense (stop gained)	not-provided			T=1.99732e-05	
+rs1161117260	42128788	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs778820986	42128789	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=0.0	
+rs371793722	42128794	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	G=0.000312305		G=3.88923e-05	
+rs1291448337	42128797	single nucleotide variant	CYP2D6 and 2 more	,missense variant	drug-response				
+rs531010318	42128798	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	G=0.000156152		G=9.77383e-06	
+rs201501394	42128800	single nucleotide variant	CYP2D6 and 3 more	,missense variant,nonsense (stop gained)	not-provided				
+rs781621687	42128801	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			G=2.93789e-05	
+rs770638636	42128803	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			G=3.92403e-05	
+rs199609589	42128804	single nucleotide variant	CYP2D6 and 2 more	,missense variant,nonsense (stop gained)	not-provided			T=9.82627e-06	
+rs567606867	42128807	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	T=0.00062461		T=4.95236e-05	
+rs775461428	42128810	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			C=9.92044e-06	
+rs199535154	42128812	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	G=0.000312305		G=0.00337447	
+rs5030866	42128815	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	T=0.00452842		T=0.00732494	
+rs761895610	42128816	single nucleotide variant	CYP2D6 and 2 more	,missense variant,nonsense (stop gained)	not-provided			T=1.00943e-05	
+rs750439337	42128818	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response			C=1.01769e-05	
+rs758618555	42128819	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=1.0279e-05	
+rs1310439220	42128824	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1931457874	42128825	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs766981772	42128827	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			G=2.08899e-05	
+rs1275741831	42128830	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs755571437	42128831	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=2.11833e-05	
+rs2146936706	42128836	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1249615945	42128840	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146936737	42128842	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs778690377	42128843	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided	A=0.000156152		A=2.35571e-05	
+rs2146936750	42128845	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146936757	42128846	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs745365204	42128848	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs774982812	42128849	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1394681715	42128851	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs768664932	42128852	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			C=5.16102e-05	
+rs761708830	42128854	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			G=1.36214e-05	
+rs149300955	42128855	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			A=1.365e-05	
+rs1253767006	42128857	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs763284150	42128858	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			T=0.0	
+rs1931469907	42128860	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1931470497	42128861	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs948982668	42128863	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs755518310	42128864	single nucleotide variant	CYP2D6 and 3 more	,missense variant,nonsense (stop gained)	not-provided			T=4.71313e-05	
+rs1931473426	42128866	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146936937	42128867	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs369772253	42128869	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=9.91899e-05	
+rs1210318866	42128870	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1449705822	42128872	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs758080762	42128873	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=5.24384e-05	
+rs2146937005	42128875	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs538707090	42128876	single nucleotide variant	CYP2D6 and 3 more	,missense variant	drug-response	T=0.00140537			
+rs747884067	42128878	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=5.43262e-05	
+rs2146937045	42128879	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs769576546	42128881	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=0.0	
+rs773148044	42128882	single nucleotide variant	CYP2D6 and 3 more	,missense variant	drug-response			C=7.62021e-05	
+rs1164379625	42128884	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs146975259	42128885	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1460270533	42128887	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs763216774	42128888	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			G=4.03112e-05	
+rs2146937125	42128890	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1602578192	42128891	single nucleotide variant	CYP2D6 and 2 more	,missense variant	drug-response				
+rs2146937138	42128893	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146937146	42128894	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1931484018	42128896	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs77578877	42128897	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			G=2.24598e-05	
+rs2146937193	42128899	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs767893111	42128900	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			C=2.29074e-05	
+rs1931486743	42128902	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146937239	42128903	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1332580859	42128905	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs753186887	42128906	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=2.40523e-05	
+rs1931489160	42128908	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146937305	42128909	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146937321	42128911	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931490308	42128912	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1931491827	42128914	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs764477422	42128915	single nucleotide variant	CYP2D6 and 3 more	,missense variant	drug-response			T=0.000123548	
+rs758027609	42128917	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			C=7.42501e-05	
+rs2146937392	42128920	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs779726125	42128921	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			A=0.0	
+rs2146937415	42128923	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs375536796	42128924	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			G=2.72673e-05	
+rs1459127426	42128926	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1602578555	42128929	single nucleotide variant	CYP2D6 and 3 more	,missense variant	drug-response				
+rs1286808849	42128930	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs556882139	42128932	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided	T=0.00062461		T=0.000202934	
+rs67780109	42128933	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=8.64105e-05	
+rs2146937515	42128935	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146937521	42128936	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1353497796	42128938	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs900446609	42128939	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146937556	42128941	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs749131338	42128942	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=8.77758e-05	
+rs1288779666	42128944	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs3892097	42128945	single nucleotide variant	CYP2D6 and 3 more	splice acceptor variant	drug-response	T=0.0941599		T=0.170761	1346258,1978251,1978565,2211621,7574463,8181196,8867869,9585799,9918137,10460069,11682257,12360109,14520122,14646691,14716707,15115913,15205367,15252821,16024198,16361630,16871470,17008819,17244352,17667959,17721180,17764479,18024866,18070221,18359183,18547414,19537956,19639055,19809024,20174590,20435227,20459744,20531370,20548328,20847277,20849243,20921971,21152250,21289622,21480951,21614669,21712189,21750172,21790905,21840870,22111602,22183189,22389859,22448283,22479249,22482072,22638694,22688145,22992668,23130019,23133420,23226064,23775025,24151610,24193112,24701578,24779372,24868171,24944790,25047911,25419701,25685889,26369774,26785747,26793106,26858644,26942037,27108086,27171561,27467145,27529241,27536078,27636550,27738374,27785397,27942231,28178648,28343093,28775993,29193749,29279099,29369497,29681089,29736057,29789925,30068618,30093744,30093869,30821899,31019283,31086207,31100205,31129315,31820125,31858263,32303955,32326111,32609646,32639515,32681777,32827391,32872162,33013391,33519226,33564555,33569925,33688237,33875422,34366834,34385834,34621706,34899282,34920277,34958284,35126118,35286517,35597526,35990039
+rs774771690	42128946	single nucleotide variant	CYP2D6 and 1 more	splice acceptor variant	not-provided			C=0.0	
+rs1330523501	42129736	single nucleotide variant	CYP2D6 and 2 more	splice donor variant	not-provided				
+rs2146940804	42129737	single nucleotide variant	CYP2D6 and 1 more	splice donor variant	not-provided				
+rs2146940812	42129738	single nucleotide variant	CYP2D6 and 1 more	,missense variant,nonsense (stop gained)	not-provided				
+rs905048715	42129741	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided				
+rs1335828340	42129743	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146940852	42129744	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs765866702	42129746	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=8.65876e-06	
+rs751080276	42129747	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=1.73226e-05	
+rs781060458	42129749	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=8.66281e-06	
+rs1356654184	42129750	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1602584280	42129752	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs563185985	42129753	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	T=0.000156152		T=8.66506e-06	
+rs2146940931	42129758	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs535642512	42129759	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	T=0.00156152			
+rs774456571	42129764	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			G=8.70231e-06	
+rs78459009	42129765	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	C=0.000780762		C=0.000923055	
+rs772618839	42129767	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			C=8.71916e-06	
+rs28371706	42129770	single nucleotide variant	CYP2D6 and 3 more	,missense variant	drug-response	A=0.0629294			18547414,19164093,21480951,21790905,22111602,22482072,23133420,25266489,26091847,26369774,26793106,27108086,27233804,27467145,27785397,28603633,29193749,29681089,30068618,30409984,31019283,31858263,32326111,32639515,33519226,33875422,34385834,34621706,34958284
+rs74802369	42129771	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided	A=0.000780762		A=0.000769608	
+rs1424328314	42129773	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146941029	42129774	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs147149624	42129776	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=8.90266e-06	
+rs1418012321	42129777	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs76187628	42129779	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided	G=0.000780762			
+rs267608308	42129780	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				20597905
+rs1184190007	42129785	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146941106	42129788	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs369390846	42129789	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=1.81449e-05	
+rs752638279	42129790	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs956110155	42129791	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs777686407	42129792	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			A=9.11178e-06	
+rs779059957	42129794	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=2.73758e-05	
+rs746115614	42129795	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			T=9.18189e-06	
+rs373766657	42129797	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=1.84587e-05	
+rs2146941188	42129798	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1206351211	42129800	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1234819453	42129801	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931753719	42129803	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs762154814	42129804	single nucleotide variant	CYP2D6 and 2 more	,missense variant,nonsense (stop gained)	not-provided			T=1.87364e-05	
+rs759234339	42129807	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=9.41974e-06	
+rs28371704	42129809	single nucleotide variant	CYP2D6 and 3 more	,missense variant	drug-response	C=0.0715178		C=0.11562	18547414,24200957,26858644,27228982,34823523
+rs752300760	42129810	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			C=1.89973e-05	
+rs1397696580	42129812	single nucleotide variant	CYP2D6 and 2 more	,missense variant	drug-response				
+rs917047616	42129813	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146941316	42129815	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1445528488	42129816	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1243885787	42129818	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs267608309	42129821	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				15499201,18784265,22216145
+rs1339919736	42129824	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs377488485	42129825	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs267608276	42129827	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	G=0.000468457			
+rs780087488	42129828	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146941410	42129830	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1198309616	42129831	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1253856356	42129833	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146941435	42129834	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs267608310	42129836	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=3.30178e-05	9241659
+rs1377573761	42129837	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146941479	42129842	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146941482	42129844	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs200229206	42129845	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs759084741	42129849	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=2.30734e-05	
+rs2146941508	42129851	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1326236980	42129852	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146941527	42129854	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1322240586	42129857	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs775131598	42129858	single nucleotide variant	CYP2D6 and 2 more	,missense variant	drug-response			A=1.22699e-05	
+rs760317684	42129860	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=3.76951e-05	
+rs1931773986	42129861	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1317134803	42129863	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1233673694	42129864	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1274048225	42129865	single nucleotide variant	CYP2D6 and 2 more	,missense variant,nonsense (stop gained)	not-provided				
+rs763708198	42129867	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=1.323e-05	
+rs753651840	42129869	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=1.35763e-05	
+rs2146941610	42129870	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1931778788	42129875	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1447621164	42129876	single nucleotide variant	CYP2D6 and 1 more	,nonsense (stop gained)	not-provided				
+rs1166022405	42129881	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1602585439	42129884	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs761841577	42129885	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			G=1.7401e-05	
+rs1456026511	42129887	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1931782957	42129888	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146941696	42129890	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1015910728	42129891	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146941710	42129893	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs764892620	42129894	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			T=0.0	
+rs1339683764	42129896	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs1415188318	42129899	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs758589487	42129900	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=2.52449e-05	
+rs565444796	42129902	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	T=0.000312305		T=2.65238e-05	
+rs1242928364	42129903	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1265060231	42129905	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs267608311	42129906	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				16858124,18784265
+rs201377835	42129910	single nucleotide variant	CYP2D6 and 1 more	splice acceptor variant	likely-benign	G=0.000156152		G=0.000184264	
+rs2146943579	42130610	single nucleotide variant	CYP2D6 and 3 more	splice donor variant	not-provided				
+rs1463855756	42130611	single nucleotide variant	CYP2D6 and 3 more	splice donor variant	not-provided				
+rs1451137004	42130613	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs774157537	42130614	single nucleotide variant	CYP2D6 and 3 more	,missense variant,nonsense (stop gained)	not-provided			A=1.10392e-05	
+rs2146943638	42130616	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1399750031	42130617	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146943686	42130620	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1366158196	42130622	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1931985273	42130623	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1157817197	42130625	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1296887704	42130626	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1217175268	42130628	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1257032891	42130629	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146943803	42130631	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146943809	42130632	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1931990872	42130634	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146943835	42130635	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1602589675	42130637	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs536109057	42130638	single nucleotide variant	CYP2D6 and 2 more	,missense variant,nonsense (stop gained)	not-provided	A=0.000312305		A=4.88453e-05	
+rs2146943885	42130640	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146943891	42130641	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs143812937	42130643	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			C=2.89397e-05	
+rs2146943917	42130644	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146943940	42130646	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1040704095	42130647	single nucleotide variant	CYP2D6 and 2 more	,missense variant	drug-response				
+rs1931996937	42130648	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146943963	42130649	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs754357004	42130650	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=9.60283e-06	
+rs2146943988	42130652	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146944002	42130655	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146944049	42130658	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146944055	42130659	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146944064	42130661	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs146838345	42130662	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			T=9.67998e-06	
+rs750859276	42130664	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			C=9.68711e-06	
+rs118203758	42130667	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided	T=0.00109307		T=0.000252344	19636337
+rs5030862	42130668	single nucleotide variant	CYP2D6 and 3 more	,missense variant	other			T=3.89894e-05	21480951,22183189,26793106,27108086,29681089,33519226,34621706
+rs373243894	42130670	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided	A=0.000156152		A=9.79566e-06	
+rs749179272	42130671	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			A=4.89812e-05	
+rs770891169	42130673	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			T=9.81528e-06	
+rs1326543372	42130676	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146944206	42130677	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1288096759	42130682	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1487241440	42130683	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1407786572	42130685	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146944282	42130686	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1258016506	42130688	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs771774661	42130689	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=3.12409e-05	
+rs370009591	42130691	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			T=1.0418e-05	
+rs1065852	42130692	single nucleotide variant	CYP2D6 and 2 more	,missense variant	drug-response	A=0.228919		A=0.246687	2211621,12051754,18547414,18698231,19164093,19639055,20174590,20548328,20847277,20921971,21480951,21790905,21840870,22183189,22479249,22482072,22552919,23133420,23207012,24798984,24868171,24944790,25159483,25419701,25887915,26214065,26316040,26369774,26768225,26793106,26858644,27108086,27110117,27171561,27228982,27467145,27529241,27536078,27540311,27636225,27636550,27665849,27716216,27738374,27785397,27942231,28178648,28343093,28603633,29180876,29193749,29279099,29369497,29500141,29736057,29789925,30068618,30093744,30093869,30593137,30706164,31019283,31086207,31264381,31858263,32219146,32256400,32457635,32609646,32639515,32681777,32699276,32827391,32994732,33430289,33519226,33688237,33875422,34115022,34302632,34366834,34385834,34429635,34434063,34540891,34621706,34798807,34823523,34949935,34958284,35078561,35401003,35572141
+rs1932016704	42130694	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146944351	42130695	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1418365589	42130697	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs762378491	42130698	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=4.5438e-05	
+rs765912784	42130700	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			T=1.1508e-05	
+rs1282073755	42130701	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1377921514	42130703	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146944429	42130704	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146944440	42130705	single nucleotide variant	CYP2D6 and 3 more	,missense variant,nonsense (stop gained)	not-provided				
+rs1223876546	42130706	single nucleotide variant	CYP2D6 and 3 more	,missense variant,nonsense (stop gained)	not-provided				
+rs1276203971	42130707	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs377617003	42130709	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs138100349	42130710	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided	A=0.000468457		A=0.00357921	
+rs1602590731	42130712	single nucleotide variant	CYP2D6 and 3 more	,missense variant	drug-response				
+rs2146944544	42130713	single nucleotide variant	CYP2D6 and 3 more	,missense variant,nonsense (stop gained)	not-provided				
+rs28371696	42130715	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided	T=0.0098376		T=0.00340694	19164093,26793106,33875422
+rs145868402	42130716	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=2.58124e-05	
+rs138417770	42130718	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided			T=2.61986e-05	
+rs1358991664	42130721	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146944638	42130722	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146944645	42130723	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1472562440	42130724	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1179371370	42130727	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1932030649	42130730	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146944722	42130731	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146944735	42130734	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146944754	42130736	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146944777	42130739	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1420797477	42130740	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146944802	42130742	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146944824	42130745	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1167414191	42130746	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146944846	42130749	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs745794582	42130751	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided			A=1.63265e-05	
+rs2146944870	42130752	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146944892	42130754	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146944902	42130755	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146944927	42130757	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1416532887	42130758	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146944956	42130760	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs769258	42130761	single nucleotide variant	CYP2D6 and 3 more	,missense variant	drug-response	T=0.0176452		T=0.0530122	20070850,23133420,26793106,26858644,27228982,29193749,33519226
+rs1447119000	42130763	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146945007	42130764	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided	G=0.000156152			
+rs2146945029	42130766	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs1275370019	42130769	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1346961531	42130770	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs1602591357	42130772	single nucleotide variant	CYP2D6 and 1 more	,missense variant	drug-response				
+rs72549358	42130773	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided	T=0.00109307		T=0.00328003	26858644
+rs2146945104	42130775	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs773790593	42130778	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided			A=4.9334e-05	
+rs1315104438	42130779	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146945165	42130781	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146945182	42130784	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146945202	42130787	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146945211	42130788	single nucleotide variant	CYP2D6 and 3 more	,missense variant	not-provided				
+rs2146945219	42130789	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				
+rs2146945224	42130790	single nucleotide variant	CYP2D6 and 2 more	,missense variant	not-provided				
+rs2146945235	42130791	single nucleotide variant	CYP2D6 and 1 more	,missense variant	not-provided				

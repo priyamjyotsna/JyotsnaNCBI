@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNA Sequence Analysis - Jyotsna's NCBI Tools</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="/styles/dna-analysis.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>DNA Sequence Analysis Tool</h1>
+                <p class="header-subtitle">Analyze nucleotide composition from NCBI sequences</p>
+                <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
+            </div>
+        </header>
+
+        <div class="tool-container">
+            <div class="input-section">
+                <div class="accession-input">
+                    <h3>NCBI Accession Number</h3>
+                    <div class="input-group">
+                        <input type="text" id="accessionInput" placeholder="e.g., NC_000001.11">
+                        <select id="sequenceType" class="sequence-type-select">
+                            <option value="DNA">DNA</option>
+                            <option value="RNA">RNA</option>
+                        </select>
+                        <button id="analyzeBtn">Analyze Sequence</button>
+                    </div>
+                </div>
+
+                <div class="sequence-upload">
+                    <h3>Or Upload Sequence File</h3>
+                    <div class="sequence-type-group">
+                        <label>Sequence Type:</label>
+                        <select id="uploadSequenceType" class="sequence-type-select">
+                            <option value="DNA">DNA</option>
+                            <option value="RNA">RNA</option>
+                        </select>
+                    </div>
+                    <div class="drag-drop-zone" id="dragDropZone">
+                        <div class="drag-drop-content">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Drag and drop your sequence file here</p>
+                            <p class="file-info">or click to browse</p>
+                            <input type="file" id="sequenceFile" accept=".fasta,.txt" hidden>
+                        </div>
+                    </div>
+                    <p class="file-info">Supported formats: FASTA, plain text</p>
+                </div>
+            </div>
+
+            <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i> Fetching sequence...
+            </div>
+
+            <div id="resultsSection" class="results-section" style="display: none;">
+                <div class="report-container">
+                    <h3>Sequence Retrieval Report</h3>
+                    <table id="retrievalReport" class="report-table">
+                        <thead>
+                            <tr>
+                                <th>Accession Number</th>
+                                <th>Status</th>
+                                <th>Sequence Length</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr id="retrievalRow"></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="report-container">
+                    <h3>Nucleotide Count Report</h3>
+                    <table id="nucleotideReport" class="report-table">
+                        <thead>
+                            <tr>
+                                <th>Serial No</th>
+                                <th>Nucleotide</th>
+                                <th>Count</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add after the results section -->
+    <div id="chartSection" class="chart-section" style="display: none;">
+        <div class="report-container">
+            <h3>Nucleotide Distribution</h3>
+            <div class="chart-container">
+                <canvas id="nucleotideChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <!-- Chart.js and custom JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/dna-analysis.js"></script>
+</body>
+</html>
