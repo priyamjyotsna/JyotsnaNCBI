@@ -14,6 +14,46 @@ function initializeAuth() {
             const loading = document.getElementById('loading');
             const errorMessage = document.getElementById('errorMessage');
 
+            // Check for redirect result immediately
+            auth.getRedirectResult()
+                .then(async (result) => {
+                    if (result.user) {
+                        console.log('Google sign-in successful:', result.user);
+                        const token = await result.user.getIdToken();
+
+                        const response = await fetch('/auth/google-signin', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                token,
+                                userData: {
+                                    uid: result.user.uid,
+                                    name: result.user.displayName,
+                                    email: result.user.email,
+                                    photo: result.user.photoURL
+                                }
+                            }),
+                            credentials: 'include'
+                        });
+
+                        const data = await response.json();
+                        if (data.success) {
+                            window.location.href = data.redirect || '/auth/welcome';
+                        } else {
+                            throw new Error(data.error || 'Authentication failed');
+                        }
+                    }
+                })
+                .catch((error) => {
+                    console.error('Redirect result error:', error);
+                    if (errorMessage) {
+                        errorMessage.textContent = 'Login failed: ' + error.message;
+                        errorMessage.style.display = 'block';
+                    }
+                });
+
             // Set persistence to LOCAL
             return auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
                 .then(() => {
@@ -45,39 +85,8 @@ function initializeAuth() {
                                 auth_type: 'reauthenticate'
                             });
 
-                            const result = await auth.signInWithRedirect(provider);
-                            const user = result.user;
-                            
-                            if (!user) {
-                                throw new Error('No user data available');
-                            }
-
-                            console.log('Google sign-in successful:', user);
-                            const token = await user.getIdToken();
-
-                            const response = await fetch('/auth/google-signin', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    token,
-                                    userData: {
-                                        uid: user.uid,
-                                        name: user.displayName,
-                                        email: user.email,
-                                        photo: user.photoURL
-                                    }
-                                }),
-                                credentials: 'include'
-                            });
-
-                            const data = await response.json();
-                            if (data.success) {
-                                window.location.href = data.redirect || '/auth/welcome';
-                            } else {
-                                throw new Error(data.error || 'Authentication failed');
-                            }
+                            // Just start the redirect - the result will be handled when the page reloads
+                            await auth.signInWithRedirect(provider);
                         } catch (error) {
                             console.error('Authentication error:', error);
                             let errorMsg = 'Login failed: ';
