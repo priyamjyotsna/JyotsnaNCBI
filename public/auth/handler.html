@@ -18,8 +18,44 @@
                 // This page handles the authentication redirect
                 firebase.auth().getRedirectResult()
                     .then((result) => {
-                        // Redirect back to the login page which will handle the rest
-                        window.location.href = '/auth/login';
+                        if (result.user) {
+                            // User is signed in, send token to server
+                            return result.user.getIdToken().then(token => {
+                                // Send the token to your backend
+                                return fetch('/auth/google-signin', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        token: token,
+                                        userData: {
+                                            name: result.user.displayName,
+                                            email: result.user.email,
+                                            photo: result.user.photoURL
+                                        }
+                                    })
+                                });
+                            }).then(response => response.json())
+                              .then(data => {
+                                  if (data.success) {
+                                      // Redirect to welcome page on success
+                                      window.location.href = '/auth/welcome';
+                                  } else {
+                                      throw new Error('Server authentication failed');
+                                  }
+                              });
+                        } else {
+                            // No user from redirect, check if already signed in
+                            const user = firebase.auth().currentUser;
+                            if (user) {
+                                // Already signed in, redirect to welcome
+                                window.location.href = '/auth/welcome';
+                            } else {
+                                // No user, go back to login
+                                window.location.href = '/auth/login';
+                            }
+                        }
                     })
                     .catch((error) => {
                         console.error('Auth redirect error:', error);
