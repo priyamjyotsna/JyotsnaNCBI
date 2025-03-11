@@ -142,3 +142,8 @@ module.exports = app;
 app.get('/auth/login-debug', (req, res) => {
     res.render('auth/login-debug');
 });
+
+// Add this route for a simpler login test
+app.get('/auth/login-simple', (req, res) => {
+    res.render('auth/login-simple');
+});
