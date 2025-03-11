@@ -56,6 +56,14 @@ app.use((req, res, next) => {
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Add this near your other middleware definitions
+app.use('/__/auth', express.static(path.join(__dirname, 'public/auth')));
+
+// Add specific handler route for Firebase auth redirects
+app.get('/__/auth/handler', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/auth/handler.html'));
+});
+
 // Firebase config endpoint
 app.get('/api/firebase-config', (req, res) => {
     res.json({

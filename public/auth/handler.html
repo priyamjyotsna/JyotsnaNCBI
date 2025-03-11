@@ -6,21 +6,30 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script>
-        // This page handles the authentication redirect
-        window.onload = function() {
-            // Get the redirect result and handle it
-            firebase.auth().getRedirectResult()
-                .then((result) => {
-                    if (result.user) {
+        // Fetch Firebase config from server
+        fetch('/api/firebase-config')
+            .then(response => response.json())
+            .then(firebaseConfig => {
+                // Initialize Firebase
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
+                // This page handles the authentication redirect
+                firebase.auth().getRedirectResult()
+                    .then((result) => {
                         // Redirect back to the login page which will handle the rest
                         window.location.href = '/auth/login';
-                    }
-                })
-                .catch((error) => {
-                    console.error('Auth redirect error:', error);
-                    window.location.href = '/auth/login?error=' + encodeURIComponent(error.message);
-                });
-        };
+                    })
+                    .catch((error) => {
+                        console.error('Auth redirect error:', error);
+                        window.location.href = '/auth/login?error=' + encodeURIComponent(error.message);
+                    });
+            })
+            .catch(error => {
+                console.error('Failed to load Firebase config:', error);
+                window.location.href = '/auth/login?error=configuration_error';
+            });
     </script>
 </head>
 <body>
@@ -28,4 +37,4 @@
         <p>Completing authentication...</p>
     </div>
 </body>
-</html> 
+</html>
