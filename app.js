@@ -132,3 +132,8 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
+// Add this route for debugging
+app.get('/auth/login-debug', (req, res) => {
+    res.render('auth/login-debug');
+});

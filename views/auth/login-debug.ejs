@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Debug</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <h1>Login Debug</h1>
+    <button id="googleSignIn">Sign in with Google (Redirect)</button>
+    <button id="googleSignInPopup">Sign in with Google (Popup)</button>
+    
+    <script>
+        // Fetch Firebase config
+        fetch('/api/firebase-config')
+            .then(response => response.json())
+            .then(config => {
+                // Initialize Firebase
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(config);
+                    console.log('Firebase initialized');
+                }
+                
+                // Set up Google sign-in with redirect
+                document.getElementById('googleSignIn').addEventListener('click', () => {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    provider.setCustomParameters({ prompt: 'select_account' });
+                    
+                    console.log('Starting sign in with redirect');
+                    firebase.auth().signInWithRedirect(provider)
+                        .catch(error => {
+                            console.error('Redirect error:', error);
+                            alert('Error: ' + error.message);
+                        });
+                });
+                
+                // Set up Google sign-in with popup
+                document.getElementById('googleSignInPopup').addEventListener('click', () => {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    provider.setCustomParameters({ prompt: 'select_account' });
+                    
+                    console.log('Starting sign in with popup');
+                    firebase.auth().signInWithPopup(provider)
+                        .then(result => {
+                            console.log('Popup result:', result);
+                            if (result.user) {
+                                return result.user.getIdToken().then(token => {
+                                    return fetch('/auth/google-signin', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                            token: token,
+                                            userData: {
+                                                name: result.user.displayName,
+                                                email: result.user.email,
+                                                photo: result.user.photoURL
+                                            }
+                                        })
+                                    });
+                                }).then(response => response.json())
+                                  .then(data => {
+                                      if (data.success) {
+                                          window.location.href = '/auth/welcome';
+                                      } else {
+                                          throw new Error('Server authentication failed');
+                                      }
+                                  });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Popup error:', error);
+                            alert('Error: ' + error.message);
+                        });
+                });
+            })
+            .catch(error => {
+                console.error('Config error:', error);
+                alert('Error loading Firebase configuration: ' + error.message);
+            });
+    </script>
+</body>
+</html>

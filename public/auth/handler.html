@@ -6,21 +6,32 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script>
+        // Add debugging
+        console.log('Handler page loaded');
+        
         // Fetch Firebase config from server
         fetch('/api/firebase-config')
             .then(response => response.json())
             .then(firebaseConfig => {
+                console.log('Firebase config loaded', firebaseConfig);
+                
                 // Initialize Firebase
                 if (!firebase.apps.length) {
                     firebase.initializeApp(firebaseConfig);
+                    console.log('Firebase initialized in handler');
                 }
                 
                 // This page handles the authentication redirect
+                console.log('Getting redirect result...');
                 firebase.auth().getRedirectResult()
                     .then((result) => {
+                        console.log('Redirect result:', result);
+                        
                         if (result.user) {
+                            console.log('User found in result:', result.user.email);
                             // User is signed in, send token to server
                             return result.user.getIdToken().then(token => {
+                                console.log('Got ID token, sending to server');
                                 // Send the token to your backend
                                 return fetch('/auth/google-signin', {
                                     method: 'POST',
@@ -38,20 +49,25 @@
                                 });
                             }).then(response => response.json())
                               .then(data => {
+                                  console.log('Server response:', data);
                                   if (data.success) {
                                       // Redirect to welcome page on success
+                                      console.log('Authentication successful, redirecting to welcome');
                                       window.location.href = '/auth/welcome';
                                   } else {
                                       throw new Error('Server authentication failed');
                                   }
                               });
                         } else {
+                            console.log('No user in redirect result');
                             // No user from redirect, check if already signed in
                             const user = firebase.auth().currentUser;
                             if (user) {
+                                console.log('Current user found:', user.email);
                                 // Already signed in, redirect to welcome
                                 window.location.href = '/auth/welcome';
                             } else {
+                                console.log('No current user, redirecting to login');
                                 // No user, go back to login
                                 window.location.href = '/auth/login';
                             }
@@ -71,6 +87,8 @@
 <body>
     <div style="text-align: center; padding: 20px;">
         <p>Completing authentication...</p>
+        <p>If you're seeing this page for more than a few seconds, there might be an issue with the authentication process.</p>
+        <p>Please check the browser console for more information.</p>
     </div>
 </body>
 </html>
