@@ -143,19 +143,6 @@ app.get('/api/get-ncbi-credentials', requireAuth, async (req, res) => {
     }
 });
 
-// Add Firebase config endpoint
-app.get('/api/firebase-config', (req, res) => {
-    // Send only the public Firebase config (not admin credentials)
-    try {
-        // Use the JS module instead of JSON file
-        const publicConfig = require('./config/firebase-config');
-        res.json(publicConfig);
-    } catch (error) {
-        console.error('Error serving Firebase config:', error);
-        res.status(500).json({ error: 'Failed to load configuration' });
-    }
-});
-
 // Consolidated API routes
 app.get('/api/config', (req, res) => {
     res.json({
