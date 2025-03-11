@@ -56,19 +56,6 @@ app.use((req, res, next) => {
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Add Firebase auth routes
-app.use('/__/auth', express.static(path.join(__dirname, 'public/auth')));
-
-// Add specific handler route for Firebase auth redirects
-app.get('/__/auth/handler', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/auth/handler.html'));
-});
-
-// Add route for Firebase auth iframe
-app.get('/__/auth/iframe', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/auth/iframe.html'));
-});
-
 // Firebase config endpoint
 app.get('/api/firebase-config', (req, res) => {
     res.json({
@@ -137,13 +124,3 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
-
-// Add this route for debugging
-app.get('/auth/login-debug', (req, res) => {
-    res.render('auth/login-debug');
-});
-
-// Add this route for a simpler login test
-app.get('/auth/login-simple', (req, res) => {
-    res.render('auth/login-simple');
-});

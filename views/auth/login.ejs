@@ -1,25 +1,110 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Login - NCBI Tools</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
     <link rel="stylesheet" href="/styles/main.css">
     <link rel="stylesheet" href="/styles/auth.css">
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <!-- Custom auth script -->
-    <script src="/js/auth.js"></script>
 </head>
 <body>
-    <div class="auth-container">
-        <h2>Login to NCBI Tools</h2>
-        <h3>You need to login before accessing NCBI tools</h3>
-        <button id="googleSignIn" class="google-btn">
-            <img src="https://www.google.com/favicon.ico" width="20" height="20" alt="Google">
-            Sign in with Google
-        </button>
-        <div id="loading" style="display: none;">Authenticating...</div>
-        <div id="errorMessage" style="display: none;" class="error-message"></div>
+    <div class="container">
+        <div class="auth-container">
+            <h1>Login</h1>
+            <div id="loginStatus"></div>
+            <button id="googleSignIn" class="google-btn">Sign in with Google</button>
+            <p>Don't have an account? <a href="/auth/signup">Sign up</a></p>
+        </div>
     </div>
+
+    <script>
+        const statusDiv = document.getElementById('loginStatus');
+        
+        // Fetch Firebase config
+        fetch('/api/firebase-config')
+            .then(response => response.json())
+            .then(config => {
+                // Initialize Firebase
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(config);
+                }
+                
+                // Check if user is already signed in
+                firebase.auth().onAuthStateChanged(user => {
+                    if (user) {
+                        // User is already signed in, get token and send to server
+                        user.getIdToken().then(token => {
+                            return fetch('/auth/google-signin', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    token: token,
+                                    userData: {
+                                        name: user.displayName,
+                                        email: user.email,
+                                        photo: user.photoURL
+                                    }
+                                })
+                            });
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                window.location.href = '/auth/welcome';
+                            }
+                        })
+                        .catch(error => {
+                            statusDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+                        });
+                    }
+                });
+                
+                // Set up Google sign-in
+                document.getElementById('googleSignIn').addEventListener('click', () => {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    provider.setCustomParameters({ prompt: 'select_account' });
+                    
+                    // Use signInWithPopup instead of signInWithRedirect
+                    firebase.auth().signInWithPopup(provider)
+                        .then(result => {
+                            // Get token and send to server
+                            return result.user.getIdToken().then(token => {
+                                return fetch('/auth/google-signin', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        token: token,
+                                        userData: {
+                                            name: result.user.displayName,
+                                            email: result.user.email,
+                                            photo: result.user.photoURL
+                                        }
+                                    })
+                                });
+                            });
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                window.location.href = '/auth/welcome';
+                            } else {
+                                throw new Error('Server authentication failed');
+                            }
+                        })
+                        .catch(error => {
+                            statusDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+                        });
+                });
+            })
+            .catch(error => {
+                statusDiv.innerHTML = `<p class="error">Configuration error: ${error.message}</p>`;
+            });
+    </script>
 </body>
 </html>
