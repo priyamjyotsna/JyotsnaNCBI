@@ -4,20 +4,42 @@ const axios = require('axios');
 const session = require('express-session');
 const admin = require('firebase-admin');
 const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ memory: true });
 const fs = require('fs');
 const csv = require('csv-parse');
 
 // Initialize Firebase Admin with error handling
 try {
-    const serviceAccount = require('./config/firebase-admin.json');
+    console.log('Initializing Firebase with project ID:', process.env.FIREBASE_PROJECT_ID);
+    
     if (!admin.apps.length) {
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
+        const firebaseConfig = {
+            credential: admin.credential.cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                // Handle the private key properly
+                privateKey: process.env.FIREBASE_PRIVATE_KEY
+                    ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+                    : undefined
+            })
+        };
+        
+        console.log('Firebase config prepared:', {
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            hasPrivateKey: !!process.env.FIREBASE_PRIVATE_KEY
         });
+        
+        admin.initializeApp(firebaseConfig);
+        console.log('Firebase initialized successfully');
     }
 } catch (error) {
     console.error('Firebase initialization error:', error);
+    console.error('Environment variables available:', {
+        hasProjectId: !!process.env.FIREBASE_PROJECT_ID,
+        hasClientEmail: !!process.env.FIREBASE_CLIENT_EMAIL,
+        hasPrivateKey: !!process.env.FIREBASE_PRIVATE_KEY
+    });
 }
 
 // Make Firestore available to your routes
@@ -141,10 +163,15 @@ app.get('/api/get-ncbi-credentials', requireAuth, async (req, res) => {
 
 // Add Firebase config endpoint
 app.get('/api/firebase-config', (req, res) => {
-    // Send only the public Firebase config (not admin credentials)
     try {
-        // Use the JS module instead of JSON file
-        const publicConfig = require('./config/firebase-config');
+        const publicConfig = {
+            apiKey: process.env.FIREBASE_API_KEY,
+            authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+            messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+            appId: process.env.FIREBASE_APP_ID
+        };
         res.json(publicConfig);
     } catch (error) {
         console.error('Error serving Firebase config:', error);
