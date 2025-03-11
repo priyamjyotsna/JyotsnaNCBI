@@ -6,82 +6,67 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script>
+        console.log('Handler page loaded');
+        
         // Fetch Firebase config from server
         fetch('/api/firebase-config')
             .then(response => response.json())
             .then(firebaseConfig => {
+                console.log('Firebase config loaded', firebaseConfig);
+                
                 // Initialize Firebase
                 if (!firebase.apps.length) {
                     firebase.initializeApp(firebaseConfig);
+                    console.log('Firebase initialized in handler');
                 }
                 
-                // Handle both popup and redirect results
-                const urlParams = new URLSearchParams(window.location.search);
-                const authType = urlParams.get('authType');
-                
-                if (authType === 'signInViaPopup') {
-                    // This is a popup auth request
-                    // The opener window will handle the result
-                    // Just close this window
-                    window.close();
-                } else {
-                    // This is a redirect auth request
-                    firebase.auth().getRedirectResult()
-                        .then((result) => {
-                            if (result.user) {
-                                // User is signed in, send token to server
-                                return result.user.getIdToken().then(token => {
-                                    // Send the token to your backend
-                                    return fetch('/auth/google-signin', {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json'
-                                        },
-                                        body: JSON.stringify({
-                                            token: token,
-                                            userData: {
-                                                name: result.user.displayName,
-                                                email: result.user.email,
-                                                photo: result.user.photoURL
-                                            }
-                                        })
-                                    });
-                                }).then(response => response.json())
-                                  .then(data => {
-                                      if (data.success) {
-                                          // Redirect to welcome page on success
-                                          window.location.href = '/auth/welcome';
-                                      } else {
-                                          throw new Error('Server authentication failed');
-                                      }
-                                  });
+                console.log('Getting redirect result...');
+                // Process the redirect result
+                firebase.auth().getRedirectResult()
+                    .then(result => {
+                        console.log('Redirect result:', result);
+                        if (result.user) {
+                            console.log('User found in redirect result');
+                            // Redirect to the original page
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const redirectUrl = urlParams.get('redirectUrl');
+                            if (redirectUrl) {
+                                window.location.href = redirectUrl;
                             } else {
-                                // No user from redirect, check if already signed in
-                                const user = firebase.auth().currentUser;
-                                if (user) {
-                                    // Already signed in, redirect to welcome
-                                    window.location.href = '/auth/welcome';
-                                } else {
-                                    // No user, go back to login
-                                    window.location.href = '/auth/login';
-                                }
+                                window.location.href = '/auth/welcome';
                             }
-                        })
-                        .catch((error) => {
-                            console.error('Auth redirect error:', error);
-                            window.location.href = '/auth/login?error=' + encodeURIComponent(error.message);
-                        });
-                }
+                        } else {
+                            console.log('No user in redirect result');
+                            // Check if we're in a popup
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const authType = urlParams.get('authType');
+                            
+                            if (authType === 'signInViaPopup') {
+                                console.log('This is a popup, closing');
+                                // This is a popup, just close it
+                                window.close();
+                            } else {
+                                console.log('Not a popup, redirecting to login');
+                                // Not a popup, redirect to login
+                                window.location.href = '/auth/login';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Redirect error:', error);
+                        window.location.href = '/auth/login?error=' + encodeURIComponent(error.message);
+                    });
             })
             .catch(error => {
-                console.error('Failed to load Firebase config:', error);
+                console.error('Config error:', error);
                 window.location.href = '/auth/login?error=configuration_error';
             });
     </script>
 </head>
 <body>
-    <div style="text-align: center; padding: 20px;">
-        <p>Completing authentication...</p>
+    <div style="text-align: center; padding: 20px; font-family: Arial, sans-serif;">
+        <h2>Completing authentication...</h2>
+        <p>Please wait while we complete the authentication process.</p>
     </div>
 </body>
 </html>

@@ -14,13 +14,31 @@
         <div class="auth-container">
             <h1>Login</h1>
             <div id="loginStatus"></div>
-            <button id="googleSignIn" class="google-btn">Sign in with Google</button>
-            <p>Don't have an account? <a href="/auth/signup">Sign up</a></p>
+            <button id="googleSignIn" class="google-btn">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                Sign in with Google
+            </button>
+            <p class="auth-link">Don't have an account? <a href="/auth/signup">Sign up</a></p>
+            <div id="loadingIndicator" style="display: none;">
+                <i class="fa-spinner"></i> Signing in...
+            </div>
+            <div id="errorMessage" class="error-message"></div>
         </div>
     </div>
 
     <script>
         const statusDiv = document.getElementById('loginStatus');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorMessage = document.getElementById('errorMessage');
+        const signInButton = document.getElementById('googleSignIn');
+        
+        // Function to show error
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            loadingIndicator.style.display = 'none';
+            signInButton.disabled = false;
+        }
         
         // Fetch Firebase config
         fetch('/api/firebase-config')
@@ -31,10 +49,55 @@
                     firebase.initializeApp(config);
                 }
                 
+                // Check if returning from a redirect
+                firebase.auth().getRedirectResult()
+                    .then(result => {
+                        if (result.user) {
+                            // User successfully authenticated with redirect
+                            loadingIndicator.style.display = 'block';
+                            signInButton.disabled = true;
+                            
+                            // Get token and send to server
+                            return result.user.getIdToken().then(token => {
+                                return fetch('/auth/google-signin', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        token: token,
+                                        userData: {
+                                            name: result.user.displayName,
+                                            email: result.user.email,
+                                            photo: result.user.photoURL
+                                        }
+                                    })
+                                });
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    window.location.href = '/auth/welcome';
+                                } else {
+                                    throw new Error('Server authentication failed');
+                                }
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        if (error.code && error.code !== 'auth/credential-already-in-use') {
+                            showError(`Authentication error: ${error.message}`);
+                        }
+                    });
+                
                 // Check if user is already signed in
                 firebase.auth().onAuthStateChanged(user => {
                     if (user) {
-                        // User is already signed in, get token and send to server
+                        // User is already signed in
+                        loadingIndicator.style.display = 'block';
+                        signInButton.disabled = true;
+                        
+                        // Get token and send to server
                         user.getIdToken().then(token => {
                             return fetch('/auth/google-signin', {
                                 method: 'POST',
@@ -55,55 +118,34 @@
                         .then(data => {
                             if (data.success) {
                                 window.location.href = '/auth/welcome';
-                            }
-                        })
-                        .catch(error => {
-                            statusDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
-                        });
-                    }
-                });
-                
-                // Set up Google sign-in
-                document.getElementById('googleSignIn').addEventListener('click', () => {
-                    const provider = new firebase.auth.GoogleAuthProvider();
-                    provider.setCustomParameters({ prompt: 'select_account' });
-                    
-                    // Use signInWithPopup instead of signInWithRedirect
-                    firebase.auth().signInWithPopup(provider)
-                        .then(result => {
-                            // Get token and send to server
-                            return result.user.getIdToken().then(token => {
-                                return fetch('/auth/google-signin', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        token: token,
-                                        userData: {
-                                            name: result.user.displayName,
-                                            email: result.user.email,
-                                            photo: result.user.photoURL
-                                        }
-                                    })
-                                });
-                            });
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                window.location.href = '/auth/welcome';
                             } else {
                                 throw new Error('Server authentication failed');
                             }
                         })
                         .catch(error => {
-                            statusDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+                            showError(`Error: ${error.message}`);
+                        });
+                    }
+                });
+                
+                // Set up Google sign-in with redirect
+                signInButton.addEventListener('click', () => {
+                    loadingIndicator.style.display = 'block';
+                    signInButton.disabled = true;
+                    errorMessage.style.display = 'none';
+                    
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    provider.setCustomParameters({ prompt: 'select_account' });
+                    
+                    // Use redirect method instead of popup
+                    firebase.auth().signInWithRedirect(provider)
+                        .catch(error => {
+                            showError(`Sign-in error: ${error.message}`);
                         });
                 });
             })
             .catch(error => {
-                statusDiv.innerHTML = `<p class="error">Configuration error: ${error.message}</p>`;
+                showError(`Configuration error: ${error.message}`);
             });
     </script>
 </body>
