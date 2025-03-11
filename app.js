@@ -164,13 +164,11 @@ app.get('/api/get-ncbi-credentials', requireAuth, async (req, res) => {
 // Add Firebase config endpoint
 app.get('/api/firebase-config', (req, res) => {
     try {
+        // Only expose what's needed for client-side auth
         const publicConfig = {
             apiKey: process.env.FIREBASE_API_KEY,
             authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-            messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-            appId: process.env.FIREBASE_APP_ID
+            projectId: process.env.FIREBASE_PROJECT_ID
         };
         res.json(publicConfig);
     } catch (error) {
@@ -577,6 +575,47 @@ app.get('/api/debug/session', (req, res) => {
         user: req.session.user || null,
         sessionID: req.sessionID
     });
+});
+
+// Auth routes
+app.get('/auth/login', (req, res) => {
+    res.render('auth/login');
+});
+
+app.get('/auth/signup', (req, res) => {
+    res.render('auth/signup');
+});
+
+app.get('/auth/welcome', (req, res) => {
+    if (!req.session.user) {
+        return res.redirect('/auth/login');
+    }
+    res.render('auth/welcome', { user: req.session.user });
+});
+
+app.post('/auth/google-signin', async (req, res) => {
+    try {
+        const { token, userData } = req.body;
+        
+        // Verify the token
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        
+        // Store user data in session
+        req.session.user = {
+            uid: decodedToken.uid,
+            email: decodedToken.email,
+            name: userData.name,
+            photo: userData.photo
+        };
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Google sign-in error:', error);
+        res.status(401).json({ 
+            success: false, 
+            error: 'Authentication failed' 
+        });
+    }
 });
 
 const PORT = process.env.PORT || 3007;
