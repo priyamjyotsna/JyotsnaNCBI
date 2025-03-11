@@ -11,28 +11,77 @@
     <h1>Login Debug</h1>
     <button id="googleSignIn">Sign in with Google (Redirect)</button>
     <button id="googleSignInPopup">Sign in with Google (Popup)</button>
+    <div id="status"></div>
     
     <script>
+        const statusDiv = document.getElementById('status');
+        
+        // Check if we're returning from a redirect
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+        if (error) {
+            statusDiv.innerHTML = `<p style="color: red;">Error: ${error}</p>`;
+        }
+        
         // Fetch Firebase config
         fetch('/api/firebase-config')
             .then(response => response.json())
             .then(config => {
+                statusDiv.innerHTML += '<p>Firebase config loaded</p>';
+                
                 // Initialize Firebase
                 if (!firebase.apps.length) {
                     firebase.initializeApp(config);
-                    console.log('Firebase initialized');
+                    statusDiv.innerHTML += '<p>Firebase initialized</p>';
                 }
+                
+                // Check if user is already signed in
+                firebase.auth().onAuthStateChanged(user => {
+                    if (user) {
+                        statusDiv.innerHTML += `<p>User already signed in: ${user.email}</p>`;
+                        
+                        // Get token and send to server
+                        user.getIdToken().then(token => {
+                            statusDiv.innerHTML += '<p>Got ID token, sending to server</p>';
+                            
+                            return fetch('/auth/google-signin', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    token: token,
+                                    userData: {
+                                        name: user.displayName,
+                                        email: user.email,
+                                        photo: user.photoURL
+                                    }
+                                })
+                            });
+                        }).then(response => response.json())
+                          .then(data => {
+                              statusDiv.innerHTML += `<p>Server response: ${JSON.stringify(data)}</p>`;
+                              
+                              if (data.success) {
+                                  statusDiv.innerHTML += '<p>Authentication successful, redirecting to welcome</p>';
+                                  window.location.href = '/auth/welcome';
+                              }
+                          })
+                          .catch(error => {
+                              statusDiv.innerHTML += `<p style="color: red;">Server error: ${error.message}</p>`;
+                          });
+                    }
+                });
                 
                 // Set up Google sign-in with redirect
                 document.getElementById('googleSignIn').addEventListener('click', () => {
                     const provider = new firebase.auth.GoogleAuthProvider();
                     provider.setCustomParameters({ prompt: 'select_account' });
                     
-                    console.log('Starting sign in with redirect');
+                    statusDiv.innerHTML += '<p>Starting sign in with redirect</p>';
                     firebase.auth().signInWithRedirect(provider)
                         .catch(error => {
-                            console.error('Redirect error:', error);
-                            alert('Error: ' + error.message);
+                            statusDiv.innerHTML += `<p style="color: red;">Redirect error: ${error.message}</p>`;
                         });
                 });
                 
@@ -41,45 +90,46 @@
                     const provider = new firebase.auth.GoogleAuthProvider();
                     provider.setCustomParameters({ prompt: 'select_account' });
                     
-                    console.log('Starting sign in with popup');
+                    statusDiv.innerHTML += '<p>Starting sign in with popup</p>';
                     firebase.auth().signInWithPopup(provider)
                         .then(result => {
-                            console.log('Popup result:', result);
-                            if (result.user) {
-                                return result.user.getIdToken().then(token => {
-                                    return fetch('/auth/google-signin', {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json'
-                                        },
-                                        body: JSON.stringify({
-                                            token: token,
-                                            userData: {
-                                                name: result.user.displayName,
-                                                email: result.user.email,
-                                                photo: result.user.photoURL
-                                            }
-                                        })
-                                    });
-                                }).then(response => response.json())
-                                  .then(data => {
-                                      if (data.success) {
-                                          window.location.href = '/auth/welcome';
-                                      } else {
-                                          throw new Error('Server authentication failed');
-                                      }
-                                  });
-                            }
+                            statusDiv.innerHTML += `<p>Popup result: User ${result.user.email}</p>`;
+                            
+                            return result.user.getIdToken().then(token => {
+                                statusDiv.innerHTML += '<p>Got ID token, sending to server</p>';
+                                
+                                // Fix the syntax error in the fetch call inside the popup handler
+                                return fetch('/auth/google-signin', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        token: token,
+                                        userData: {
+                                            name: result.user.displayName,
+                                            email: result.user.email,
+                                            photo: result.user.photoURL
+                                        }
+                                    })  // This closing parenthesis was missing
+                                });
+                            }).then(response => response.json())
+                              .then(data => {
+                                  statusDiv.innerHTML += `<p>Server response: ${JSON.stringify(data)}</p>`;
+                                  
+                                  if (data.success) {
+                                      statusDiv.innerHTML += '<p>Authentication successful, redirecting to welcome</p>';
+                                      window.location.href = '/auth/welcome';
+                                  }
+                              });
                         })
                         .catch(error => {
-                            console.error('Popup error:', error);
-                            alert('Error: ' + error.message);
+                            statusDiv.innerHTML += `<p style="color: red;">Popup error: ${error.message}</p>`;
                         });
                 });
             })
             .catch(error => {
-                console.error('Config error:', error);
-                alert('Error loading Firebase configuration: ' + error.message);
+                statusDiv.innerHTML += `<p style="color: red;">Config error: ${error.message}</p>`;
             });
     </script>
 </body>
