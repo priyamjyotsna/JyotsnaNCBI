@@ -7,6 +7,8 @@ const multer = require('multer');
 const upload = multer({ memory: true });
 const fs = require('fs');
 const csv = require('csv-parse');
+const { Firestore } = require('@google-cloud/firestore');
+const { FirestoreStore } = require('@google-cloud/connect-firestore');
 
 // Initialize Firebase Admin with error handling
 try {
@@ -52,15 +54,22 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Initialize Firestore for session storage
+const firestoreDb = new Firestore();
+
 // Update your session middleware
 app.use(session({
-    secret: 'jyotsna-ncbi-secret-key',
-    resave: true,
-    saveUninitialized: true,
+    store: new FirestoreStore({
+        dataset: firestoreDb,
+        kind: 'express-sessions',
+    }),
+    secret: process.env.SESSION_SECRET || 'jyotsna-ncbi-secret-key',
+    resave: false,
+    saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
 

@@ -4,9 +4,13 @@ function initializeAuth() {
     return fetch('/api/firebase-config')
         .then(response => response.json())
         .then(firebaseConfig => {
-            // Initialize Firebase
+            // Initialize Firebase with specific auth settings
             if (!firebase.apps || !firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
+                // Set auth settings to handle auth without Firebase Hosting
+                const auth = firebase.auth();
+                auth.useDeviceLanguage();
+                auth.settings.appVerificationDisabledForTesting = false;
             }
             
             const auth = firebase.auth();
@@ -22,8 +26,11 @@ function initializeAuth() {
                     if (errorMessage) errorMessage.style.display = 'none';
 
                     const provider = new firebase.auth.GoogleAuthProvider();
+                    provider.setCustomParameters({
+                        prompt: 'select_account'
+                    });
                     
-                    // Use popup for authentication
+                    // Use popup for authentication with custom settings
                     const result = await auth.signInWithPopup(provider);
                     const user = result.user;
                     console.log('Google sign-in successful');
