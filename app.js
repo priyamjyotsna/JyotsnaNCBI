@@ -5,6 +5,7 @@ const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const admin = require('firebase-admin');
+const FirebaseStore = require('connect-session-firebase')(session);
 
 // Initialize Firebase Admin
 try {
@@ -36,12 +37,18 @@ app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session middleware
+// Session middleware with Firebase store
 app.use(session({
+    store: new FirebaseStore({
+        database: admin.database(),
+    }),
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
 }));
 
 // Make user data available to views
@@ -62,12 +69,23 @@ app.get('/api/firebase-config', (req, res) => {
     });
 });
 
+// Root route - Home page
+app.get('/', (req, res) => {
+    res.render('index', { user: req.session.user });
+});
+
 // Auth routes
 app.get('/auth/login', (req, res) => {
+    if (req.session.user) {
+        return res.redirect('/auth/welcome');
+    }
     res.render('auth/login');
 });
 
 app.get('/auth/signup', (req, res) => {
+    if (req.session.user) {
+        return res.redirect('/auth/welcome');
+    }
     res.render('auth/signup');
 });
 
@@ -101,11 +119,6 @@ app.post('/auth/google-signin', async (req, res) => {
             error: 'Authentication failed' 
         });
     }
-});
-
-// Root route redirects to login
-app.get('/', (req, res) => {
-    res.redirect('/auth/login');
 });
 
 // Start the server
