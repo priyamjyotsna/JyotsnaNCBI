@@ -508,11 +508,73 @@ function processSequenceData(data, type) {
                 }
             };
 
-            displayResults();
-            createMutationChart();
-            displaySequenceAlignment();
-            populateMutationTable();
+            // Show results section before updating content
             resultsSection.style.display = 'block';
+            resultsSection.innerHTML = `
+                <div class="results-header">
+                    <h2>Comparison Results</h2>
+                    <div class="export-options">
+                        <button id="exportExcel" class="export-btn">
+                            <i class="fas fa-file-excel"></i> Export to Excel
+                        </button>
+                        <button id="exportPDF" class="export-btn">
+                            <i class="fas fa-file-pdf"></i> Export to PDF
+                        </button>
+                        <button id="exportCSV" class="export-btn">
+                            <i class="fas fa-file-csv"></i> Export to CSV
+                        </button>
+                    </div>
+                </div>
+
+                <div class="summary-stats">
+                    <div class="stat-card">
+                        <h4>Total Mutations</h4>
+                        <div class="stat-value" id="totalMutations">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Sequence Length</h4>
+                        <div class="stat-value" id="sequenceLength">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Mutation Rate</h4>
+                        <div class="stat-value" id="mutationRate">0%</div>
+                    </div>
+                </div>
+
+                <div class="visualization-section">
+                    <div class="chart-container">
+                        <h4>Mutation Distribution</h4>
+                        <canvas id="mutationChart" style="width: 100%; height: 300px;"></canvas>
+                    </div>
+                </div>
+
+                <div class="sequence-display">
+                    <h4>Sequence Alignment with Mutations Highlighted</h4>
+                    <div class="sequence-viewer" id="sequenceViewer">
+                        <!-- Sequence alignment will be displayed here -->
+                    </div>
+                </div>
+
+                <div class="mutation-list">
+                    <h4>Detailed Mutation List</h4>
+                    <table id="mutationTable">
+                        <thead>
+                            <tr>
+                                <th>Position</th>
+                                <th>Reference</th>
+                                <th>Query</th>
+                                <th>Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Mutation details will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            // Now that the elements exist, update them
+            displayResults();
 
         } catch (error) {
             console.error('Error comparing sequences:', error);
