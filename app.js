@@ -28,6 +28,7 @@ try {
     }
 } catch (error) {
     console.error('Firebase initialization error:', error);
+    process.exit(1); // Exit if Firebase fails to initialize
 }
 
 // Make Firestore available to your routes
