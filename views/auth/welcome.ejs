@@ -132,15 +132,26 @@
     <script>
         async function handleLogout() {
             try {
-                // Sign out from Firebase
-                await firebase.auth().signOut();
+                // Sign out from Firebase first
+                if (firebase.auth().currentUser) {
+                    await firebase.auth().signOut();
+                }
                 
-                // Redirect to server logout endpoint
-                window.location.href = '/auth/logout';
+                // Then call server logout endpoint
+                const response = await fetch('/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/auth/login';
+                } else {
+                    throw new Error('Server logout failed');
+                }
             } catch (error) {
                 console.error('Logout error:', error);
-                // If Firebase logout fails, still try server logout
-                window.location.href = '/auth/logout';
+                // If anything fails, force redirect to login
+                window.location.href = '/auth/login';
             }
         }
 

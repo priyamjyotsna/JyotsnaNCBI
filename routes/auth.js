@@ -124,12 +124,23 @@ router.get('/welcome', requireAuth, async (req, res) => {
     }
 });
 
-// Logout route
-router.get('/logout', (req, res) => {
+// Logout route - handle both GET and POST
+router.all('/logout', (req, res) => {
+    // Clear session
     req.session.destroy((err) => {
         if (err) {
             console.error('Session destruction error:', err);
+            if (req.method === 'POST') {
+                return res.status(500).json({ success: false, error: 'Failed to clear session' });
+            }
         }
+        
+        // For POST requests, send JSON response
+        if (req.method === 'POST') {
+            return res.json({ success: true });
+        }
+        
+        // For GET requests, redirect to login
         res.redirect('/auth/login');
     });
 });
