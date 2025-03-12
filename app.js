@@ -185,20 +185,27 @@ app.get('/api/nucleotide/sequence', requireAuth, async (req, res) => {
             });
         }
 
-        const user = req.session.user;
-        if (!user.ncbiCredentials) {
-            return res.status(400).json({
-                success: false,
-                error: 'NCBI credentials not found. Please add them in your profile.'
-            });
+        // Get user's email from session
+        const userEmail = req.session.user.email;
+        
+        // Determine which credentials to use
+        let ncbiEmail = process.env.NCBI_EMAIL;
+        let ncbiApiKey = process.env.NCBI_API_KEY;
+
+        // Override email with user's email
+        ncbiEmail = userEmail;
+
+        // If user has provided both email and API key, use those instead
+        if (req.session.user.ncbiCredentials?.email && req.session.user.ncbiCredentials?.apiKey) {
+            ncbiEmail = req.session.user.ncbiCredentials.email;
+            ncbiApiKey = req.session.user.ncbiCredentials.apiKey;
         }
 
-        const { email, apiKey } = user.ncbiCredentials;
         const baseUrl = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
-
-        // First, search for the ID to get the proper nucleotide ID
+        
+        // First, search for the ID
         const searchResponse = await axios.get(
-            `${baseUrl}/esearch.fcgi?db=nucleotide&term=${id}[accn]&tool=nucleotide-downloader&email=${email}&api_key=${apiKey}&retmode=json`
+            `${baseUrl}/esearch.fcgi?db=nucleotide&term=${id}[accn]&tool=nucleotide-downloader&email=${ncbiEmail}${ncbiApiKey ? `&api_key=${ncbiApiKey}` : ''}&retmode=json`
         );
 
         if (!searchResponse.data.esearchresult.idlist || searchResponse.data.esearchresult.idlist.length === 0) {
@@ -210,7 +217,7 @@ app.get('/api/nucleotide/sequence', requireAuth, async (req, res) => {
 
         // Then fetch the sequence
         const fetchResponse = await axios.get(
-            `${baseUrl}/efetch.fcgi?db=nucleotide&id=${searchResponse.data.esearchresult.idlist[0]}&rettype=fasta&retmode=text&tool=nucleotide-downloader&email=${email}&api_key=${apiKey}`
+            `${baseUrl}/efetch.fcgi?db=nucleotide&id=${searchResponse.data.esearchresult.idlist[0]}&rettype=fasta&retmode=text&tool=nucleotide-downloader&email=${ncbiEmail}${ncbiApiKey ? `&api_key=${ncbiApiKey}` : ''}`
         );
 
         res.json({

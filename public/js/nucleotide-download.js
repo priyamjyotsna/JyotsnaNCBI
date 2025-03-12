@@ -3,63 +3,15 @@ class NucleotideDownloader {
         this.downloadBtn = document.getElementById('downloadBtn');
         this.statusDiv = document.getElementById('status');
         this.progressDiv = document.getElementById('progress');
-        this.hasCredentials = false;
-        this.init();
-        this.bindEvents();
-    }
-
-    async init() {
-        await this.checkCredentials();
-    }
-
-    bindEvents() {
+        this.resultDiv = document.getElementById('result');
+        this.sequenceInput = document.getElementById('sequenceIds');
+        
         if (this.downloadBtn) {
-            this.downloadBtn.addEventListener('click', () => this.handleDownload());
-        }
-    }
-
-    async checkCredentials() {
-        try {
-            const response = await fetch('/api/user/ncbi-credentials', {
-                credentials: 'include',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            this.hasCredentials = data.success && data.credentials && data.credentials.exists;
-            
-            if (!this.hasCredentials) {
-                this.updateStatus('Please add your NCBI credentials in your profile settings. <a href="/profile">Go to Profile</a>', 'warning');
-                if (this.downloadBtn) {
-                    this.downloadBtn.disabled = true;
-                }
-                return false;
-            }
-            return true;
-        } catch (error) {
-            console.error('Error checking credentials:', error);
-            this.updateStatus('Failed to verify NCBI credentials. Please refresh the page or try again later.', 'error');
-            if (this.downloadBtn) {
-                this.downloadBtn.disabled = true;
-            }
-            return false;
+            this.downloadBtn.addEventListener('click', (e) => this.handleDownload(e));
         }
     }
 
     async fetchSequence(accessionId) {
-        if (!this.hasCredentials) {
-            await this.checkCredentials();
-            if (!this.hasCredentials) {
-                throw new Error('NCBI credentials required');
-            }
-        }
-
         const response = await fetch(`/api/nucleotide/sequence?id=${accessionId}`, {
             credentials: 'include',
             headers: {
