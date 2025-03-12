@@ -5,6 +5,7 @@ const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const admin = require('firebase-admin');
+const axios = require('axios');
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -54,7 +55,7 @@ try {
 // Make Firestore available to your routes
 const db = admin.firestore();
 
-const authRoutes = require('./routes/auth');
+const { router: authRoutes } = require('./routes/auth');
 const app = express();
 
 // View engine setup
@@ -143,7 +144,7 @@ app.use('/auth', authRoutes);
 app.get('/api/firebase-config', (req, res) => {
     res.json({
         apiKey: process.env.FIREBASE_API_KEY,
-        authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+        authDomain: "jyotsnancbi.firebaseapp.com",
         projectId: process.env.FIREBASE_PROJECT_ID,
         databaseURL: "https://jyotsnancbi-default-rtdb.firebaseio.com",
         storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "jyotsnancbi.appspot.com",
@@ -159,6 +160,71 @@ app.get('/', (req, res) => {
     } catch (error) {
         console.error('Error rendering index:', error);
         res.status(500).send('Internal Server Error');
+    }
+});
+
+// Nucleotide download route
+app.get('/nucleotide-download', (req, res) => {
+    if (!req.session.user) {
+        req.session.returnTo = req.originalUrl;
+        return res.redirect('/auth/login');
+    }
+    try {
+        res.render('nucleotide-download', { user: req.session.user });
+    } catch (error) {
+        console.error('Error rendering nucleotide-download:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// NCBI API endpoint for nucleotide download
+app.post('/nucleotide-download/fetch', async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    try {
+        const { id } = req.body;
+        const user = req.session.user;
+
+        if (!user.ncbiCredentials) {
+            return res.status(400).json({
+                success: false,
+                error: 'NCBI credentials not found. Please add them in your profile.'
+            });
+        }
+
+        const { email, apiKey } = user.ncbiCredentials;
+        const baseUrl = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
+
+        // First, search for the ID to get the proper nucleotide ID
+        const searchResponse = await axios.get(
+            `${baseUrl}/esearch.fcgi?db=nucleotide&term=${id}[accn]&tool=nucleotide-downloader&email=${email}&api_key=${apiKey}&retmode=json`
+        );
+
+        if (!searchResponse.data.esearchresult.idlist || searchResponse.data.esearchresult.idlist.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Nucleotide sequence not found'
+            });
+        }
+
+        // Then fetch the sequence
+        const fetchResponse = await axios.get(
+            `${baseUrl}/efetch.fcgi?db=nucleotide&id=${searchResponse.data.esearchresult.idlist[0]}&rettype=fasta&retmode=text&tool=nucleotide-downloader&email=${email}&api_key=${apiKey}`
+        );
+
+        res.json({
+            success: true,
+            data: fetchResponse.data
+        });
+
+    } catch (error) {
+        console.error('Error fetching nucleotide sequence:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch nucleotide sequence'
+        });
     }
 });
 
