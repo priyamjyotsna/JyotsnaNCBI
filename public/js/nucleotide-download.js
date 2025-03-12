@@ -1,257 +1,202 @@
 class NucleotideDownloader {
     constructor() {
-        this.baseUrl = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
-        this.email = 'your.email@example.com';
-        this.delay = 500;
-        
-        // Initialize elements first
-        this.initializeElements();
-        // Then bind event listeners
-        this.bindEventListeners();
-        this.loadConfig();
-    }
-
-    initializeElements() {
-        this.startIdInput = document.getElementById('startId');
-        this.endIdInput = document.getElementById('endId');
-        this.previewLength = document.getElementById('previewLength');
         this.downloadBtn = document.getElementById('downloadBtn');
         this.statusDiv = document.getElementById('status');
-        this.previewTable = document.getElementById('previewTable').querySelector('tbody');
+        this.progressDiv = document.getElementById('progress');
+        this.hasCredentials = false;
+        this.init();
     }
 
-    bindEventListeners() {
-        if (this.downloadBtn) {
-            this.downloadBtn.addEventListener('click', () => this.handleDownload());
+    async init() {
+        await this.checkCredentials();
+        this.attachEventListeners();
+    }
+
+    async checkCredentials() {
+        try {
+            const response = await fetch('/api/user/ncbi-credentials', {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            
+            this.hasCredentials = data.success && data.credentials;
+            
+            if (!this.hasCredentials) {
+                this.updateStatus('Please add your NCBI credentials in your profile settings to download sequences. <a href="/profile">Go to Profile</a>', 'warning');
+                if (this.downloadBtn) {
+                    this.downloadBtn.disabled = true;
+                }
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.error('Error checking credentials:', error);
+            this.updateStatus('Failed to verify NCBI credentials. Please try again.', 'error');
+            return false;
+        }
+    }
+
+    async fetchSequence(accessionId) {
+        if (!this.hasCredentials) {
+            await this.checkCredentials();
+            if (!this.hasCredentials) {
+                throw new Error('NCBI credentials required');
+            }
+        }
+
+        const response = await fetch(`/api/nucleotide/sequence?id=${accessionId}`, {
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Failed to fetch sequence ${accessionId}`);
+        }
+
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error || `Failed to fetch sequence ${accessionId}`);
+        }
+
+        return data.data;
+    }
+
+    updateStatus(message, type = 'info') {
+        if (this.statusDiv) {
+            this.statusDiv.innerHTML = message;
+            this.statusDiv.className = `status ${type}`;
+        }
+    }
+
+    updateProgress(current, total) {
+        if (this.progressDiv) {
+            const percentage = Math.round((current / total) * 100);
+            this.progressDiv.textContent = `Progress: ${current}/${total} (${percentage}%)`;
+            this.progressDiv.style.width = `${percentage}%`;
+        }
+    }
+
+    async handleDownload(e) {
+        e.preventDefault();
+        
+        // Clear previous results
+        this.resultDiv.innerHTML = '';
+        
+        // Get sequence IDs
+        const ids = this.sequenceInput.value
+            .split(/[\s,]+/)
+            .map(id => id.trim())
+            .filter(id => id);
+            
+        if (ids.length === 0) {
+            this.updateStatus('Please enter at least one sequence ID.', 'danger');
+            return;
         }
         
-        if (this.previewLength) {
-            this.previewLength.addEventListener('change', () => {
-                const th = document.querySelector('#previewTable thead th:last-child');
-                if (th) {
-                    th.textContent = `Sequence (first ${this.previewLength.value} bp)`;
+        this.downloadButton.disabled = true;
+        this.updateStatus('Downloading sequences...', 'info');
+        
+        try {
+            // Download sequences in parallel with rate limiting
+            const results = await Promise.allSettled(
+                ids.map(id => this.fetchSequence(id))
+            );
+            
+            // Process results
+            let successCount = 0;
+            const sequences = [];
+            
+            results.forEach((result, index) => {
+                const id = ids[index];
+                if (result.status === 'fulfilled') {
+                    successCount++;
+                    sequences.push(result.value);
+                } else {
+                    console.error(`Error with ${id}:`, result.reason);
+                    this.appendError(id, result.reason.message);
                 }
+                this.updateProgress(index + 1, ids.length);
             });
+            
+            // Display final status
+            if (successCount > 0) {
+                this.displayResults(sequences);
+                this.updateStatus(
+                    `Downloaded ${successCount} of ${ids.length} sequences successfully.`,
+                    successCount < ids.length ? 'warning' : 'success'
+                );
+            } else {
+                this.updateStatus('Failed to download any sequences.', 'danger');
+            }
+        } catch (error) {
+            console.error('Download error:', error);
+            this.updateStatus('Error downloading sequences: ' + error.message, 'danger');
+        } finally {
+            this.downloadButton.disabled = false;
         }
     }
 
     async loadConfig() {
         try {
             const response = await fetch('/api/config');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const config = await response.json();
             this.email = config.email;
+            this.apiKey = config.apiKey;
         } catch (error) {
             console.error('Failed to load config:', error);
+            this.updateStatus('Failed to load configuration. Please try again.', 'error');
         }
     }
 
-    // Update the preview display in handleDownload
-    async handleDownload() {
-        try {
-            this.downloadBtn.disabled = true;
-            this.updateStatus('Generating accession IDs...', 'loading');
-            
-            const startId = this.startIdInput.value.trim();
-            const endId = this.endIdInput.value.trim();
-            
-            // Generate filename from range
-            const filename = `${startId}-${endId}.csv`;
-            
-            const accessions = this.generateAccessionRange(startId, endId);
-            const sequences = [];
-            
-            this.updateStatus(`Fetching ${accessions.length} sequences...`, 'loading');
-            this.previewTable.innerHTML = '';
-            
-            let successCount = 0;
-            let errorCount = 0;
-            
-            // Use smaller batch size and longer delay between batches
-            const batchSize = 2; // Reduce to 2 sequences at a time
-            for (let i = 0; i < accessions.length; i += batchSize) {
-                const batch = accessions.slice(i, i + batchSize);
-                
-                // Process batch concurrently
-                const results = await Promise.allSettled(
-                    batch.map(accessionId => this.fetchSequence(accessionId))
-                );
-                
-                // Process results
-                results.forEach((result, index) => {
-                    const accessionId = batch[index];
-                    
-                    if (result.status === 'fulfilled') {
-                        const sequence = result.value;
-                        sequences.push({ accessionId, sequence });
-                        successCount++;
-                        
-                        // Update preview
-                        const row = this.previewTable.insertRow();
-                        row.insertCell(0).textContent = accessionId;
-                        
-                        // Update preview with selected length
-                        const previewLen = parseInt(this.previewLength.value);
-                        row.insertCell(1).textContent = sequence.substring(0, previewLen) + '...';
-                    } else {
-                        console.error(`Error with ${accessionId}:`, result.reason);
-                        sequences.push({ accessionId, sequence: 'ERROR: ' + result.reason.message });
-                        errorCount++;
-                        
-                        // Add error row to preview
-                        const row = this.previewTable.insertRow();
-                        row.insertCell(0).textContent = accessionId;
-                        const errorCell = row.insertCell(1);
-                        errorCell.textContent = 'ERROR: ' + result.reason.message;
-                        errorCell.classList.add('error-text');
-                    }
-                });
-                
-                // Add a longer delay between batches to avoid NCBI rate limits
-                if (i + batchSize < accessions.length) {
-                    this.updateStatus(`Pausing to avoid rate limits... (${i+batchSize}/${accessions.length} processed)`, 'info');
-                    await new Promise(resolve => setTimeout(resolve, 2000)); // Increased delay to 2 seconds
-                }
-            }
-            
-            // Generate CSV with dynamic filename
-            const csvContent = this.generateCSV(sequences);
-            this.downloadCSV(csvContent, filename);
-            
-            const statusMessage = `Download complete! ${successCount} sequences downloaded successfully, ${errorCount} errors.`;
-            this.updateStatus(statusMessage, errorCount > 0 ? 'warning' : 'success');
-        } catch (error) {
-            console.error('Download error:', error);
-            this.updateStatus(`Error: ${error.message}`, 'error');
-        } finally {
-            this.downloadBtn.disabled = false;
-        }
-    }
-
-    updateStatus(message, type = 'info') {
-        if (this.statusDiv) {
-            this.statusDiv.textContent = message;
-            this.statusDiv.className = `status-section ${type}`;
-        }
-    }
-
-    generateAccessionRange(start, end) {
-        const prefix = start.match(/^[A-Za-z]+/)[0];
-        const startNum = parseInt(start.match(/\d+/)[0]);
-        const endNum = parseInt(end.match(/\d+/)[0]);
+    displayResults(sequences) {
+        // Create a container for the download button
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'mb-3';
         
-        const accessions = [];
-        for (let i = startNum; i <= endNum; i++) {
-            accessions.push(`${prefix}${i}`);
-        }
-        return accessions;
-    }
-    async fetchSequence(accessionId) {
-        try {
-            this.updateStatus(`Fetching ${accessionId}...`, 'loading');
-            
-            // Create a controller for timeout handling with longer timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 45000); // Increase timeout to 45 seconds
-            
-            try {
-                // Remove API key and email from client-side request - these should be used server-side
-                const response = await fetch(`/api/nucleotide/sequence?id=${accessionId}`, {
-                    signal: controller.signal,
-                    headers: {
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache'
-                    }
-                });
-                
-                // Clear the timeout
-                clearTimeout(timeoutId);
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    let errorMessage;
-                    try {
-                        const errorData = JSON.parse(errorText);
-                        errorMessage = errorData.error || `HTTP error! status: ${response.status}`;
-                    } catch (e) {
-                        errorMessage = `HTTP error! status: ${response.status}`;
-                    }
-                    throw new Error(errorMessage);
-                }
-                
-                const data = await response.json();
-                if (!data.success) {
-                    throw new Error(data.error || 'Unknown error occurred');
-                }
-                
-                if (!data.data || !data.data.sequence) {
-                    throw new Error(`No sequence data returned for ${accessionId}`);
-                }
-                
-                return data.data.sequence;
-            } catch (error) {
-                // Clear the timeout if there was an error
-                clearTimeout(timeoutId);
-                
-                // Handle abort errors with a more user-friendly message
-                if (error.name === 'AbortError') {
-                    throw new Error(`Request timed out for ${accessionId}. NCBI servers may be busy.`);
-                }
-                
-                throw error;
-            }
-        } catch (error) {
-            console.error(`Error fetching ${accessionId}:`, error);
-            
-            // Implement retry logic for timeouts
-            if (error.message.includes('timed out')) {
-                try {
-                    this.updateStatus(`Retrying ${accessionId}...`, 'loading');
-                    // Try a different endpoint as fallback
-                    const retryResponse = await fetch(`/api/nucleotide/sequence?id=${accessionId}&retry=true`, {
-                        timeout: 45000
-                    });
-                    
-                    if (!retryResponse.ok) {
-                        throw new Error(`Retry failed for ${accessionId}`);
-                    }
-                    
-                    const data = await retryResponse.json();
-                    if (data.success && data.data && data.data.sequence) {
-                        return data.data.sequence;
-                    }
-                    throw new Error(`No sequence data returned on retry for ${accessionId}`);
-                } catch (retryError) {
-                    console.error(`Retry failed for ${accessionId}:`, retryError);
-                    throw error; // Throw the original error if retry fails
-                }
-            }
-            
-            throw error;
-        }
-    }
-
-    generateCSV(sequences) {
-        const header = 'Accession ID,Sequence\n';
-        const rows = sequences.map(({ accessionId, sequence }) => 
-            `${accessionId},"${sequence}"`
-        ).join('\n');
+        // Add download button
+        const downloadBtn = document.createElement('button');
+        downloadBtn.textContent = 'Download FASTA';
+        downloadBtn.className = 'btn btn-success';
+        downloadBtn.onclick = () => this.downloadFasta(sequences);
+        buttonContainer.appendChild(downloadBtn);
         
-        return header + rows;
+        // Create sequence display
+        const pre = document.createElement('pre');
+        pre.className = 'sequence-result';
+        pre.textContent = sequences.join('\n\n');
+        
+        // Add to result div
+        this.resultDiv.appendChild(buttonContainer);
+        this.resultDiv.appendChild(pre);
     }
 
-    downloadCSV(content, filename) {
-        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    appendError(id, error) {
+        const div = document.createElement('div');
+        div.className = 'alert alert-danger';
+        div.textContent = `Error downloading ${id}: ${error}`;
+        this.resultDiv.appendChild(div);
+    }
+
+    downloadFasta(sequences) {
+        const blob = new Blob([sequences.join('\n\n')], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'sequences.fasta';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
     }
 }
 
-// Initialize when DOM is fully loaded
+// Initialize the downloader when the DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    const downloader = new NucleotideDownloader();
+    new NucleotideDownloader();
 });
