@@ -57,6 +57,12 @@
             text-decoration: none;
             margin-top: 15px;
         }
+        /* Add timeout indicator */
+        #timeoutIndicator {
+            margin-top: 15px;
+            color: #666;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -91,6 +97,7 @@
                 }
             }
             debugElement.appendChild(logLine);
+            debugElement.scrollTop = debugElement.scrollHeight;
         }
         
         // Update status with visual feedback
@@ -112,8 +119,43 @@
             }, delay);
         }
         
+        // Add a timeout to prevent getting stuck
+        function setupTimeout(seconds = 15) {
+            log(`Setting up ${seconds} second timeout`);
+            
+            // Create timeout indicator
+            const timeoutDiv = document.createElement('div');
+            timeoutDiv.id = 'timeoutIndicator';
+            timeoutDiv.textContent = `Automatic redirect in ${seconds} seconds...`;
+            document.querySelector('.container').insertBefore(timeoutDiv, actionButtons);
+            
+            // Update countdown
+            const interval = setInterval(() => {
+                seconds--;
+                if (seconds <= 0) {
+                    clearInterval(interval);
+                    log('Timeout reached, redirecting to login');
+                    redirectTo('/auth/login');
+                } else {
+                    timeoutDiv.textContent = `Automatic redirect in ${seconds} seconds...`;
+                }
+            }, 1000);
+            
+            return {
+                clear: () => {
+                    clearInterval(interval);
+                    if (timeoutDiv.parentNode) {
+                        timeoutDiv.parentNode.removeChild(timeoutDiv);
+                    }
+                }
+            };
+        }
+        
         // Main function to handle authentication
         async function handleAuthentication() {
+            // Set up timeout
+            const timeout = setupTimeout(15);
+            
             try {
                 updateStatus('Fetching Firebase configuration...');
                 
@@ -148,10 +190,20 @@
                     
                     try {
                         // Get redirect result
-                        const result = await firebase.auth().getRedirectResult();
+                        log('Calling getRedirectResult()');
+                        const result = await Promise.race([
+                            firebase.auth().getRedirectResult(),
+                            new Promise((_, reject) => 
+                                setTimeout(() => reject(new Error('getRedirectResult timeout')), 8000)
+                            )
+                        ]);
+                        
                         log('Redirect result received', result);
                         
                         if (result.user) {
+                            // Clear timeout since we have a successful result
+                            timeout.clear();
+                            
                             updateStatus('Successfully signed in!');
                             
                             // Get token
@@ -185,10 +237,14 @@
                             }
                         } else {
                             // Check if user is already signed in
+                            log('No user in redirect result, checking current user');
                             const currentUser = firebase.auth().currentUser;
                             log('Current user check', currentUser);
                             
                             if (currentUser) {
+                                // Clear timeout since we have a user
+                                timeout.clear();
+                                
                                 updateStatus('User already signed in');
                                 redirectTo('/auth/welcome');
                             } else {
@@ -199,12 +255,26 @@
                     } catch (redirectError) {
                         log('Redirect error', redirectError);
                         updateStatus(`Authentication error: ${redirectError.message}`);
-                        showButtons();
+                        
+                        // Try direct redirect to login if we have a timeout
+                        if (redirectError.message === 'getRedirectResult timeout') {
+                            log('Redirect timed out, trying direct redirect');
+                            if (redirectUrl) {
+                                redirectTo(redirectUrl);
+                            } else {
+                                redirectTo('/auth/login');
+                            }
+                        } else {
+                            showButtons();
+                        }
                     }
                 } else if (authType === 'signInViaPopup') {
                     // Handle popup auth
                     log('Handling popup sign-in');
                     updateStatus('Popup authentication completed');
+                    
+                    // Clear timeout
+                    timeout.clear();
                     
                     // Just close the window for popup auth
                     window.close();
