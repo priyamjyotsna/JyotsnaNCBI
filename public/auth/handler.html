@@ -179,94 +179,76 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const authType = urlParams.get('authType');
                 const redirectUrl = urlParams.get('redirectUrl');
+                const providerId = urlParams.get('providerId');
                 
-                log('URL parameters', { authType, redirectUrl });
+                log('URL parameters', { authType, redirectUrl, providerId });
                 
                 updateStatus('Processing authentication...');
+                
+                // Check if user is already signed in first
+                const currentUser = firebase.auth().currentUser;
+                log('Current user check before redirect handling', currentUser);
+                
+                if (currentUser) {
+                    // User is already signed in, skip redirect result
+                    timeout.clear();
+                    updateStatus('User already signed in, proceeding...');
+                    
+                    try {
+                        // Get token
+                        const token = await currentUser.getIdToken();
+                        log('Token obtained from current user');
+                        
+                        // Send to server
+                        updateStatus('Verifying with server...');
+                        const response = await fetch('/auth/google-signin', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                token: token,
+                                userData: {
+                                    name: currentUser.displayName,
+                                    email: currentUser.email,
+                                    photo: currentUser.photoURL
+                                }
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        log('Server response', data);
+                        
+                        if (data.success) {
+                            redirectTo('/auth/welcome');
+                            return;
+                        }
+                    } catch (error) {
+                        log('Error with current user', error);
+                        // Continue with redirect result as fallback
+                    }
+                }
                 
                 // Handle different auth types
                 if (authType === 'signInViaRedirect') {
                     log('Handling redirect sign-in');
                     
                     try {
-                        // Get redirect result
-                        log('Calling getRedirectResult()');
-                        const result = await Promise.race([
-                            firebase.auth().getRedirectResult(),
-                            new Promise((_, reject) => 
-                                setTimeout(() => reject(new Error('getRedirectResult timeout')), 8000)
-                            )
-                        ]);
+                        // Try a simpler approach - just redirect back to login
+                        // This avoids the hanging getRedirectResult() call
+                        log('Skipping getRedirectResult due to timeout issues');
+                        updateStatus('Completing authentication...');
                         
-                        log('Redirect result received', result);
-                        
-                        if (result.user) {
-                            // Clear timeout since we have a successful result
-                            timeout.clear();
-                            
-                            updateStatus('Successfully signed in!');
-                            
-                            // Get token
-                            const token = await result.user.getIdToken();
-                            log('Token obtained');
-                            
-                            // Send to server
-                            updateStatus('Verifying with server...');
-                            const response = await fetch('/auth/google-signin', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    token: token,
-                                    userData: {
-                                        name: result.user.displayName,
-                                        email: result.user.email,
-                                        photo: result.user.photoURL
-                                    }
-                                })
-                            });
-                            
-                            const data = await response.json();
-                            log('Server response', data);
-                            
-                            if (data.success) {
-                                redirectTo('/auth/welcome');
-                            } else {
-                                throw new Error(data.error || 'Server verification failed');
-                            }
+                        // If we have a redirect URL, use it
+                        if (redirectUrl) {
+                            redirectTo(redirectUrl);
                         } else {
-                            // Check if user is already signed in
-                            log('No user in redirect result, checking current user');
-                            const currentUser = firebase.auth().currentUser;
-                            log('Current user check', currentUser);
-                            
-                            if (currentUser) {
-                                // Clear timeout since we have a user
-                                timeout.clear();
-                                
-                                updateStatus('User already signed in');
-                                redirectTo('/auth/welcome');
-                            } else {
-                                updateStatus('No user found after redirect');
-                                showButtons();
-                            }
+                            redirectTo('/auth/login');
                         }
                     } catch (redirectError) {
                         log('Redirect error', redirectError);
                         updateStatus(`Authentication error: ${redirectError.message}`);
-                        
-                        // Try direct redirect to login if we have a timeout
-                        if (redirectError.message === 'getRedirectResult timeout') {
-                            log('Redirect timed out, trying direct redirect');
-                            if (redirectUrl) {
-                                redirectTo(redirectUrl);
-                            } else {
-                                redirectTo('/auth/login');
-                            }
-                        } else {
-                            showButtons();
-                        }
+                        showButtons();
                     }
                 } else if (authType === 'signInViaPopup') {
                     // Handle popup auth
