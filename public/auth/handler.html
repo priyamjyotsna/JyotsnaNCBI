@@ -185,85 +185,107 @@
                 
                 updateStatus('Processing authentication...');
                 
-                // Check if user is already signed in first
-                const currentUser = firebase.auth().currentUser;
-                log('Current user check before redirect handling', currentUser);
+                // Add a small delay to allow Firebase auth to initialize
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 
-                if (currentUser) {
-                    // User is already signed in, skip redirect result
-                    timeout.clear();
-                    updateStatus('User already signed in, proceeding...');
-                    
-                    try {
-                        // Get token
-                        const token = await currentUser.getIdToken();
-                        log('Token obtained from current user');
-                        
-                        // Send to server
-                        updateStatus('Verifying with server...');
-                        const response = await fetch('/auth/google-signin', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                token: token,
-                                userData: {
-                                    name: currentUser.displayName,
-                                    email: currentUser.email,
-                                    photo: currentUser.photoURL
-                                }
-                            })
+                // Try to get auth state through onAuthStateChanged instead of currentUser
+                try {
+                    log('Waiting for auth state...');
+                    const user = await new Promise((resolve, reject) => {
+                        const unsubscribe = firebase.auth().onAuthStateChanged(user => {
+                            unsubscribe();
+                            resolve(user);
+                        }, error => {
+                            unsubscribe();
+                            reject(error);
                         });
                         
-                        const data = await response.json();
-                        log('Server response', data);
+                        // Set a timeout for this promise as well
+                        setTimeout(() => {
+                            unsubscribe();
+                            resolve(null); // Resolve with null if timeout
+                        }, 3000);
+                    });
+                    
+                    log('Auth state check result', user);
+                    
+                    if (user) {
+                        // User is already signed in, skip redirect result
+                        timeout.clear();
+                        updateStatus('User authenticated, proceeding...');
                         
-                        if (data.success) {
-                            redirectTo('/auth/welcome');
-                            return;
+                        try {
+                            // Get token
+                            const token = await user.getIdToken();
+                            log('Token obtained from auth state');
+                            
+                            // Send to server
+                            updateStatus('Verifying with server...');
+                            const response = await fetch('/auth/google-signin', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    token: token,
+                                    userData: {
+                                        name: user.displayName,
+                                        email: user.email,
+                                        photo: user.photoURL
+                                    }
+                                })
+                            });
+                            
+                            const data = await response.json();
+                            log('Server response', data);
+                            
+                            if (data.success) {
+                                redirectTo('/auth/welcome');
+                                return;
+                            } else {
+                                throw new Error(data.message || 'Server verification failed');
+                            }
+                        } catch (error) {
+                            log('Error with authenticated user', error);
+                            // Continue with redirect as fallback
                         }
-                    } catch (error) {
-                        log('Error with current user', error);
-                        // Continue with redirect result as fallback
                     }
+                } catch (authStateError) {
+                    log('Error checking auth state', authStateError);
                 }
                 
                 // Handle different auth types
                 if (authType === 'signInViaRedirect') {
                     log('Handling redirect sign-in');
                     
-                    try {
-                        // Try a simpler approach - just redirect back to login
-                        // This avoids the hanging getRedirectResult() call
-                        log('Skipping getRedirectResult due to timeout issues');
-                        updateStatus('Completing authentication...');
-                        
-                        // If we have a redirect URL, use it
-                        if (redirectUrl) {
-                            redirectTo(redirectUrl);
-                        } else {
-                            redirectTo('/auth/login');
-                        }
-                    } catch (redirectError) {
-                        log('Redirect error', redirectError);
-                        updateStatus(`Authentication error: ${redirectError.message}`);
-                        showButtons();
+                    // Try a simpler approach - just redirect back to login
+                    // This avoids the hanging getRedirectResult() call
+                    log('Skipping getRedirectResult due to timeout issues');
+                    updateStatus('Completing authentication...');
+                    
+                    // If we have a redirect URL, use it
+                    if (redirectUrl) {
+                        redirectTo(redirectUrl);
+                    } else {
+                        redirectTo('/auth/login');
                     }
-                } else if (authType === 'signInViaPopup') {
-                    // Handle popup auth
-                    log('Handling popup sign-in');
-                    updateStatus('Popup authentication completed');
+                }
+                
+                try {
+                    // Try a simpler approach - just redirect back to login
+                    // This avoids the hanging getRedirectResult() call
+                    log('Skipping getRedirectResult due to timeout issues');
+                    updateStatus('Completing authentication...');
                     
-                    // Clear timeout
-                    timeout.clear();
-                    
-                    // Just close the window for popup auth
-                    window.close();
-                } else {
-                    // Unknown auth type
-                    log('Unknown auth type', authType);
-                    updateStatus('Unknown authentication type');
+                    // If we have a redirect URL, use it
+                    if (redirectUrl) {
+                        redirectTo(redirectUrl);
+                    } else {
+                        redirectTo('/auth/login');
+                    }
+                } catch (redirectError) {
+                    log('Redirect error', redirectError);
+                    updateStatus(`Authentication error: ${redirectError.message}`);
                     showButtons();
                 }
             } catch (error) {
