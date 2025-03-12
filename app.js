@@ -55,7 +55,7 @@ try {
 // Make Firestore available to your routes
 const db = admin.firestore();
 
-const { router: authRoutes } = require('./routes/auth');
+const auth = require('./routes/auth');
 const app = express();
 
 // View engine setup
@@ -138,7 +138,7 @@ app.get('/health', (req, res) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
-app.use('/auth', authRoutes);
+app.use('/auth', auth.router);
 
 // Firebase config endpoint
 app.get('/api/firebase-config', (req, res) => {
@@ -164,11 +164,7 @@ app.get('/', (req, res) => {
 });
 
 // Nucleotide download route
-app.get('/nucleotide-download', (req, res) => {
-    if (!req.session.user) {
-        req.session.returnTo = req.originalUrl;
-        return res.redirect('/auth/login');
-    }
+app.get('/nucleotide-download', auth.requireAuth, (req, res) => {
     try {
         res.render('nucleotide-download', { user: req.session.user });
     } catch (error) {
@@ -178,11 +174,7 @@ app.get('/nucleotide-download', (req, res) => {
 });
 
 // NCBI API endpoint for nucleotide download
-app.post('/nucleotide-download/fetch', async (req, res) => {
-    if (!req.session.user) {
-        return res.status(401).json({ success: false, error: 'Authentication required' });
-    }
-
+app.post('/nucleotide-download/fetch', auth.requireAuth, async (req, res) => {
     try {
         const { id } = req.body;
         const user = req.session.user;
