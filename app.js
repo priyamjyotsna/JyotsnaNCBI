@@ -103,7 +103,9 @@ app.get('/api/firebase-config', (req, res) => {
     res.json({
         apiKey: process.env.FIREBASE_API_KEY,
         authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.FIREBASE_PROJECT_ID
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        databaseURL: "https://jyotsnancbi-default-rtdb.firebaseio.com",
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "jyotsnancbi.appspot.com"
     });
 });
 

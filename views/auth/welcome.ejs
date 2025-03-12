@@ -5,6 +5,10 @@
     <link rel="stylesheet" href="/styles/main.css">
     <link rel="stylesheet" href="/styles/auth.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #2c3e50, #4ca1af);
@@ -88,40 +92,6 @@
             color: #dc3545;
         }
     </style>
-    <script>
-        document.getElementById('ncbiCredentialsForm').addEventListener('submit', function(e) {
-          e.preventDefault();
-          
-          const email = document.getElementById('ncbiEmail').value;
-          const apiKey = document.getElementById('ncbiApiKey').value;
-          
-          console.log('Submitting credentials:', { email, apiKey });
-          
-          fetch('/auth/save-ncbi-credentials', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email, apiKey }),
-            credentials: 'include'
-          })
-          .then(response => response.json())
-          .then(data => {
-            console.log('Response:', data);
-            if (data.success) {
-              alert('NCBI credentials saved successfully!');
-            } else {
-              alert('Error: ' + data.error);
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            alert('Failed to save credentials. Please try again.');
-          });
-        });
-      </script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <div class="welcome-container">
@@ -136,81 +106,18 @@
                 <h4>NCBI API Credentials</h4>
                 <p>Enter your NCBI email and API key to enhance your experience</p>
                 
-                <!-- Add this form to the welcome.ejs file -->
                 <form id="ncbiCredentialsForm">
                     <h3>Your NCBI API Credentials</h3>
                     <div class="form-group">
                         <label for="ncbiEmail">NCBI Email</label>
-                        <input type="email" id="ncbiEmail" name="email" value="<%= ncbiCredentials.email %>" class="form-control">
+                        <input type="email" id="ncbiEmail" name="ncbiEmail" value="<%= user.ncbiCredentials ? user.ncbiCredentials.email : '' %>" class="form-control" required>
                     </div>
                     <div class="form-group">
                         <label for="ncbiApiKey">NCBI API Key</label>
-                        <input type="text" id="ncbiApiKey" name="apiKey" value="<%= ncbiCredentials.apiKey %>" class="form-control">
+                        <input type="text" id="ncbiApiKey" name="ncbiApiKey" value="<%= user.ncbiCredentials ? user.ncbiCredentials.apiKey : '' %>" class="form-control" required>
                     </div>
-                    <button type="submit" id="saveCredentials" class="btn btn-primary">Save Credentials</button>
-                    <div id="saveStatus"></div>
+                    <button type="submit" class="save-btn">Save Credentials</button>
                 </form>
-                
-                <script>
-                    <!-- Keep only this event listener in your form section -->
-                    <script>
-                        // Add this script to handle form submission
-                        document.addEventListener('DOMContentLoaded', function() {
-                            const form = document.getElementById('ncbiCredentialsForm');
-                            if (form) {
-                                form.addEventListener('submit', async function(e) {
-                                    e.preventDefault();
-                                    
-                                    const saveButton = document.getElementById('saveCredentials');
-                                    const saveStatus = document.getElementById('saveStatus');
-                                    
-                                    // Disable button and show loading state
-                                    saveButton.disabled = true;
-                                    saveButton.textContent = 'Saving...';
-                                    saveStatus.textContent = '';
-                                    
-                                    try {
-                                        const email = document.getElementById('ncbiEmail').value;
-                                        const apiKey = document.getElementById('ncbiApiKey').value;
-                                        
-                                        const response = await fetch('/auth/save-ncbi-credentials', {
-                                            method: 'POST',
-                                            headers: {
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify({ email, apiKey }),
-                                            credentials: 'include'
-                                        });
-                                        
-                                        const data = await response.json();
-                                        
-                                        if (data.success) {
-                                            saveStatus.textContent = 'Credentials saved successfully!';
-                                            saveStatus.style.color = 'green';
-                                        } else {
-                                            throw new Error(data.error || 'Failed to save credentials');
-                                        }
-                                    } catch (error) {
-                                        console.error('Error saving credentials:', error);
-                                        saveStatus.textContent = 'Error: ' + error.message;
-                                        saveStatus.style.color = 'red';
-                                    } finally {
-                                        // Re-enable button
-                                        saveButton.disabled = false;
-                                        saveButton.textContent = 'Save Credentials';
-                                        
-                                        // Clear status after 3 seconds
-                                        setTimeout(() => {
-                                            if (saveStatus.style.color === 'green') {
-                                                saveStatus.textContent = '';
-                                            }
-                                        }, 3000);
-                                    }
-                                });
-                            }
-                        });
-                    </script>
-                </script>
                 
                 <div id="statusMessage" class="status-message"></div>
             </div>
@@ -223,65 +130,86 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Firebase
-            fetch('/api/firebase-config')
-                .then(response => response.json())
-                .then(firebaseConfig => {
-                    if (!firebase.apps.length) {
-                        firebase.initializeApp(firebaseConfig);
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Initialize Firebase
+                const response = await fetch('/api/firebase-config');
+                const firebaseConfig = await response.json();
+                
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
+                const db = firebase.firestore();
+                const rtdb = firebase.database();
+                const userId = '<%= user.uid %>';
+                
+                // Set up form submission
+                const form = document.getElementById('ncbiCredentialsForm');
+                const statusMessage = document.getElementById('statusMessage');
+                
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const email = document.getElementById('ncbiEmail').value;
+                    const apiKey = document.getElementById('ncbiApiKey').value;
+                    
+                    try {
+                        // Save to both Firestore and Realtime Database
+                        const userRef = db.collection('users').doc(userId);
+                        const rtdbRef = rtdb.ref('users/' + userId + '/ncbiCredentials');
+                        
+                        await Promise.all([
+                            userRef.set({
+                                ncbiCredentials: { email, apiKey },
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            }, { merge: true }),
+                            rtdbRef.set({ email, apiKey })
+                        ]);
+                        
+                        // Send to server to update session
+                        const response = await fetch('/auth/save-ncbi-credentials', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ email, apiKey }),
+                            credentials: 'include'
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            statusMessage.textContent = 'Credentials saved successfully!';
+                            statusMessage.className = 'status-message status-success';
+                        } else {
+                            throw new Error(data.error || 'Failed to save credentials');
+                        }
+                    } catch (error) {
+                        console.error('Error saving credentials:', error);
+                        statusMessage.textContent = 'Error saving credentials: ' + error.message;
+                        statusMessage.className = 'status-message status-error';
                     }
                     
-                    const db = firebase.firestore();
-                    const userId = '<%= user.uid %>';
-                    const userRef = db.collection('users').doc(userId);
-                    
-                    // Load existing credentials if available
-                    userRef.get().then((doc) => {
-                        if (doc.exists && doc.data().ncbiCredentials) {
-                            const credentials = doc.data().ncbiCredentials;
-                            document.getElementById('ncbiEmail').value = credentials.email || '';
-                            document.getElementById('ncbiApiKey').value = credentials.apiKey || '';
-                        }
-                    }).catch((error) => {
-                        console.error("Error loading credentials:", error);
-                    });
-                    
-                    // Handle form submission
-                    document.getElementById('ncbiCredentialsForm').addEventListener('submit', function(e) {
-                        e.preventDefault();
-                        
-                        const email = document.getElementById('ncbiEmail').value;
-                        const apiKey = document.getElementById('ncbiApiKey').value;
-                        const statusMessage = document.getElementById('statusMessage');
-                        
-                        // Save to Firestore
-                        userRef.set({
-                            ncbiCredentials: {
-                                email: email,
-                                apiKey: apiKey,
-                                updatedAt: new Date()
-                            }
-                        }, { merge: true })
-                        .then(() => {
-                            statusMessage.textContent = 'NCBI credentials saved successfully!';
-                            statusMessage.className = 'status-message status-success';
-                            statusMessage.style.display = 'block';
-                            
-                            setTimeout(() => {
-                                statusMessage.style.display = 'none';
-                            }, 3000);
-                        })
-                        .catch((error) => {
-                            statusMessage.textContent = 'Error saving credentials: ' + error.message;
-                            statusMessage.className = 'status-message status-error';
-                            statusMessage.style.display = 'block';
-                        });
-                    });
-                })
-                .catch(error => {
-                    console.error('Error initializing Firebase:', error);
+                    statusMessage.style.display = 'block';
                 });
+                
+                // Load existing credentials from Realtime Database
+                const rtdbRef = rtdb.ref('users/' + userId + '/ncbiCredentials');
+                rtdbRef.on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        document.getElementById('ncbiEmail').value = data.email || '';
+                        document.getElementById('ncbiApiKey').value = data.apiKey || '';
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error initializing Firebase:', error);
+                statusMessage.textContent = 'Error initializing application: ' + error.message;
+                statusMessage.className = 'status-message status-error';
+                statusMessage.style.display = 'block';
+            }
         });
     </script>
 
