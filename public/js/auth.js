@@ -41,14 +41,26 @@ async function initializeAuth() {
         auth.useDeviceLanguage();
         console.log('[' + new Date().toLocaleTimeString() + '] Firebase initialized');
 
-        // Get URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const params = {
-            authType: urlParams.get('authType'),
-            redirectUrl: urlParams.get('redirectUrl'),
-            providerId: urlParams.get('providerId')
-        };
-        console.log('[' + new Date().toLocaleTimeString() + '] URL parameters', JSON.stringify(params));
+        // Check for redirect result first
+        try {
+            console.log('[' + new Date().toLocaleTimeString() + '] Checking redirect result...');
+            const result = await auth.getRedirectResult();
+            if (result.user) {
+                console.log('[' + new Date().toLocaleTimeString() + '] User authenticated via redirect');
+                await handleAuthSuccess(result.user);
+                return;
+            }
+        } catch (redirectError) {
+            console.log('[' + new Date().toLocaleTimeString() + '] No redirect result or error:', redirectError);
+        }
+
+        // Check if user is already signed in
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+            console.log('[' + new Date().toLocaleTimeString() + '] User already signed in:', currentUser.email);
+            await handleAuthSuccess(currentUser);
+            return;
+        }
 
         // Add click handler for sign in button
         signInBtn.addEventListener('click', async () => {
@@ -57,68 +69,23 @@ async function initializeAuth() {
                 loading.style.display = 'block';
                 errorMessage.style.display = 'none';
                 
-                console.log('[' + new Date().toLocaleTimeString() + '] Processing authentication...');
+                console.log('[' + new Date().toLocaleTimeString() + '] Starting authentication...');
                 
                 const provider = new firebase.auth.GoogleAuthProvider();
                 provider.setCustomParameters({
-                    prompt: 'select_account',
-                    auth_type: 'reauthenticate'
+                    prompt: 'select_account'
                 });
 
-                // First check if we have a redirect result
-                console.log('[' + new Date().toLocaleTimeString() + '] Waiting for auth state...');
-                const user = await new Promise((resolve, reject) => {
-                    const unsubscribe = auth.onAuthStateChanged(user => {
-                        unsubscribe();
-                        if (user) {
-                            console.log('[' + new Date().toLocaleTimeString() + '] Auth state check result', JSON.stringify(user.toJSON()));
-                            resolve(user);
-                        } else {
-                            resolve(null);
-                        }
-                    }, reject);
-                });
-
-                if (!user) {
-                    console.log('[' + new Date().toLocaleTimeString() + '] No existing user, starting sign in...');
+                // Try popup first, fallback to redirect
+                try {
+                    console.log('[' + new Date().toLocaleTimeString() + '] Attempting popup sign-in...');
                     const result = await auth.signInWithPopup(provider);
-                    if (!result.user) {
-                        throw new Error('Failed to get user from popup result');
-                    }
-                    console.log('[' + new Date().toLocaleTimeString() + '] User authenticated, proceeding...');
-                }
-
-                // Get the token from either existing user or new sign in
-                const token = await (user || auth.currentUser).getIdToken();
-                console.log('[' + new Date().toLocaleTimeString() + '] Token obtained from auth state');
-                
-                // Verify with server
-                console.log('[' + new Date().toLocaleTimeString() + '] Verifying with server...');
-                const response = await fetch('/auth/google-signin', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        token,
-                        userData: {
-                            uid: (user || auth.currentUser).uid,
-                            name: (user || auth.currentUser).displayName,
-                            email: (user || auth.currentUser).email,
-                            photo: (user || auth.currentUser).photoURL
-                        }
-                    }),
-                    credentials: 'include'
-                });
-
-                const data = await response.json();
-                console.log('[' + new Date().toLocaleTimeString() + '] Server response', JSON.stringify(data));
-                
-                if (data.success) {
-                    console.log('[' + new Date().toLocaleTimeString() + '] Redirecting to ' + data.redirect + '...');
-                    window.location.href = data.redirect;
-                } else {
-                    throw new Error(data.error || 'Server authentication failed');
+                    console.log('[' + new Date().toLocaleTimeString() + '] Popup sign-in successful');
+                    await handleAuthSuccess(result.user);
+                } catch (popupError) {
+                    console.log('[' + new Date().toLocaleTimeString() + '] Popup failed, trying redirect:', popupError);
+                    // If popup fails, try redirect
+                    await auth.signInWithRedirect(provider);
                 }
             } catch (error) {
                 let errorMsg = 'Login failed: ';
@@ -141,8 +108,51 @@ async function initializeAuth() {
                 loading.style.display = 'none';
             }
         });
+
     } catch (error) {
         showError('Failed to initialize authentication. Please try again later.', error);
+    }
+}
+
+// Helper function to handle successful authentication
+async function handleAuthSuccess(user) {
+    try {
+        console.log('[' + new Date().toLocaleTimeString() + '] Processing successful authentication for:', user.email);
+        
+        // Get fresh token
+        const token = await user.getIdToken(true);
+        
+        // Verify with server
+        console.log('[' + new Date().toLocaleTimeString() + '] Verifying with server...');
+        const response = await fetch('/auth/google-signin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                token,
+                userData: {
+                    uid: user.uid,
+                    name: user.displayName,
+                    email: user.email,
+                    photo: user.photoURL
+                }
+            }),
+            credentials: 'include'
+        });
+
+        const data = await response.json();
+        console.log('[' + new Date().toLocaleTimeString() + '] Server response:', JSON.stringify(data));
+        
+        if (data.success) {
+            console.log('[' + new Date().toLocaleTimeString() + '] Redirecting to ' + data.redirect + '...');
+            window.location.href = data.redirect;
+        } else {
+            throw new Error(data.error || 'Server authentication failed');
+        }
+    } catch (error) {
+        console.error('[' + new Date().toLocaleTimeString() + '] Auth success handling failed:', error);
+        throw error;
     }
 }
 
