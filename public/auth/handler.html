@@ -258,6 +258,18 @@
                 if (authType === 'signInViaRedirect') {
                     log('Handling redirect sign-in');
                     
+                    // Check if we're on the correct domain
+                    const currentDomain = window.location.hostname;
+                    log('Current domain', currentDomain);
+                    
+                    if (currentDomain !== config.authDomain) {
+                        log('Domain mismatch', { 
+                            current: currentDomain, 
+                            expected: config.authDomain 
+                        });
+                        updateStatus('Domain configuration issue detected');
+                    }
+                    
                     // Try a simpler approach - just redirect back to login
                     // This avoids the hanging getRedirectResult() call
                     log('Skipping getRedirectResult due to timeout issues');
@@ -286,24 +298,7 @@
                     showButtons();
                 }
                 
-                // REMOVE THIS DUPLICATE CODE BLOCK
-                // try {
-                //     // Try a simpler approach - just redirect back to login
-                //     // This avoids the hanging getRedirectResult() call
-                //     log('Skipping getRedirectResult due to timeout issues');
-                //     updateStatus('Completing authentication...');
-                //     
-                //     // If we have a redirect URL, use it
-                //     if (redirectUrl) {
-                //         redirectTo(redirectUrl);
-                //     } else {
-                //         redirectTo('/auth/login');
-                //     }
-                // } catch (redirectError) {
-                //     log('Redirect error', redirectError);
-                //     updateStatus(`Authentication error: ${redirectError.message}`);
-                //     showButtons();
-                // }
+                // Remove the commented out code block completely
             } catch (error) {
                 log('Handler error', error);
                 updateStatus(`Error: ${error.message}`);
