@@ -124,12 +124,26 @@
             
             <div class="action-buttons">
                 <a href="/" class="btn btn-primary">Go to Tools</a>
-                <a href="/auth/logout" class="btn btn-danger">Logout</a>
+                <button onclick="handleLogout()" class="btn btn-danger">Logout</button>
             </div>
         </div>
     </div>
 
     <script>
+        async function handleLogout() {
+            try {
+                // Sign out from Firebase
+                await firebase.auth().signOut();
+                
+                // Redirect to server logout endpoint
+                window.location.href = '/auth/logout';
+            } catch (error) {
+                console.error('Logout error:', error);
+                // If Firebase logout fails, still try server logout
+                window.location.href = '/auth/logout';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', async function() {
             try {
                 // Initialize Firebase
