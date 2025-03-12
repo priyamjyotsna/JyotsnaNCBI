@@ -69,9 +69,11 @@ async function initializeAuth() {
                         prompt: 'select_account'
                     });
 
-                    // Try popup sign-in
-                    await auth.signInWithPopup(provider);
-                    // handleAuthSuccess will be called by onAuthStateChanged
+                    // Use popup sign-in
+                    const result = await auth.signInWithPopup(provider);
+                    if (result.user) {
+                        await handleAuthSuccess(result.user);
+                    }
                 } catch (error) {
                     let errorMsg = 'Login failed: ';
                     
