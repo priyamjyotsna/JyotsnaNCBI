@@ -19,7 +19,7 @@ async function initializeAuth() {
     }
 
     try {
-        console.log('[' + new Date().toLocaleTimeString() + '] Setting up 15 second timeout');
+        console.log('[' + new Date().toLocaleTimeString() + '] Setting up authentication...');
         
         // Load Firebase config from server
         console.log('[' + new Date().toLocaleTimeString() + '] Fetching Firebase configuration...');
@@ -39,6 +39,15 @@ async function initializeAuth() {
         
         const auth = firebase.auth();
         auth.useDeviceLanguage();
+        
+        // Enable persistence to help with third-party cookie issues
+        try {
+            await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        } catch (persistenceError) {
+            console.warn('Failed to set persistence:', persistenceError);
+            // Continue anyway as this is not critical
+        }
+        
         console.log('[' + new Date().toLocaleTimeString() + '] Firebase initialized');
 
         // Parse URL parameters
@@ -49,6 +58,21 @@ async function initializeAuth() {
             providerId: urlParams.get('providerId')
         };
         console.log('[' + new Date().toLocaleTimeString() + '] URL parameters', JSON.stringify(params));
+
+        // Check if we're handling a redirect result
+        if (document.referrer.includes('accounts.google.com')) {
+            try {
+                const result = await auth.getRedirectResult();
+                if (result.user) {
+                    await handleAuthSuccess(result.user);
+                    return;
+                }
+            } catch (redirectError) {
+                if (redirectError.code !== 'auth/null-result') {
+                    showError('Error completing sign-in redirect. Please try again.', redirectError);
+                }
+            }
+        }
 
         // Set up auth state listener
         auth.onAuthStateChanged(async (user) => {
@@ -75,18 +99,28 @@ async function initializeAuth() {
                     
                     const provider = new firebase.auth.GoogleAuthProvider();
                     provider.setCustomParameters({
-                        prompt: 'select_account'
+                        prompt: 'select_account',
+                        // Add additional OAuth 2.0 scopes if needed
+                        // scope: 'https://www.googleapis.com/auth/userinfo.email'
                     });
 
-                    // Try popup sign-in
+                    // Try popup sign-in with fallback to redirect
                     try {
                         console.log('[' + new Date().toLocaleTimeString() + '] Attempting popup sign-in...');
-                        await auth.signInWithPopup(provider);
-                        // handleAuthSuccess will be called by onAuthStateChanged
+                        const result = await auth.signInWithPopup(provider);
+                        if (result.user) {
+                            await handleAuthSuccess(result.user);
+                        }
                     } catch (popupError) {
-                        if (popupError.code === 'auth/popup-blocked') {
-                            console.log('[' + new Date().toLocaleTimeString() + '] Popup blocked, trying redirect...');
+                        console.warn('Popup error:', popupError);
+                        
+                        if (popupError.code === 'auth/popup-blocked' || 
+                            popupError.code === 'auth/popup-closed-by-user' ||
+                            popupError.code === 'auth/cancelled-popup-request') {
+                            console.log('[' + new Date().toLocaleTimeString() + '] Popup failed, trying redirect...');
+                            // Fall back to redirect method
                             await auth.signInWithRedirect(provider);
+                            // Page will reload and handle redirect result
                         } else {
                             throw popupError;
                         }
@@ -94,7 +128,8 @@ async function initializeAuth() {
                 } catch (error) {
                     let errorMsg = 'Login failed: ';
                     
-                    if (error.code === 'auth/popup-closed-by-user') {
+                    if (error.code === 'auth/popup-closed-by-user' || 
+                        error.code === 'auth/cancelled-popup-request') {
                         errorMsg = 'Sign-in was cancelled. Please try again.';
                     } else if (error.code === 'auth/popup-blocked') {
                         errorMsg = 'Popup was blocked. Please allow popups for this site.';
@@ -102,6 +137,8 @@ async function initializeAuth() {
                         errorMsg = 'Network error. Please check your internet connection.';
                     } else if (error.code === 'auth/unauthorized-domain') {
                         errorMsg = 'This domain is not authorized for Firebase Authentication. Please check your Firebase configuration.';
+                    } else if (error.code === 'auth/web-storage-unsupported') {
+                        errorMsg = 'Please enable third-party cookies or try a different browser.';
                     } else {
                         errorMsg += error.message || 'Unknown error occurred';
                     }
@@ -156,15 +193,24 @@ async function handleAuthSuccess(user) {
             // Check if this is a popup window
             if (window.opener && window.opener !== window) {
                 console.log('[' + new Date().toLocaleTimeString() + '] Closing popup window...');
-                // Signal the main window to redirect
-                window.opener.postMessage({ type: 'AUTH_SUCCESS', redirectUrl: '/auth/welcome' }, '*');
-                // Close the popup
-                window.close();
-                return; // Important: stop here for popup windows
+                try {
+                    // Signal the main window to redirect
+                    window.opener.postMessage({ 
+                        type: 'AUTH_SUCCESS',
+                        redirectUrl: '/auth/welcome',
+                        timestamp: Date.now()
+                    }, window.location.origin);
+                    // Close the popup after a short delay to ensure the message is sent
+                    setTimeout(() => window.close(), 100);
+                } catch (error) {
+                    console.error('Error sending message to opener:', error);
+                    // If messaging fails, just close and let the main window handle it
+                    window.close();
+                }
+                return;
             }
             
-            // For the main window, only redirect if we're not already on the welcome page
-            // and we haven't received a redirect URL from the popup
+            // For the main window, redirect if needed
             if (!window.location.pathname.includes('/auth/welcome')) {
                 console.log('[' + new Date().toLocaleTimeString() + '] Redirecting to welcome page...');
                 window.location.href = '/auth/welcome';
@@ -180,6 +226,12 @@ async function handleAuthSuccess(user) {
 
 // Add message listener to handle redirect in main window
 window.addEventListener('message', (event) => {
+    // Verify the origin of the message
+    if (event.origin !== window.location.origin) {
+        console.warn('Received message from unauthorized origin:', event.origin);
+        return;
+    }
+    
     if (event.data && event.data.type === 'AUTH_SUCCESS') {
         console.log('[' + new Date().toLocaleTimeString() + '] Received auth success message from popup');
         window.location.href = event.data.redirectUrl || '/auth/welcome';
