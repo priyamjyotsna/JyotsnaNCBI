@@ -18,25 +18,59 @@
             <div class="card-body">
                 <form id="download-form">
                     <div class="form-group">
-                        <label for="sequenceIds">Enter Sequence IDs</label>
-                        <textarea 
-                            id="sequenceIds" 
+                        <label for="startId">Start Genbank Accession:</label>
+                        <input type="text" 
+                            id="startId" 
                             class="form-control" 
-                            rows="5" 
-                            placeholder="Enter sequence IDs (one per line or comma-separated)&#10;Example: MN223758, MN223759"
-                            required></textarea>
-                        <small class="form-text text-muted">
-                            Enter multiple sequence IDs separated by commas or newlines.
-                        </small>
+                            value="MN223758" 
+                            placeholder="e.g., MN223758" 
+                            required>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="endId">End Genbank Accession:</label>
+                        <input type="text" 
+                            id="endId" 
+                            class="form-control" 
+                            value="MN223767" 
+                            placeholder="e.g., MN223767" 
+                            required>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label for="previewLength">Preview Length:</label>
+                        <select id="previewLength" class="form-control">
+                            <option value="50">50 bp</option>
+                            <option value="100">100 bp</option>
+                            <option value="200">200 bp</option>
+                            <option value="500">500 bp</option>
+                            <option value="1000">1000 bp</option>
+                        </select>
                     </div>
                     
-                    <button type="submit" id="downloadBtn" class="btn btn-primary">
-                        Download Sequences
+                    <button type="submit" id="downloadBtn" class="btn btn-primary mt-3">
+                        <i class="fas fa-download"></i> Download Sequences
                     </button>
                 </form>
                 
                 <div id="status" class="alert mt-3"></div>
                 <div id="progress" class="progress-bar mt-3"></div>
+
+                <div id="preview" class="mt-4">
+                    <h3>Sequence Preview</h3>
+                    <div class="table-responsive">
+                        <table id="previewTable" class="table">
+                            <thead>
+                                <tr>
+                                    <th>Accession ID</th>
+                                    <th>Sequence (first 50 bp)</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div id="result" class="mt-4"></div>
             </div>
         </div>
@@ -71,8 +105,22 @@
         text-align: center;
         font-size: 12px;
     }
+
+    .table-responsive {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    #previewTable {
+        margin-top: 15px;
+    }
+
+    .error-text {
+        color: #dc3545;
+    }
     </style>
 
+   <script src="/js/nucleotide-download.js"></script>
     <%- include('partials/footer') %>
 </body>
 </html>

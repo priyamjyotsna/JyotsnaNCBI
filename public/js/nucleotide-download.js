@@ -1,27 +1,41 @@
 class NucleotideDownloader {
     constructor() {
-        // Initialize DOM elements
+        this.initializeElements();
+        this.bindEventListeners();
+    }
+
+    initializeElements() {
+        this.startIdInput = document.getElementById('startId');
+        this.endIdInput = document.getElementById('endId');
+        this.previewLength = document.getElementById('previewLength');
         this.downloadBtn = document.getElementById('downloadBtn');
         this.statusDiv = document.getElementById('status');
         this.progressDiv = document.getElementById('progress');
-        this.resultDiv = document.getElementById('result');
-        this.sequenceInput = document.getElementById('sequenceIds');
+        this.previewTable = document.getElementById('previewTable').querySelector('tbody');
+        this.downloadForm = document.getElementById('download-form');
+    }
 
-        // Verify required elements exist
-        if (!this.resultDiv) {
-            console.error('Required element #result not found');
-            return;
-        }
+    bindEventListeners() {
+        this.downloadForm.addEventListener('submit', (e) => this.handleDownload(e));
+        
+        this.previewLength.addEventListener('change', () => {
+            const th = document.querySelector('#previewTable thead th:last-child');
+            if (th) {
+                th.textContent = `Sequence (first ${this.previewLength.value} bp)`;
+            }
+        });
+    }
 
-        if (!this.sequenceInput) {
-            console.error('Required element #sequenceIds not found');
-            return;
+    generateAccessionRange(startId, endId) {
+        const prefix = startId.match(/^[A-Za-z]+/)[0];
+        const startNum = parseInt(startId.match(/\d+/)[0]);
+        const endNum = parseInt(endId.match(/\d+/)[0]);
+        
+        const accessions = [];
+        for (let i = startNum; i <= endNum; i++) {
+            accessions.push(`${prefix}${i}`);
         }
-
-        // Bind events if elements exist
-        if (this.downloadBtn) {
-            this.downloadBtn.addEventListener('click', (e) => this.handleDownload(e));
-        }
+        return accessions;
     }
 
     async fetchSequence(accessionId) {
@@ -48,130 +62,99 @@ class NucleotideDownloader {
     updateStatus(message, type = 'info') {
         if (this.statusDiv) {
             this.statusDiv.innerHTML = message;
-            this.statusDiv.className = `status ${type}`;
+            this.statusDiv.className = `alert alert-${type} mt-3`;
         }
     }
 
     updateProgress(current, total) {
         if (this.progressDiv) {
             const percentage = Math.round((current / total) * 100);
-            this.progressDiv.textContent = `Progress: ${current}/${total} (${percentage}%)`;
             this.progressDiv.style.width = `${percentage}%`;
+            this.progressDiv.textContent = `Progress: ${current}/${total} (${percentage}%)`;
         }
     }
 
     async handleDownload(e) {
         e.preventDefault();
         
-        // Safety check for required elements
-        if (!this.resultDiv || !this.sequenceInput) {
-            this.updateStatus('Error: Required elements not found', 'error');
+        const startId = this.startIdInput.value.trim();
+        const endId = this.endIdInput.value.trim();
+        
+        if (!startId || !endId) {
+            this.updateStatus('Please enter both start and end accession IDs.', 'danger');
             return;
         }
 
-        // Clear previous results
-        this.resultDiv.innerHTML = '';
-        
-        // Get sequence IDs
-        const ids = this.sequenceInput.value
-            .split(/[\s,]+/)
-            .map(id => id.trim())
-            .filter(id => id);
-            
-        if (ids.length === 0) {
-            this.updateStatus('Please enter at least one sequence ID.', 'danger');
-            return;
-        }
-        
-        this.downloadButton.disabled = true;
-        this.updateStatus('Downloading sequences...', 'info');
+        this.downloadBtn.disabled = true;
+        this.previewTable.innerHTML = '';
+        this.updateStatus('Generating accession IDs...', 'info');
         
         try {
-            // Download sequences in parallel with rate limiting
-            const results = await Promise.allSettled(
-                ids.map(id => this.fetchSequence(id))
-            );
-            
-            // Process results
-            let successCount = 0;
+            const accessions = this.generateAccessionRange(startId, endId);
             const sequences = [];
+            let successCount = 0;
             
-            results.forEach((result, index) => {
-                const id = ids[index];
-                if (result.status === 'fulfilled') {
-                    successCount++;
-                    sequences.push(result.value);
-                } else {
-                    console.error(`Error with ${id}:`, result.reason);
-                    this.appendError(id, result.reason.message);
+            this.updateStatus(`Fetching ${accessions.length} sequences...`, 'info');
+            
+            const batchSize = 2;
+            for (let i = 0; i < accessions.length; i += batchSize) {
+                const batch = accessions.slice(i, i + batchSize);
+                
+                const results = await Promise.allSettled(
+                    batch.map(id => this.fetchSequence(id))
+                );
+                
+                results.forEach((result, index) => {
+                    const accessionId = batch[index];
+                    const row = this.previewTable.insertRow();
+                    
+                    if (result.status === 'fulfilled') {
+                        const sequence = result.value;
+                        sequences.push({ accessionId, sequence });
+                        successCount++;
+                        
+                        const previewLen = parseInt(this.previewLength.value);
+                        row.insertCell(0).textContent = accessionId;
+                        row.insertCell(1).textContent = sequence.substring(0, previewLen) + '...';
+                    } else {
+                        row.insertCell(0).textContent = accessionId;
+                        const errorCell = row.insertCell(1);
+                        errorCell.textContent = 'ERROR: ' + result.reason.message;
+                        errorCell.className = 'error-text';
+                    }
+                    
+                    this.updateProgress(i + index + 1, accessions.length);
+                });
+                
+                if (i + batchSize < accessions.length) {
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                 }
-                this.updateProgress(index + 1, ids.length);
-            });
+            }
             
-            // Display final status
             if (successCount > 0) {
-                this.displayResults(sequences);
+                this.downloadFasta(sequences);
                 this.updateStatus(
-                    `Downloaded ${successCount} of ${ids.length} sequences successfully.`,
-                    successCount < ids.length ? 'warning' : 'success'
+                    `Downloaded ${successCount} of ${accessions.length} sequences successfully.`,
+                    successCount < accessions.length ? 'warning' : 'success'
                 );
             } else {
                 this.updateStatus('Failed to download any sequences.', 'danger');
             }
+            
         } catch (error) {
             console.error('Download error:', error);
             this.updateStatus('Error downloading sequences: ' + error.message, 'danger');
         } finally {
-            this.downloadButton.disabled = false;
+            this.downloadBtn.disabled = false;
         }
-    }
-
-    async loadConfig() {
-        try {
-            const response = await fetch('/api/config');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const config = await response.json();
-            this.email = config.email;
-            this.apiKey = config.apiKey;
-        } catch (error) {
-            console.error('Failed to load config:', error);
-            this.updateStatus('Failed to load configuration. Please try again.', 'error');
-        }
-    }
-
-    displayResults(sequences) {
-        // Create a container for the download button
-        const buttonContainer = document.createElement('div');
-        buttonContainer.className = 'mb-3';
-        
-        // Add download button
-        const downloadBtn = document.createElement('button');
-        downloadBtn.textContent = 'Download FASTA';
-        downloadBtn.className = 'btn btn-success';
-        downloadBtn.onclick = () => this.downloadFasta(sequences);
-        buttonContainer.appendChild(downloadBtn);
-        
-        // Create sequence display
-        const pre = document.createElement('pre');
-        pre.className = 'sequence-result';
-        pre.textContent = sequences.join('\n\n');
-        
-        // Add to result div
-        this.resultDiv.appendChild(buttonContainer);
-        this.resultDiv.appendChild(pre);
-    }
-
-    appendError(id, error) {
-        const div = document.createElement('div');
-        div.className = 'alert alert-danger';
-        div.textContent = `Error downloading ${id}: ${error}`;
-        this.resultDiv.appendChild(div);
     }
 
     downloadFasta(sequences) {
-        const blob = new Blob([sequences.join('\n\n')], { type: 'text/plain' });
+        const fastaContent = sequences
+            .map(({accessionId, sequence}) => `>${accessionId}\n${sequence}`)
+            .join('\n\n');
+        
+        const blob = new Blob([fastaContent], { type: 'text/plain' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -183,7 +166,6 @@ class NucleotideDownloader {
     }
 }
 
-// Initialize the downloader when the DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     new NucleotideDownloader();
 });
