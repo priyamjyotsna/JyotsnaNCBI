@@ -60,10 +60,7 @@ router.get('/signup', (req, res) => {
     res.render('auth/signup', { user: req.session.user });
 });
 
-
-
 // Single Google sign-in route
-// Update the Google sign-in route for better performance
 router.post('/google-signin', async (req, res) => {
     try {
         const { token, userData } = req.body;
@@ -92,11 +89,7 @@ router.post('/google-signin', async (req, res) => {
                     email: userData.email,
                     name: userData.name,
                     photo: userData.photo,
-                    lastLogin: admin.firestore.FieldValue.serverTimestamp(),
-                    ncbiCredentials: {
-                        email: process.env.NCBI_EMAIL || '',
-                        apiKey: process.env.NCBI_API_KEY || ''
-                    }
+                    lastLogin: admin.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
             } catch (firestoreError) {
                 console.error('Firestore error:', firestoreError);
@@ -131,80 +124,35 @@ router.post('/google-signin', async (req, res) => {
     }
 });
 
-// Update the welcome route to handle NCBI credentials
+// Welcome route
 router.get('/welcome', async (req, res) => {
-    // Log session data for debugging
-    console.log('Welcome route - Session user:', req.session.user);
-    
     if (!req.session.user) {
         return res.redirect('/auth/login');
     }
     
     try {
-        let ncbiCredentials = { email: '', apiKey: '' };
-        let firestoreEnabled = true;
+        let userData = { ...req.session.user };
         
-        // If user is authenticated, try to fetch their NCBI credentials
-        if (req.session.user && req.session.user.uid) {
+        // If user is authenticated, try to fetch additional data from Firestore
+        if (req.session.user.uid) {
             try {
-                const userId = req.session.user.uid;
-                const docRef = admin.firestore().collection('users').doc(userId);
+                const docRef = admin.firestore().collection('users').doc(req.session.user.uid);
                 const doc = await docRef.get();
                 
-                if (doc.exists && doc.data().ncbiCredentials) {
-                    ncbiCredentials = {
-                        email: doc.data().ncbiCredentials.email || '',
-                        apiKey: doc.data().ncbiCredentials.apiKey || ''
-                    };
-                } else {
-                    // Document doesn't exist yet, create it with default values
-                    console.log(`Creating new user document for ${userId}`);
-                    await docRef.set({
-                        email: req.session.user.email,
-                        name: req.session.user.name,
-                        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                        ncbiCredentials: {
-                            email: process.env.NCBI_EMAIL || '',
-                            apiKey: process.env.NCBI_API_KEY || ''
-                        }
-                    });
-                    
-                    // Use default credentials
-                    ncbiCredentials = {
-                        email: process.env.NCBI_EMAIL || '',
-                        apiKey: process.env.NCBI_API_KEY || ''
-                    };
+                if (doc.exists) {
+                    userData = { ...userData, ...doc.data() };
                 }
             } catch (firestoreError) {
                 console.error('Firestore error:', firestoreError);
-                // Use default NCBI credentials from environment variables if Firestore fails
-                ncbiCredentials = {
-                    email: process.env.NCBI_EMAIL || '',
-                    apiKey: process.env.NCBI_API_KEY || ''
-                };
-                firestoreEnabled = false;
             }
         }
         
-        res.render('auth/welcome', { 
-            user: req.session.user,
-            ncbiCredentials,
-            firestoreEnabled,
-            message: firestoreEnabled ? '' : 'Using default NCBI credentials (Firestore unavailable)'
-        });
+        res.render('auth/welcome', { user: userData });
     } catch (error) {
         console.error('Error rendering welcome page:', error);
-        // Use default NCBI credentials from environment variables
-        const defaultCredentials = {
-            email: process.env.NCBI_EMAIL || '',
-            apiKey: process.env.NCBI_API_KEY || ''
-        };
-        
         res.render('auth/welcome', { 
             user: req.session.user,
-            ncbiCredentials: defaultCredentials,
-            error: 'Failed to load NCBI credentials from database. Using default credentials.',
-            firestoreEnabled: false
+            error: 'Failed to load user data'
         });
     }
 });

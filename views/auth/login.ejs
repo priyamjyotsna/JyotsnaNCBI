@@ -13,7 +13,8 @@
 <body>
     <div class="container">
         <div class="auth-container">
-            <h1>Login</h1>
+            <h2>Login to NCBI Tools</h2>
+            <h3>You need to login before accessing NCBI tools</h3>
             <div id="loginStatus"></div>
             <button id="googleSignIn" class="google-btn">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
@@ -27,141 +28,6 @@
         </div>
     </div>
 
-    <script>
-        const statusDiv = document.getElementById('loginStatus');
-        const loadingIndicator = document.getElementById('loadingIndicator');
-        const errorMessage = document.getElementById('errorMessage');
-        const signInButton = document.getElementById('googleSignIn');
-        
-        // Function to show error with console logging for debugging
-        function showError(message, detailedError = null) {
-            console.error("Auth Error:", message, detailedError);
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-            loadingIndicator.style.display = 'none';
-            signInButton.disabled = false;
-        }
-
-        // Function to handle server authentication
-        async function authenticateWithServer(user) {
-            try {
-                loadingIndicator.style.display = 'block';
-                signInButton.disabled = true;
-                
-                const token = await user.getIdToken();
-                
-                const response = await fetch('/auth/google-signin', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        token: token,
-                        userData: {
-                            name: user.displayName,
-                            email: user.email,
-                            photo: user.photoURL
-                        }
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    window.location.href = '/auth/welcome';
-                } else {
-                    throw new Error(data.message || 'Server authentication failed');
-                }
-            } catch (error) {
-                showError(`Server authentication failed: ${error.message}`, error);
-            }
-        }
-        
-        // Initialize Firebase directly with config (alternative approach)
-        // You can replace this with your Firebase config or keep using the fetch approach
-        const firebaseConfig = {
-            // Your firebase config goes here
-            // apiKey: "AIzaSyDtVu6eDSpPzCM9OvmsnHk9Gf1yPBA3TIw",
-            // authDomain: "your-domain.firebaseapp.com",
-            // projectId: "your-project-id",
-            // etc.
-        };
-
-        // Main initialization function
-        async function initializeAuth() {
-            try {
-                // Get Firebase config - either use the above direct config or fetch from server
-                let config;
-                
-                try {
-                    const response = await fetch('/api/firebase-config');
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch config: ${response.status}`);
-                    }
-                    config = await response.json();
-                } catch (configError) {
-                    // If fetch fails and we have a direct config, use that instead
-                    if (Object.keys(firebaseConfig).length > 0) {
-                        console.log("Using direct Firebase config");
-                        config = firebaseConfig;
-                    } else {
-                        throw configError; // Re-throw if we don't have a fallback
-                    }
-                }
-                
-                // Initialize Firebase
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(config);
-                }
-                
-                // First check if we're returning from a redirect
-                try {
-                    const result = await firebase.auth().getRedirectResult();
-                    if (result.user) {
-                        console.log("User authenticated via redirect");
-                        await authenticateWithServer(result.user);
-                        return; // Exit early if redirect authentication succeeded
-                    }
-                } catch (redirectError) {
-                    // Only show error if it's not the "no redirect result" case
-                    if (redirectError.code && redirectError.code !== 'auth/credential-already-in-use') {
-                        showError(`Redirect authentication error: ${redirectError.message}`, redirectError);
-                    }
-                }
-                
-                // Then check if user is already signed in
-                firebase.auth().onAuthStateChanged(user => {
-                    if (user) {
-                        console.log("User already signed in:", user.email);
-                        authenticateWithServer(user);
-                    } else {
-                        // User is not signed in, enable the sign-in button
-                        signInButton.disabled = false;
-                    }
-                });
-                
-                // Set up Google sign-in with redirect
-                signInButton.addEventListener('click', () => {
-                    loadingIndicator.style.display = 'block';
-                    signInButton.disabled = true;
-                    errorMessage.style.display = 'none';
-                    
-                    const provider = new firebase.auth.GoogleAuthProvider();
-                    provider.setCustomParameters({ prompt: 'select_account' });
-                    
-                    // Use redirect method
-                    firebase.auth().signInWithRedirect(provider)
-                        .catch(error => {
-                            showError(`Sign-in redirect error: ${error.message}`, error);
-                        });
-                });
-            } catch (error) {
-                showError(`Authentication initialization error: ${error.message}`, error);
-            }
-        }
-        
-        // Start the authentication process
-        initializeAuth();
-    </script>
+    <script src="/js/auth.js"></script>
 </body>
 </html>

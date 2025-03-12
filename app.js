@@ -11,21 +11,29 @@ try {
     console.log('Starting Firebase initialization...');
     
     if (!admin.apps.length) {
-        const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
-        
-        admin.initializeApp({
+        const privateKey = process.env.FIREBASE_PRIVATE_KEY
+            ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+            : undefined;
+            
+        const firebaseConfig = {
             credential: admin.credential.cert({
                 projectId: process.env.FIREBASE_PROJECT_ID,
                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
                 privateKey: privateKey
             })
-        });
+        };
+        
+        admin.initializeApp(firebaseConfig);
         console.log('Firebase initialized successfully');
     }
 } catch (error) {
     console.error('Firebase initialization error:', error);
 }
 
+// Make Firestore available to your routes
+const db = admin.firestore();
+
+const authRoutes = require('./routes/auth');
 const app = express();
 
 // View engine setup
@@ -38,11 +46,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // Session middleware
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    secret: process.env.SESSION_SECRET || 'jyotsna-ncbi-secret-key',
     resave: false,
     saveUninitialized: false,
-    cookie: { 
+    cookie: {
         secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
@@ -53,8 +62,27 @@ app.use((req, res, next) => {
     next();
 });
 
-// Serve static files
+// Authentication middleware
+const requireAuth = (req, res, next) => {
+    if (!req.session.user) {
+        return res.redirect('/auth/login');
+    }
+    next();
+};
+
+// Security headers
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+});
+
+// Static files
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Routes
+app.use('/auth', authRoutes);
 
 // Add Firebase auth routes
 app.use('/__/auth', express.static(path.join(__dirname, 'public/auth')));
