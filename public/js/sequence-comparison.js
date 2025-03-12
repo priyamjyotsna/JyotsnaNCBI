@@ -708,48 +708,56 @@ function processSequenceData(data, type) {
         let labels = [];
         let data = [];
         
-        if (comparisonResults.distributionStats) {
-            // Use the pre-calculated distribution from the API
-            const stats = comparisonResults.distributionStats;
-            const binSize = stats.binSize;
-            
-            for (let i = 0; i < stats.distribution.length; i++) {
-                const start = i * binSize + 1;
-                const end = Math.min((i + 1) * binSize, comparisonResults.metadata.referenceLength);
-                labels.push(`${start}-${end}`);
-                data.push(stats.distribution[i]);
-            }
-        } else {
-            // Fall back to client-side calculation if API doesn't provide distribution
-            const binSize = Math.max(1, Math.floor(comparisonResults.metadata.referenceLength / 20));
-            const bins = {};
-            
-            comparisonResults.mutations.forEach(mutation => {
-                const binIndex = Math.floor((mutation.position - 1) / binSize);
-                bins[binIndex] = (bins[binIndex] || 0) + 1;
-            });
-            
-            for (let i = 0; i < Math.ceil(comparisonResults.metadata.referenceLength / binSize); i++) {
-                const start = i * binSize + 1;
-                const end = Math.min((i + 1) * binSize, comparisonResults.metadata.referenceLength);
-                labels.push(`${start}-${end}`);
-                data.push(bins[i] || 0);
-            }
-        }
-        
-        // Check if Chart.js is available
-        if (typeof Chart === 'undefined') {
-            console.warn('Chart.js not found, falling back to simple chart');
-            createSimpleMutationChart(labels, data);
-            return;
-        }
-        
-        // Destroy previous chart if it exists
-        if (window.mutationChart && typeof window.mutationChart.destroy === 'function') {
-            window.mutationChart.destroy();
-        }
-        
         try {
+            if (comparisonResults.distributionStats && 
+                comparisonResults.distributionStats.distribution && 
+                Array.isArray(comparisonResults.distributionStats.distribution) &&
+                comparisonResults.distributionStats.binSize) {
+                // Use the pre-calculated distribution from the API
+                const stats = comparisonResults.distributionStats;
+                const binSize = stats.binSize;
+                
+                stats.distribution.forEach((value, i) => {
+                    const start = i * binSize + 1;
+                    const end = Math.min((i + 1) * binSize, comparisonResults.metadata.referenceLength);
+                    labels.push(`${start}-${end}`);
+                    data.push(value);
+                });
+            } else {
+                // Fall back to client-side calculation
+                const binSize = Math.max(1, Math.floor(comparisonResults.metadata.referenceLength / 20));
+                const bins = {};
+                
+                if (comparisonResults.mutations && Array.isArray(comparisonResults.mutations)) {
+                    comparisonResults.mutations.forEach(mutation => {
+                        if (mutation && typeof mutation.position === 'number') {
+                            const binIndex = Math.floor((mutation.position - 1) / binSize);
+                            bins[binIndex] = (bins[binIndex] || 0) + 1;
+                        }
+                    });
+                }
+                
+                const numBins = Math.ceil(comparisonResults.metadata.referenceLength / binSize);
+                for (let i = 0; i < numBins; i++) {
+                    const start = i * binSize + 1;
+                    const end = Math.min((i + 1) * binSize, comparisonResults.metadata.referenceLength);
+                    labels.push(`${start}-${end}`);
+                    data.push(bins[i] || 0);
+                }
+            }
+            
+            // Check if Chart.js is available
+            if (typeof Chart === 'undefined') {
+                console.warn('Chart.js not found, falling back to simple chart');
+                createSimpleMutationChart(labels, data);
+                return;
+            }
+            
+            // Destroy previous chart if it exists
+            if (window.mutationChart && typeof window.mutationChart.destroy === 'function') {
+                window.mutationChart.destroy();
+            }
+            
             window.mutationChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -784,7 +792,7 @@ function processSequenceData(data, type) {
             });
         } catch (error) {
             console.error('Error creating chart:', error);
-            // Fallback to simple chart if Chart.js fails
+            // Fallback to simple chart if anything fails
             createSimpleMutationChart(labels, data);
         }
     }
