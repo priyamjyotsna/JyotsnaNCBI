@@ -470,3 +470,45 @@ app.get('/api/fetch-sequence', requireAuth, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch sequence' });
     }
 });
+// Design Primers routes
+app.get('/design-primers', requireAuth, (req, res) => {
+    try {
+        res.render('design-primers', { user: req.session.user });
+    } catch (error) {
+        console.error('Error rendering design-primers:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+app.post('/api/design-primers', requireAuth, async (req, res) => {
+    try {
+        const { sequence, params } = req.body;
+        if (!sequence) {
+            return res.status(400).json({ error: 'No sequence provided' });
+        }
+
+        const userEmail = req.session?.user?.email;
+        const baseUrl = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
+        const tool = 'primer-design';
+        const ncbiApiKey = process.env.NCBI_API_KEY;
+
+        // Add primer design logic here
+        // This will integrate with NCBI's Primer-BLAST or similar service
+
+        res.json({
+            success: true,
+            data: {
+                primers: [], // Array of designed primers
+                parameters: params,
+                timestamp: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('Error designing primers:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to design primers'
+        });
+    }
+});
