@@ -112,4 +112,28 @@ router.get('/pubmed/summary', async (req, res) => {
     }
 });
 
+router.get('/nucleotide/sequence', async (req, res) => {
+    try {
+        const { id } = req.query;
+        if (!id) {
+            return res.status(400).json({ error: 'Accession ID is required' });
+        }
+
+        // Use NCBI E-utilities to fetch the sequence
+        const response = await axios.get(
+            `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=${id}&rettype=fasta&retmode=text`
+        );
+
+        res.json({ 
+            success: true, 
+            sequence: response.data 
+        });
+    } catch (error) {
+        console.error('Error fetching sequence:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch sequence',
+            details: error.message 
+        });
+    }
+});
 module.exports = router;

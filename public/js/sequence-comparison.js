@@ -305,88 +305,43 @@ function showLargeSequenceModal(sequenceLength) {
     });
 }
 
-function fetchSequenceFromNCBI(accessionId, type) {
+async function fetchSequenceFromNCBI(accessionId, type) {
     const statusElement = type === 'reference' ? referenceStatus : queryStatus;
-    statusElement.innerHTML = '<span class="status-loading">⟳</span> Fetching from NCBI...';
+    statusElement.innerHTML = '<span class="status-loading">⌛</span> Fetching sequence...';
     
-    // Add a timeout indicator
-    const timeoutDiv = document.createElement('div');
-    timeoutDiv.className = 'timeout-message';
-    timeoutDiv.innerHTML = 'Fetching sequence data...';
-    statusElement.appendChild(timeoutDiv);
-    
-    // Add a progress indicator that updates every second
-    let seconds = 0;
-    const progressInterval = setInterval(() => {
-        seconds++;
-        timeoutDiv.innerHTML = `Fetching sequence data... (${seconds}s)`;
-        if (seconds >= 30) {
-            timeoutDiv.innerHTML = `Still working... NCBI API might be slow today`;
-        }
-    }, 1000);
-    
-    // First try the working endpoint directly
-    fetch(`/api/nucleotide/sequence?id=${encodeURIComponent(accessionId)}`, {
-        method: 'GET',
-        headers: {
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return response.json();
-    })
-    .then(data => {
-        clearInterval(progressInterval);
-        if (!data || !data.success || !data.data || !data.data.sequence) {
-            throw new Error('Invalid response format');
-        }
-        
-        // Transform the data to match expected format
-        const sequenceData = {
-            header: data.data.id || accessionId,
-            sequence: data.data.sequence
-        };
-        
-        processSequenceData(sequenceData, type);
-    })
-    .catch(error => {
-        console.error('Fetch error from direct endpoint:', error);
-        
-        // Fall back to the comparison endpoint if direct fails
-        timeoutDiv.innerHTML = 'Primary fetch failed, trying alternative method...';
-        
-        fetch(`/sequence-comparison/api/fetch-sequence?id=${encodeURIComponent(accessionId)}`, {
+    try {
+        const response = await fetch(`/sequence-comparison/api/fetch-sequence?id=${encodeURIComponent(accessionId)}`, {
             method: 'GET',
             headers: {
-                'Accept': 'application/json'
-            }
-        })
-        .then(response => {
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            return response.json();
-        })
-        .then(data => {
-            clearInterval(progressInterval);
-            if (!data || !data.sequence) {
-                throw new Error('Invalid response format');
-            }
-            processSequenceData(data, type);
-        })
-        .catch(secondError => {
-            clearInterval(progressInterval);
-            console.error('All fetch methods failed:', secondError);
-            statusElement.innerHTML = `
-                <span class="status-error">✗</span> Error: Unable to fetch sequence
-                <button class="retry-button" onclick="fetchSequenceFromNCBI('${accessionId.replace(/'/g, "\\'")}', '${type}')">
-                    Retry
-                </button>
-            `;
-            if (type === 'reference') referenceSequence = null;
-            else querySequence = null;
-            updateCompareButtonState();
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
         });
-    });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to fetch sequence');
+        }
+
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to fetch sequence');
+        }
+
+        const sequence = {
+            header: data.header,
+            sequence: data.sequence
+        };
+
+        handleLargeSequence(sequence, type, accessionId);
+
+    } catch (error) {
+        console.error('Error fetching sequence:', error);
+        statusElement.innerHTML = `<span class="status-error">✗</span> Error: ${error.message}`;
+        if (type === 'reference') referenceSequence = null;
+        else querySequence = null;
+        updateCompareButtonState();
+    }
 }
 
 
@@ -465,106 +420,58 @@ function processSequenceData(data, type) {
         }
     }
     
-    function compareSequences() {
+    async function compareSequences() {
         if (!referenceSequence || !querySequence) {
-            alert('Please load both reference and query sequences');
+            alert('Please provide both reference and query sequences');
             return;
         }
-        
-        // Show loading state
-        const loadingIndicator = document.createElement('div');
-        loadingIndicator.className = 'loading-indicator';
-        loadingIndicator.innerHTML = '<span class="spinner"></span> Analyzing sequences...';
-        document.querySelector('.tool-container').appendChild(loadingIndicator);
-        
-        // Calculate total payload size
-        const payloadSize = referenceSequence.sequence.length + querySequence.sequence.length;
-        
-        // If payload is large, use chunked processing
-        if (payloadSize > 1000000) { // 1MB threshold
-            processLargeSequences();
-        } else {
-            fetch('/sequence-comparison/api/compare-sequences', {
+
+        compareBtn.disabled = true;
+        resultsSection.innerHTML = '<div class="loading">Comparing sequences... <div class="spinner"></div></div>';
+
+        try {
+            const response = await fetch('/sequence-comparison/api/compare-sequences', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({
                     referenceSequence: referenceSequence.sequence,
                     querySequence: querySequence.sequence
                 })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => {
-                        throw new Error(err.error || 'Failed to compare sequences');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Set all required properties for the comparison results
-                comparisonResults = {
-                    ...data,
-                    referenceHeader: referenceSequence.header,
-                    queryHeader: querySequence.header,
-                    referenceLength: referenceSequence.sequence.length,
-                    queryLength: querySequence.sequence.length
-                };
-                document.querySelector('.loading-indicator')?.remove();
-                displayResults();
-            })
-            .catch(error => {
-                console.error('Comparison error:', error);
-                document.querySelector('.loading-indicator')?.remove();
-                alert(`Error: ${error.message}`);
             });
-        }
-    }
 
-    async function processLargeSequences() {
-        try {
-            // First, get a session ID for this comparison
-            const sessionResponse = await fetch('/sequence-comparison/api/create-session', {
-                method: 'POST'
-            });
-            const { sessionId } = await sessionResponse.json();
-    
-            // Upload reference sequence in chunks
-            await uploadSequenceInChunks(referenceSequence.sequence, sessionId, 'reference');
-            
-            // Upload query sequence in chunks
-            await uploadSequenceInChunks(querySequence.sequence, sessionId, 'query');
-            
-            // Start the comparison
-            const comparisonResponse = await fetch(`/sequence-comparison/api/compare-session/${sessionId}`, {
-                method: 'POST'
-            });
-            
-            const data = await comparisonResponse.json();
-            
-            // Process results as before
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to compare sequences');
+            }
+
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to compare sequences');
+            }
+
             comparisonResults = {
-                referenceHeader: referenceSequence.header,
-                queryHeader: querySequence.header,
-                referenceLength: referenceSequence.sequence.length,
-                queryLength: querySequence.sequence.length,
                 mutations: data.mutations,
                 alignment: data.alignment,
-                distributionStats: data.distributionStats
+                distributionStats: data.distributionStats,
+                metadata: data.metadata
             };
-            
-            // Remove loading indicator and display results
-            document.querySelector('.loading-indicator')?.remove();
+
             displayResults();
-            
+            createMutationChart();
+            displaySequenceAlignment();
+            populateMutationTable();
+            resultsSection.style.display = 'block';
+
         } catch (error) {
-            console.error('Large sequence processing error:', error);
-            alert(`Error: ${error.message}`);
-            document.querySelector('.loading-indicator')?.remove();
+            console.error('Error comparing sequences:', error);
+            resultsSection.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+        } finally {
+            compareBtn.disabled = false;
         }
     }
-    
 
     function displayResults() {
         if (!comparisonResults) return;

@@ -583,8 +583,16 @@ app.get('/sequence-comparison', requireAuth, (req, res) => {
     }
 });
 
-app.post('/api/compare-sequences', requireAuth, async (req, res) => {
+app.post('/sequence-comparison/api/compare-sequences', requireAuth, async (req, res) => {
     try {
+        // Check if user is authenticated
+        if (!req.session.user) {
+            return res.status(401).json({
+                success: false,
+                error: 'Authentication required'
+            });
+        }
+
         // Check if request body is properly formatted
         if (!req.body || typeof req.body !== 'object') {
             return res.status(400).json({
@@ -593,10 +601,12 @@ app.post('/api/compare-sequences', requireAuth, async (req, res) => {
             });
         }
 
-        const { reference, query } = req.body;
+        const { referenceSequence, querySequence } = req.body;
         
         // Validate input sequences
-        if (!reference || !query || typeof reference !== 'string' || typeof query !== 'string') {
+        if (!referenceSequence || !querySequence || 
+            typeof referenceSequence !== 'string' || 
+            typeof querySequence !== 'string') {
             return res.status(400).json({
                 success: false,
                 error: 'Both reference and query sequences are required and must be strings'
@@ -604,15 +614,18 @@ app.post('/api/compare-sequences', requireAuth, async (req, res) => {
         }
 
         // Clean sequences (remove whitespace and normalize)
-        const cleanReference = reference.trim().toUpperCase();
-        const cleanQuery = query.trim().toUpperCase();
+        const cleanReference = referenceSequence.trim().toUpperCase();
+        const cleanQuery = querySequence.trim().toUpperCase();
 
         // Perform sequence comparison
         const results = await compareSequences(cleanReference, cleanQuery);
         
         return res.json({
             success: true,
-            data: results
+            mutations: results.mutations,
+            alignment: results.alignment,
+            distributionStats: results.mutationTypes,
+            metadata: results.metadata
         });
 
     } catch (error) {
@@ -624,6 +637,104 @@ app.post('/api/compare-sequences', requireAuth, async (req, res) => {
         });
     }
 });
+
+// Update the sequence fetch endpoint
+app.get('/sequence-comparison/api/fetch-sequence', requireAuth, async (req, res) => {
+    try {
+        const { id } = req.query;
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                error: 'No sequence ID provided'
+            });
+        }
+
+        const userEmail = req.session?.user?.email;
+        if (!userEmail) {
+            return res.status(401).json({
+                success: false,
+                error: 'User not authenticated'
+            });
+        }
+
+        const baseUrl = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
+        const tool = 'sequence-comparison';
+        const ncbiApiKey = process.env.NCBI_API_KEY;
+
+        // Add delay between requests
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+        await delay(500); // 500ms delay to respect NCBI rate limits
+
+        // First fetch sequence ID
+        const searchUrl = `${baseUrl}/esearch.fcgi`;
+        const searchParams = {
+            db: 'nucleotide',
+            term: `${id}[accn]`,
+            retmode: 'json',
+            tool: tool,
+            email: userEmail,
+            api_key: ncbiApiKey
+        };
+
+        const searchResponse = await axios.get(searchUrl, { params: searchParams });
+        
+        if (!searchResponse.data?.esearchresult?.idlist?.[0]) {
+            return res.status(404).json({
+                success: false,
+                error: `Sequence ${id} not found`
+            });
+        }
+
+        // Then fetch the actual sequence
+        const fetchUrl = `${baseUrl}/efetch.fcgi`;
+        const fetchParams = {
+            db: 'nucleotide',
+            id: searchResponse.data.esearchresult.idlist[0],
+            rettype: 'fasta',
+            retmode: 'text',
+            tool: tool,
+            email: userEmail,
+            api_key: ncbiApiKey
+        };
+
+        const fetchResponse = await axios.get(fetchUrl, { params: fetchParams });
+        const sequence = parseFasta(fetchResponse.data);
+
+        return res.json({
+            success: true,
+            header: sequence.header,
+            sequence: sequence.sequence
+        });
+
+    } catch (error) {
+        console.error('NCBI API Error:', error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            error: 'Failed to fetch sequence',
+            details: error.response?.data || error.message
+        });
+    }
+});
+
+// Helper function to parse FASTA format
+function parseFasta(text) {
+    const lines = text.split('\n');
+    let header = '';
+    let sequence = '';
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.length === 0) continue;
+        
+        if (line[0] === '>') {
+            header = line.substring(1);
+        } else {
+            sequence += line;
+        }
+    }
+    
+    return { header, sequence };
+}
 
 async function compareSequences(reference, query) {
     // Implement sequence comparison logic
