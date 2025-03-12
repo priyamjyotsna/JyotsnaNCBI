@@ -1,11 +1,24 @@
 class NucleotideDownloader {
     constructor() {
+        // Initialize DOM elements
         this.downloadBtn = document.getElementById('downloadBtn');
         this.statusDiv = document.getElementById('status');
         this.progressDiv = document.getElementById('progress');
         this.resultDiv = document.getElementById('result');
         this.sequenceInput = document.getElementById('sequenceIds');
-        
+
+        // Verify required elements exist
+        if (!this.resultDiv) {
+            console.error('Required element #result not found');
+            return;
+        }
+
+        if (!this.sequenceInput) {
+            console.error('Required element #sequenceIds not found');
+            return;
+        }
+
+        // Bind events if elements exist
         if (this.downloadBtn) {
             this.downloadBtn.addEventListener('click', (e) => this.handleDownload(e));
         }
@@ -50,6 +63,12 @@ class NucleotideDownloader {
     async handleDownload(e) {
         e.preventDefault();
         
+        // Safety check for required elements
+        if (!this.resultDiv || !this.sequenceInput) {
+            this.updateStatus('Error: Required elements not found', 'error');
+            return;
+        }
+
         // Clear previous results
         this.resultDiv.innerHTML = '';
         
