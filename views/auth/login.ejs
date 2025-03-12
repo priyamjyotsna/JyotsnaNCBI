@@ -39,40 +39,52 @@
                         console.log('Google sign-in button clicked');
 
                         const provider = new firebase.auth.GoogleAuthProvider();
-                        const result = await auth.signInWithPopup(provider);
-                        const user = result.user;
-                        const token = await user.getIdToken();
+                        // Change from popup to redirect for better cross-origin handling
+                        await auth.signInWithRedirect(provider);
                         
-                        console.log('Google sign-in successful, sending to server...');
-
-                        const response = await fetch('/auth/google-signin', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                token,
-                                userData: {
-                                    name: user.displayName,
-                                    email: user.email,
-                                    photo: user.photoURL
-                                }
-                            }),
-                            credentials: 'include'
-                        });
-
-                        const data = await response.json();
-                        if (data.success) {
-                            window.location.href = data.redirect || '/auth/welcome';
-                        } else {
-                            throw new Error(data.error || 'Authentication failed');
-                        }
                     } catch (error) {
                         console.error('Login error:', error);
                         alert('Login failed: ' + error.message);
-                    } finally {
                         signInBtn.disabled = false;
                         loading.classList.remove('active');
+                    }
+                });
+
+                // Add auth state listener to handle redirect result
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        try {
+                            const token = await user.getIdToken();
+                            console.log('User authenticated, sending to server...');
+
+                            const response = await fetch('/auth/google-signin', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    token,
+                                    userData: {
+                                        name: user.displayName,
+                                        email: user.email,
+                                        photo: user.photoURL
+                                    }
+                                }),
+                                credentials: 'include'
+                            });
+
+                            const data = await response.json();
+                            if (data.success) {
+                                window.location.href = data.redirect || '/auth/welcome';
+                            } else {
+                                throw new Error(data.error || 'Authentication failed');
+                            }
+                        } catch (error) {
+                            console.error('Server verification error:', error);
+                            alert('Login verification failed: ' + error.message);
+                            signInBtn.disabled = false;
+                            loading.classList.remove('active');
+                        }
                     }
                 });
             })
