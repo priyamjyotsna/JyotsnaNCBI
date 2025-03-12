@@ -512,3 +512,59 @@ app.post('/api/design-primers', requireAuth, async (req, res) => {
         });
     }
 });
+
+// Variant Analysis routes
+app.get('/variant-analysis', requireAuth, (req, res) => {
+    try {
+        res.render('variant-analysis', { user: req.session.user });
+    } catch (error) {
+        console.error('Error rendering variant-analysis:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+app.post('/api/analyze-variants', requireAuth, async (req, res) => {
+    try {
+        if (!req.files || !req.files.variantFile) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'No variant file uploaded' 
+            });
+        }
+
+        const file = req.files.variantFile;
+        const batchSize = parseInt(req.body.batchSize) || 50;
+        const options = JSON.parse(req.body.options || '[]');
+        
+        // Process the TSV file and analyze variants
+        const variants = await analyzeVariants(file, batchSize, options);
+        
+        res.json({
+            success: true,
+            data: variants
+        });
+
+    } catch (error) {
+        console.error('Error analyzing variants:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to analyze variants'
+        });
+    }
+});
+
+async function analyzeVariants(file, batchSize, options) {
+    // Read and parse TSV file
+    const content = file.data.toString();
+    const lines = content.split('\n').filter(line => line.trim());
+    const variants = [];
+
+    // Process in batches
+    for (let i = 0; i < lines.length; i += batchSize) {
+        const batch = lines.slice(i, i + batchSize);
+        // Process each variant in the batch
+        // Add Ensembl API integration here
+    }
+
+    return variants;
+}
