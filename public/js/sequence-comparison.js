@@ -451,21 +451,17 @@ function processSequenceData(data, type) {
         resultsSection.innerHTML = '<div class="loading">Comparing sequences... <div class="spinner"></div></div>';
 
         try {
-            // Ensure we're sending the correct sequence data
+            // Ensure we're sending just the sequence strings as expected by the server
             const payload = {
-                referenceSequence: {
-                    header: referenceSequence.header || '',
-                    sequence: referenceSequence.sequence.trim()
-                },
-                querySequence: {
-                    header: querySequence.header || '',
-                    sequence: querySequence.sequence.trim()
-                }
+                referenceSequence: referenceSequence.sequence.toString().trim(),
+                querySequence: querySequence.sequence.toString().trim()
             };
 
             console.log('Sending comparison request with payload:', {
-                refLength: payload.referenceSequence.sequence.length,
-                queryLength: payload.querySequence.sequence.length
+                refLength: payload.referenceSequence.length,
+                queryLength: payload.querySequence.length,
+                refType: typeof payload.referenceSequence,
+                queryType: typeof payload.querySequence
             });
 
             const response = await fetch('/sequence-comparison/api/compare-sequences', {
@@ -498,6 +494,7 @@ function processSequenceData(data, type) {
                 throw new Error(data.error || 'Failed to compare sequences');
             }
 
+            // Store the results with metadata
             comparisonResults = {
                 mutations: data.mutations || [],
                 alignment: data.alignment || null,
@@ -505,8 +502,8 @@ function processSequenceData(data, type) {
                 metadata: {
                     referenceLength: referenceSequence.sequence.length,
                     queryLength: querySequence.sequence.length,
-                    referenceHeader: referenceSequence.header,
-                    queryHeader: querySequence.header,
+                    referenceHeader: referenceSequence.header || '',
+                    queryHeader: querySequence.header || '',
                     ...data.metadata
                 }
             };
