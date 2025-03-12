@@ -809,169 +809,203 @@ function processSequenceData(data, type) {
     
     function displaySequenceAlignment() {
         const sequenceViewer = document.getElementById('sequenceViewer');
-        
-        // Check if we have alignment data from the API
-        if (comparisonResults.alignment) {
-            const alignment = comparisonResults.alignment;
-            const refSeq = alignment.alignedReference;
-            const querySeq = alignment.alignedQuery;
-            
-            // Generate HTML for sequence display with line numbers and highlighting
-            let html = '';
-            const charsPerLine = 60;
-            const lines = Math.ceil(refSeq.length / charsPerLine);
-            
-            for (let i = 0; i < lines; i++) {
-                const start = i * charsPerLine;
-                const end = Math.min(start + charsPerLine, refSeq.length);
-                const lineNumber = start + 1;
-                
-                // Reference sequence line
-                html += `<div class="sequence-line">`;
-                html += `<span class="line-number">${lineNumber}</span>`;
-                html += `<span class="sequence-label">Ref</span>`;
-                html += `<span class="sequence-text">`;
-                
-                for (let j = start; j < end; j++) {
-                    const refChar = refSeq[j];
-                    const queryChar = querySeq[j];
-                    const isMatch = refChar === queryChar && refChar !== '-';
-                    const isDeletion = refChar === '-';
-                    
-                    if (!isMatch) {
-                        html += `<span class="mutation ref-base">${refChar}</span>`;
-                    } else {
-                        html += refChar;
-                    }
-                }
-                
-                html += `</span></div>`;
-                
-                // Mutation markers line
-                html += `<div class="sequence-line">`;
-                html += `<span class="line-number"></span>`;
-                html += `<span class="sequence-label"></span>`;
-                html += `<span class="sequence-text">`;
-                
-                for (let j = start; j < end; j++) {
-                    const refChar = refSeq[j];
-                    const queryChar = querySeq[j];
-                    const isMatch = refChar === queryChar && refChar !== '-';
-                    
-                    html += isMatch ? ' ' : '|';
-                }
-                
-                html += `</span></div>`;
-                
-                // Query sequence line
-                html += `<div class="sequence-line">`;
-                html += `<span class="line-number">${lineNumber}</span>`;
-                html += `<span class="sequence-label">Query</span>`;
-                html += `<span class="sequence-text">`;
-                
-                for (let j = start; j < end; j++) {
-                    const refChar = refSeq[j];
-                    const queryChar = querySeq[j];
-                    const isMatch = refChar === queryChar && refChar !== '-';
-                    const isInsertion = queryChar === '-';
-                    
-                    if (!isMatch) {
-                        html += `<span class="mutation query-base">${queryChar}</span>`;
-                    } else {
-                        html += queryChar;
-                    }
-                }
-                
-                html += `</span></div>`;
-                
-                // Add a spacer between blocks
-                html += `<div class="sequence-spacer"></div>`;
-            }
-            
-            sequenceViewer.innerHTML = html;
-        } else {
-            // Fall back to the original implementation if no alignment data
-            const refSeq = referenceSequence.sequence;
-            const querySeq = querySequence.sequence;
-            
-            // Create a map of mutation positions for quick lookup
-            const mutationMap = {};
-            comparisonResults.mutations.forEach(mutation => {
-                mutationMap[mutation.position - 1] = true;
-            });
-            
-            // Generate HTML for sequence display with line numbers and highlighting
-            let html = '';
-            const charsPerLine = 60;
-            const lines = Math.ceil(Math.max(refSeq.length, querySeq.length) / charsPerLine);
-            
-            for (let i = 0; i < lines; i++) {
-                const start = i * charsPerLine;
-                const end = Math.min(start + charsPerLine, Math.max(refSeq.length, querySeq.length));
-                const lineNumber = start + 1;
-                
-                // Reference sequence line
-                html += `<div class="sequence-line">`;
-                html += `<span class="line-number">${lineNumber}</span>`;
-                html += `<span class="sequence-label">Ref</span>`;
-                html += `<span class="sequence-text">`;
-                
-                for (let j = start; j < end; j++) {
-                    if (j < refSeq.length) {
-                        if (mutationMap[j]) {
-                            html += `<span class="mutation ref-base">${refSeq[j]}</span>`;
-                        } else {
-                            html += refSeq[j];
-                        }
-                    } else {
-                        html += ' ';
-                    }
-                }
-                
-                html += `</span></div>`;
-                
-                // Mutation markers line
-                html += `<div class="sequence-line">`;
-                html += `<span class="line-number"></span>`;
-                html += `<span class="sequence-label"></span>`;
-                html += `<span class="sequence-text">`;
-                
-                for (let j = start; j < end; j++) {
-                    const refChar = refSeq[j];
-                    const queryChar = querySeq[j];
-                    const isMatch = refChar === queryChar && refChar !== '-';
-                    
-                    html += isMatch ? ' ' : '|';
-                }
-                
-                html += `</span></div>`;
-                
-                // Query sequence line
-                html += `<div class="sequence-line">`;
-                html += `<span class="line-number">${lineNumber}</span>`;
-                html += `<span class="sequence-label">Query</span>`;
-                html += `<span class="sequence-text">`;
-                
-                for (let j = start; j < end; j++) {
-                    if (j < querySeq.length) {
-                        if (mutationMap[j]) {
-                            html += `<span class="mutation query-base">${querySeq[j]}</span>`;
-                        } else {
-                            html += querySeq[j];
-                        }
-                    } else {
-                        html += ' ';
-                    }
-                }
-                
-                html += `</span></div>`;
-                
-                // Add a spacer between blocks
-                html += `<div class="sequence-spacer"></div>`;
-            }
-            
-            sequenceViewer.innerHTML = html;
+        if (!sequenceViewer) {
+            console.error('Sequence viewer element not found');
+            return;
         }
+
+        if (!comparisonResults || !referenceSequence || !querySequence) {
+            console.error('Missing sequence data for alignment');
+            sequenceViewer.innerHTML = '<div class="error">Unable to display sequence alignment: Missing data</div>';
+            return;
+        }
+
+        try {
+            // Check if we have alignment data from the API
+            if (comparisonResults.alignment) {
+                const alignment = comparisonResults.alignment;
+                if (!alignment.alignedReference || !alignment.alignedQuery) {
+                    throw new Error('Invalid alignment data');
+                }
+
+                const refSeq = alignment.alignedReference;
+                const querySeq = alignment.alignedQuery;
+                
+                // Generate HTML for sequence display with line numbers and highlighting
+                let html = generateAlignmentHTML(refSeq, querySeq);
+                sequenceViewer.innerHTML = html;
+            } else {
+                // Fall back to simple comparison
+                const refSeq = referenceSequence.sequence;
+                const querySeq = querySequence.sequence;
+                
+                // Create a map of mutation positions for quick lookup
+                const mutationMap = {};
+                if (comparisonResults.mutations && Array.isArray(comparisonResults.mutations)) {
+                    comparisonResults.mutations.forEach(mutation => {
+                        if (mutation && typeof mutation.position === 'number') {
+                            mutationMap[mutation.position - 1] = true;
+                        }
+                    });
+                }
+                
+                // Generate HTML for sequence display
+                let html = generateSimpleComparisonHTML(refSeq, querySeq, mutationMap);
+                sequenceViewer.innerHTML = html;
+            }
+        } catch (error) {
+            console.error('Error displaying sequence alignment:', error);
+            sequenceViewer.innerHTML = `<div class="error">Error displaying alignment: ${error.message}</div>`;
+        }
+    }
+    
+    // Helper function to generate alignment HTML
+    function generateAlignmentHTML(refSeq, querySeq) {
+        let html = '';
+        const charsPerLine = 60;
+        const lines = Math.ceil(refSeq.length / charsPerLine);
+        
+        for (let i = 0; i < lines; i++) {
+            const start = i * charsPerLine;
+            const end = Math.min(start + charsPerLine, refSeq.length);
+            const lineNumber = start + 1;
+            
+            // Reference sequence line
+            html += `<div class="sequence-line">`;
+            html += `<span class="line-number">${lineNumber}</span>`;
+            html += `<span class="sequence-label">Ref</span>`;
+            html += `<span class="sequence-text">`;
+            
+            for (let j = start; j < end; j++) {
+                const refChar = refSeq[j] || '-';
+                const queryChar = querySeq[j] || '-';
+                const isMatch = refChar === queryChar && refChar !== '-';
+                
+                if (!isMatch) {
+                    html += `<span class="mutation ref-base">${refChar}</span>`;
+                } else {
+                    html += refChar;
+                }
+            }
+            
+            html += `</span></div>`;
+            
+            // Mutation markers line
+            html += `<div class="sequence-line">`;
+            html += `<span class="line-number"></span>`;
+            html += `<span class="sequence-label"></span>`;
+            html += `<span class="sequence-text">`;
+            
+            for (let j = start; j < end; j++) {
+                const refChar = refSeq[j] || '-';
+                const queryChar = querySeq[j] || '-';
+                const isMatch = refChar === queryChar && refChar !== '-';
+                
+                html += isMatch ? ' ' : '|';
+            }
+            
+            html += `</span></div>`;
+            
+            // Query sequence line
+            html += `<div class="sequence-line">`;
+            html += `<span class="line-number">${lineNumber}</span>`;
+            html += `<span class="sequence-label">Query</span>`;
+            html += `<span class="sequence-text">`;
+            
+            for (let j = start; j < end; j++) {
+                const refChar = refSeq[j] || '-';
+                const queryChar = querySeq[j] || '-';
+                const isMatch = refChar === queryChar && refChar !== '-';
+                
+                if (!isMatch) {
+                    html += `<span class="mutation query-base">${queryChar}</span>`;
+                } else {
+                    html += queryChar;
+                }
+            }
+            
+            html += `</span></div>`;
+            
+            // Add a spacer between blocks
+            html += `<div class="sequence-spacer"></div>`;
+        }
+        
+        return html;
+    }
+
+    // Helper function to generate simple comparison HTML
+    function generateSimpleComparisonHTML(refSeq, querySeq, mutationMap) {
+        let html = '';
+        const charsPerLine = 60;
+        const maxLength = Math.max(refSeq.length, querySeq.length);
+        const lines = Math.ceil(maxLength / charsPerLine);
+        
+        for (let i = 0; i < lines; i++) {
+            const start = i * charsPerLine;
+            const end = Math.min(start + charsPerLine, maxLength);
+            const lineNumber = start + 1;
+            
+            // Reference sequence line
+            html += `<div class="sequence-line">`;
+            html += `<span class="line-number">${lineNumber}</span>`;
+            html += `<span class="sequence-label">Ref</span>`;
+            html += `<span class="sequence-text">`;
+            
+            for (let j = start; j < end; j++) {
+                if (j < refSeq.length) {
+                    if (mutationMap[j]) {
+                        html += `<span class="mutation ref-base">${refSeq[j]}</span>`;
+                    } else {
+                        html += refSeq[j];
+                    }
+                } else {
+                    html += '-';
+                }
+            }
+            
+            html += `</span></div>`;
+            
+            // Mutation markers line
+            html += `<div class="sequence-line">`;
+            html += `<span class="line-number"></span>`;
+            html += `<span class="sequence-label"></span>`;
+            html += `<span class="sequence-text">`;
+            
+            for (let j = start; j < end; j++) {
+                const refChar = j < refSeq.length ? refSeq[j] : '-';
+                const queryChar = j < querySeq.length ? querySeq[j] : '-';
+                const isMatch = refChar === queryChar;
+                
+                html += isMatch ? ' ' : '|';
+            }
+            
+            html += `</span></div>`;
+            
+            // Query sequence line
+            html += `<div class="sequence-line">`;
+            html += `<span class="line-number">${lineNumber}</span>`;
+            html += `<span class="sequence-label">Query</span>`;
+            html += `<span class="sequence-text">`;
+            
+            for (let j = start; j < end; j++) {
+                if (j < querySeq.length) {
+                    if (mutationMap[j]) {
+                        html += `<span class="mutation query-base">${querySeq[j]}</span>`;
+                    } else {
+                        html += querySeq[j];
+                    }
+                } else {
+                    html += '-';
+                }
+            }
+            
+            html += `</span></div>`;
+            
+            // Add a spacer between blocks
+            html += `<div class="sequence-spacer"></div>`;
+        }
+        
+        return html;
     }
     
     function populateMutationTable() {
