@@ -33,7 +33,7 @@ async function initializeAuth() {
         
         // Initialize Firebase with specific auth settings
         console.log('[' + new Date().toLocaleTimeString() + '] Initializing Firebase...');
-        if (!firebase.apps || !firebase.apps.length) {
+        if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         
@@ -41,77 +41,76 @@ async function initializeAuth() {
         auth.useDeviceLanguage();
         console.log('[' + new Date().toLocaleTimeString() + '] Firebase initialized');
 
-        // Check if we're on the login page
-        if (window.location.pathname === '/auth/login') {
-            // Check for redirect result first
+        // Parse URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const params = {
+            authType: urlParams.get('authType'),
+            redirectUrl: urlParams.get('redirectUrl'),
+            providerId: urlParams.get('providerId')
+        };
+        console.log('[' + new Date().toLocaleTimeString() + '] URL parameters', JSON.stringify(params));
+
+        // Handle redirect result if coming from a redirect
+        if (params.authType === 'signInViaRedirect') {
             try {
-                console.log('[' + new Date().toLocaleTimeString() + '] Checking redirect result...');
+                console.log('[' + new Date().toLocaleTimeString() + '] Handling redirect sign-in');
                 const result = await auth.getRedirectResult();
                 if (result.user) {
-                    console.log('[' + new Date().toLocaleTimeString() + '] User authenticated via redirect');
+                    console.log('[' + new Date().toLocaleTimeString() + '] Got user from redirect');
                     await handleAuthSuccess(result.user);
                     return;
                 }
             } catch (redirectError) {
-                console.log('[' + new Date().toLocaleTimeString() + '] No redirect result or error:', redirectError);
+                console.log('[' + new Date().toLocaleTimeString() + '] No redirect result:', redirectError);
             }
+        }
 
-            // Check if user is already signed in
-            const currentUser = auth.currentUser;
-            if (currentUser) {
-                console.log('[' + new Date().toLocaleTimeString() + '] User already signed in:', currentUser.email);
-                await handleAuthSuccess(currentUser);
-                return;
-            }
+        // Check if user is already signed in
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+            console.log('[' + new Date().toLocaleTimeString() + '] User already signed in:', currentUser.email);
+            await handleAuthSuccess(currentUser);
+            return;
+        }
 
-            // Add click handler for sign in button
-            if (signInBtn) {
-                signInBtn.addEventListener('click', async () => {
-                    try {
-                        signInBtn.disabled = true;
-                        if (loading) loading.style.display = 'block';
-                        if (errorMessage) errorMessage.style.display = 'none';
-                        
-                        console.log('[' + new Date().toLocaleTimeString() + '] Starting authentication...');
-                        
-                        const provider = new firebase.auth.GoogleAuthProvider();
-                        provider.setCustomParameters({
-                            prompt: 'select_account'
-                        });
+        // Add click handler for sign in button
+        if (signInBtn) {
+            signInBtn.addEventListener('click', async () => {
+                try {
+                    signInBtn.disabled = true;
+                    if (loading) loading.style.display = 'block';
+                    if (errorMessage) errorMessage.style.display = 'none';
+                    
+                    console.log('[' + new Date().toLocaleTimeString() + '] Starting authentication...');
+                    
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    provider.setCustomParameters({
+                        prompt: 'select_account'
+                    });
 
-                        // Try popup first, fallback to redirect
-                        try {
-                            console.log('[' + new Date().toLocaleTimeString() + '] Attempting popup sign-in...');
-                            const result = await auth.signInWithPopup(provider);
-                            console.log('[' + new Date().toLocaleTimeString() + '] Popup sign-in successful');
-                            await handleAuthSuccess(result.user);
-                        } catch (popupError) {
-                            console.log('[' + new Date().toLocaleTimeString() + '] Popup failed, trying redirect:', popupError);
-                            // If popup fails, try redirect
-                            await auth.signInWithRedirect(provider);
-                        }
-                    } catch (error) {
-                        let errorMsg = 'Login failed: ';
-                        
-                        if (error.code === 'auth/popup-closed-by-user') {
-                            errorMsg = 'Sign-in was cancelled. Please try again.';
-                        } else if (error.code === 'auth/popup-blocked') {
-                            errorMsg = 'Popup was blocked. Please allow popups for this site.';
-                        } else if (error.code === 'auth/network-request-failed') {
-                            errorMsg = 'Network error. Please check your internet connection.';
-                        } else if (error.code === 'auth/unauthorized-domain') {
-                            errorMsg = 'This domain is not authorized for Firebase Authentication. Please check your Firebase configuration.';
-                        } else {
-                            errorMsg += error.message || 'Unknown error occurred';
-                        }
-                        
-                        showError(errorMsg, error);
-                    } finally {
-                        if (signInBtn) signInBtn.disabled = false;
-                        if (loading) loading.style.display = 'none';
+                    // Always use popup for initial sign-in
+                    console.log('[' + new Date().toLocaleTimeString() + '] Attempting popup sign-in...');
+                    const result = await auth.signInWithPopup(provider);
+                    console.log('[' + new Date().toLocaleTimeString() + '] Popup sign-in successful');
+                    await handleAuthSuccess(result.user);
+                } catch (error) {
+                    let errorMsg = 'Login failed: ';
+                    
+                    if (error.code === 'auth/popup-closed-by-user') {
+                        errorMsg = 'Sign-in was cancelled. Please try again.';
+                    } else if (error.code === 'auth/popup-blocked') {
+                        errorMsg = 'Popup was blocked. Please allow popups for this site.';
+                    } else if (error.code === 'auth/network-request-failed') {
+                        errorMsg = 'Network error. Please check your internet connection.';
+                    } else if (error.code === 'auth/unauthorized-domain') {
+                        errorMsg = 'This domain is not authorized for Firebase Authentication. Please check your Firebase configuration.';
+                    } else {
+                        errorMsg += error.message || 'Unknown error occurred';
                     }
-                });
-            }
+                    
+                    showError(errorMsg, error);
+                }
+            });
         }
     } catch (error) {
         showError('Failed to initialize authentication. Please try again later.', error);
@@ -153,8 +152,12 @@ async function handleAuthSuccess(user) {
         console.log('[' + new Date().toLocaleTimeString() + '] Server response:', JSON.stringify(data));
         
         if (data.success) {
-            console.log('[' + new Date().toLocaleTimeString() + '] Redirecting to ' + data.redirect + '...');
-            window.location.href = data.redirect;
+            // Clear any existing redirect parameters from the URL
+            const cleanUrl = window.location.origin + window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+            
+            console.log('[' + new Date().toLocaleTimeString() + '] Redirecting to welcome page...');
+            window.location.href = '/auth/welcome';
         } else {
             throw new Error(data.error || 'Server authentication failed');
         }

@@ -5,6 +5,8 @@ const admin = require('firebase-admin');
 // Authentication middleware
 const requireAuth = (req, res, next) => {
     if (!req.session.user) {
+        // Store the intended destination
+        req.session.returnTo = req.originalUrl;
         return res.redirect('/auth/login');
     }
     next();
@@ -18,12 +20,13 @@ const checkAuth = (req, res, next) => {
     next();
 };
 
+// Clear Firebase session on login page load
 router.get('/login', checkAuth, (req, res) => {
     res.render('auth/login', { user: null });
 });
 
-router.get('/signup', (req, res) => {
-    res.render('auth/signup', { user: req.session.user });
+router.get('/signup', checkAuth, (req, res) => {
+    res.render('auth/signup', { user: null });
 });
 
 // Single Google sign-in route
@@ -70,7 +73,7 @@ router.post('/google-signin', async (req, res) => {
                 photo: userData.photo
             };
             
-            // Save session explicitly to ensure it's stored before responding
+            // Save session explicitly
             req.session.save((err) => {
                 if (err) {
                     console.error('Session save error:', err);
@@ -78,7 +81,7 @@ router.post('/google-signin', async (req, res) => {
                 }
                 
                 console.log('Session saved successfully for:', userData.email);
-                return res.json({ success: true, redirect: '/auth/welcome' });
+                return res.json({ success: true });
             });
         } catch (verifyError) {
             console.error('Token verification error:', verifyError);
@@ -102,78 +105,63 @@ router.get('/welcome', requireAuth, async (req, res) => {
                 const doc = await docRef.get();
                 
                 if (doc.exists) {
-                    userData = { ...userData, ...doc.data() };
+                    const data = doc.data();
+                    userData = { 
+                        ...userData, 
+                        ncbiCredentials: data.ncbiCredentials || null
+                    };
                 }
             } catch (firestoreError) {
                 console.error('Firestore error:', firestoreError);
+                // Continue even if Firestore fails
             }
         }
         
         res.render('auth/welcome', { user: userData });
     } catch (error) {
-        console.error('Error rendering welcome page:', error);
-        res.render('auth/welcome', { 
-            user: req.session.user,
-            error: 'Failed to load user data'
-        });
+        console.error('Welcome page error:', error);
+        res.redirect('/auth/login');
     }
 });
 
+// Logout route
 router.get('/logout', (req, res) => {
     req.session.destroy((err) => {
-        if (err) console.error('Logout error:', err);
-        res.redirect('/');
+        if (err) {
+            console.error('Session destruction error:', err);
+        }
+        res.redirect('/auth/login');
     });
 });
 
-// Add this route to handle saving NCBI credentials
+// Save NCBI credentials
 router.post('/save-ncbi-credentials', requireAuth, async (req, res) => {
     try {
         const { email, apiKey } = req.body;
         
-        // Add validation for the input
         if (!email || !apiKey) {
-            console.log('Missing required fields:', { email, apiKey });
-            return res.status(400).json({ success: false, error: 'Email and API key are required' });
+            return res.status(400).json({ success: false, error: 'Missing required fields' });
         }
         
-        const userId = req.session.user.uid;
-        console.log('Attempting to save NCBI credentials for user:', userId);
+        // Update session
+        req.session.user.ncbiCredentials = { email, apiKey };
         
+        // Save to Firestore
         try {
-            // Use set with merge option instead of update to handle non-existent documents
-            await admin.firestore().collection('users').doc(userId).set({
-                ncbiCredentials: {
-                    email: email,
-                    apiKey: apiKey
-                },
+            const userRef = admin.firestore().collection('users').doc(req.session.user.uid);
+            await userRef.set({
+                ncbiCredentials: { email, apiKey },
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
-            
-            console.log('Successfully saved credentials to Firestore');
-            
-            // Update session with new credentials
-            if (!req.session.user.ncbiCredentials) {
-                req.session.user.ncbiCredentials = {};
-            }
-            req.session.user.ncbiCredentials.email = email;
-            req.session.user.ncbiCredentials.apiKey = apiKey;
-            
-            return res.json({ success: true, message: 'NCBI credentials saved successfully' });
         } catch (firestoreError) {
-            console.error('Specific Firestore error:', firestoreError);
-            return res.status(500).json({ 
-                success: false, 
-                error: 'Database error: ' + firestoreError.message,
-                code: firestoreError.code
-            });
+            console.error('Firestore error:', firestoreError);
+            // Continue even if Firestore fails
         }
+        
+        res.json({ success: true });
     } catch (error) {
-        console.error('Error saving NCBI credentials:', error);
-        return res.status(500).json({ 
-            success: false, 
-            error: 'Failed to save credentials: ' + error.message 
-        });
+        console.error('Save credentials error:', error);
+        res.status(500).json({ success: false, error: 'Failed to save credentials' });
     }
 });
 
