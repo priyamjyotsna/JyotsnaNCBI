@@ -568,3 +568,92 @@ async function analyzeVariants(file, batchSize, options) {
 
     return variants;
 }
+
+// Sequence Comparison routes
+app.get('/sequence-comparison', requireAuth, (req, res) => {
+    try {
+        res.render('sequence-comparison', { user: req.session.user });
+    } catch (error) {
+        console.error('Error rendering sequence-comparison:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+app.post('/api/compare-sequences', requireAuth, async (req, res) => {
+    try {
+        const { reference, query } = req.body;
+        if (!reference || !query) {
+            return res.status(400).json({
+                success: false,
+                error: 'Both reference and query sequences are required'
+            });
+        }
+
+        // Perform sequence comparison
+        const results = await compareSequences(reference, query);
+        
+        res.json({
+            success: true,
+            data: results
+        });
+
+    } catch (error) {
+        console.error('Error comparing sequences:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to compare sequences'
+        });
+    }
+});
+
+async function compareSequences(reference, query) {
+    // Implement sequence comparison logic
+    const mutations = [];
+    const alignment = { reference: '', query: '' };
+    let substitutions = 0, insertions = 0, deletions = 0;
+
+    // Basic sequence alignment and mutation detection
+    let i = 0, j = 0;
+    while (i < reference.length || j < query.length) {
+        if (i < reference.length && j < query.length) {
+            if (reference[i] !== query[j]) {
+                mutations.push({
+                    position: i + 1,
+                    reference: reference[i],
+                    query: query[j],
+                    type: 'substitution'
+                });
+                substitutions++;
+            }
+            i++; j++;
+        } else if (i < reference.length) {
+            mutations.push({
+                position: i + 1,
+                reference: reference[i],
+                query: '-',
+                type: 'deletion'
+            });
+            deletions++;
+            i++;
+        } else {
+            mutations.push({
+                position: j + 1,
+                reference: '-',
+                query: query[j],
+                type: 'insertion'
+            });
+            insertions++;
+            j++;
+        }
+    }
+
+    return {
+        mutations,
+        alignment,
+        mutationTypes: { substitutions, insertions, deletions },
+        metadata: {
+            reference: { length: reference.length },
+            query: { length: query.length }
+        }
+    };
+}
