@@ -6,6 +6,12 @@ const path = require('path');
 const session = require('express-session');
 const admin = require('firebase-admin');
 
+// Generate a random session secret if not provided
+if (!process.env.SESSION_SECRET) {
+    console.warn('WARNING: SESSION_SECRET not set. Using a random secret. This will invalidate existing sessions on restart.');
+    process.env.SESSION_SECRET = require('crypto').randomBytes(32).toString('hex');
+}
+
 // Initialize Firebase Admin
 try {
     console.log('Starting Firebase initialization...');
@@ -45,15 +51,19 @@ app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session middleware
+// Session middleware with secure configuration
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'jyotsna-ncbi-secret-key',
+    secret: process.env.SESSION_SECRET || require('crypto').randomBytes(32).toString('hex'),
     resave: false,
     saveUninitialized: false,
+    rolling: true, // Extends session expiry on activity
+    name: 'sessionId', // Custom cookie name
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        secure: 'auto', // This will automatically set secure based on the connection
+        httpOnly: true, // Prevents client side access to the cookie 
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: 'lax', // Protects against CSRF
+        domain: process.env.NODE_ENV === 'production' ? '.jyotsnapriyam.com' : undefined // Set cookie domain in production
     }
 }));
 
@@ -79,6 +89,13 @@ app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    // Add CORS headers for production
+    if (process.env.NODE_ENV === 'production') {
+        res.setHeader('Access-Control-Allow-Origin', 'https://ncbi.jyotsnapriyam.com');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    }
     next();
 });
 
@@ -108,7 +125,9 @@ app.get('/api/firebase-config', (req, res) => {
         authDomain: process.env.FIREBASE_AUTH_DOMAIN,
         projectId: process.env.FIREBASE_PROJECT_ID,
         databaseURL: "https://jyotsnancbi-default-rtdb.firebaseio.com",
-        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "jyotsnancbi.appspot.com"
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "jyotsnancbi.appspot.com",
+        messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.FIREBASE_APP_ID
     });
 });
 
