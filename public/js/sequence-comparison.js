@@ -305,6 +305,17 @@ function showLargeSequenceModal(sequenceLength) {
     });
 }
 
+async function handleAuthenticationError(response) {
+    if (response.status === 401 || response.status === 403) {
+        // Save current state if needed
+        sessionStorage.setItem('lastPath', window.location.pathname);
+        // Redirect to login page
+        window.location.href = '/login';
+        return true;
+    }
+    return false;
+}
+
 async function fetchSequenceFromNCBI(accessionId, type) {
     const statusElement = type === 'reference' ? referenceStatus : queryStatus;
     statusElement.innerHTML = '<span class="status-loading">⌛</span> Fetching sequence...';
@@ -317,6 +328,11 @@ async function fetchSequenceFromNCBI(accessionId, type) {
             },
             credentials: 'same-origin'
         });
+
+        // Check for authentication errors first
+        if (await handleAuthenticationError(response)) {
+            return;
+        }
 
         if (!response.ok) {
             const errorData = await response.json();
@@ -337,6 +353,11 @@ async function fetchSequenceFromNCBI(accessionId, type) {
 
     } catch (error) {
         console.error('Error fetching sequence:', error);
+        if (error.message.includes('<!DOCTYPE')) {
+            // If we get HTML response, likely a session timeout
+            window.location.href = '/login';
+            return;
+        }
         statusElement.innerHTML = `<span class="status-error">✗</span> Error: ${error.message}`;
         if (type === 'reference') referenceSequence = null;
         else querySequence = null;
@@ -430,33 +451,64 @@ function processSequenceData(data, type) {
         resultsSection.innerHTML = '<div class="loading">Comparing sequences... <div class="spinner"></div></div>';
 
         try {
+            // Ensure we're sending the correct sequence data
+            const payload = {
+                referenceSequence: {
+                    header: referenceSequence.header || '',
+                    sequence: referenceSequence.sequence.trim()
+                },
+                querySequence: {
+                    header: querySequence.header || '',
+                    sequence: querySequence.sequence.trim()
+                }
+            };
+
+            console.log('Sending comparison request with payload:', {
+                refLength: payload.referenceSequence.sequence.length,
+                queryLength: payload.querySequence.sequence.length
+            });
+
             const response = await fetch('/sequence-comparison/api/compare-sequences', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify({
-                    referenceSequence: referenceSequence.sequence,
-                    querySequence: querySequence.sequence
-                })
+                body: JSON.stringify(payload)
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to compare sequences');
+            // First try to get the response as JSON
+            let data;
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                // If not JSON, get the text and log it for debugging
+                const text = await response.text();
+                console.error('Received non-JSON response:', text);
+                throw new Error('Server returned invalid format');
             }
 
-            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to compare sequences');
+            }
+
             if (!data.success) {
                 throw new Error(data.error || 'Failed to compare sequences');
             }
 
             comparisonResults = {
-                mutations: data.mutations,
-                alignment: data.alignment,
-                distributionStats: data.distributionStats,
-                metadata: data.metadata
+                mutations: data.mutations || [],
+                alignment: data.alignment || null,
+                distributionStats: data.distributionStats || {},
+                metadata: {
+                    referenceLength: referenceSequence.sequence.length,
+                    queryLength: querySequence.sequence.length,
+                    referenceHeader: referenceSequence.header,
+                    queryHeader: querySequence.header,
+                    ...data.metadata
+                }
             };
 
             displayResults();
