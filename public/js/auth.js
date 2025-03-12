@@ -66,22 +66,17 @@ async function initializeAuth() {
                     
                     const provider = new firebase.auth.GoogleAuthProvider();
                     provider.setCustomParameters({
-                        prompt: 'select_account'
+                        prompt: 'select_account',
+                        // Set auth domain explicitly
+                        auth_domain: firebaseConfig.authDomain
                     });
 
-                    // Use popup sign-in
-                    const result = await auth.signInWithPopup(provider);
-                    if (result.user) {
-                        await handleAuthSuccess(result.user);
-                    }
+                    // Use signInWithRedirect instead of popup
+                    await auth.signInWithRedirect(provider);
                 } catch (error) {
                     let errorMsg = 'Login failed: ';
                     
-                    if (error.code === 'auth/popup-closed-by-user') {
-                        errorMsg = 'Sign-in was cancelled. Please try again.';
-                    } else if (error.code === 'auth/popup-blocked') {
-                        errorMsg = 'Popup was blocked. Please allow popups for this site.';
-                    } else if (error.code === 'auth/network-request-failed') {
+                    if (error.code === 'auth/network-request-failed') {
                         errorMsg = 'Network error. Please check your internet connection.';
                     } else if (error.code === 'auth/unauthorized-domain') {
                         errorMsg = 'This domain is not authorized for Firebase Authentication. Please check your Firebase configuration.';
@@ -95,6 +90,18 @@ async function initializeAuth() {
                     if (loading) loading.style.display = 'none';
                 }
             });
+        }
+
+        // Check for redirect result
+        try {
+            const result = await auth.getRedirectResult();
+            if (result.user) {
+                await handleAuthSuccess(result.user);
+            }
+        } catch (error) {
+            if (error.code !== 'auth/null-result') {
+                showError('Error completing sign-in. Please try again.', error);
+            }
         }
     } catch (error) {
         showError('Failed to initialize authentication. Please try again later.', error);
