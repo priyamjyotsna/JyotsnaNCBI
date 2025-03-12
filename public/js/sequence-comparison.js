@@ -625,7 +625,22 @@ function processSequenceData(data, type) {
     }
     
     function createMutationChart() {
-        const ctx = document.getElementById('mutationChart').getContext('2d');
+        const canvas = document.getElementById('mutationChart');
+        if (!canvas) {
+            console.error('Mutation chart canvas element not found');
+            return;
+        }
+
+        // Get the canvas context
+        let ctx;
+        try {
+            ctx = canvas.getContext('2d');
+        } catch (error) {
+            console.error('Failed to get canvas context:', error);
+            // Fall back to simple chart
+            createSimpleMutationChart([], []);
+            return;
+        }
         
         // Use distribution data from the API if available
         let labels = [];
@@ -638,13 +653,13 @@ function processSequenceData(data, type) {
             
             for (let i = 0; i < stats.distribution.length; i++) {
                 const start = i * binSize + 1;
-                const end = Math.min((i + 1) * binSize, comparisonResults.referenceLength);
+                const end = Math.min((i + 1) * binSize, comparisonResults.metadata.referenceLength);
                 labels.push(`${start}-${end}`);
                 data.push(stats.distribution[i]);
             }
         } else {
             // Fall back to client-side calculation if API doesn't provide distribution
-            const binSize = Math.max(1, Math.floor(comparisonResults.referenceLength / 20));
+            const binSize = Math.max(1, Math.floor(comparisonResults.metadata.referenceLength / 20));
             const bins = {};
             
             comparisonResults.mutations.forEach(mutation => {
@@ -652,9 +667,9 @@ function processSequenceData(data, type) {
                 bins[binIndex] = (bins[binIndex] || 0) + 1;
             });
             
-            for (let i = 0; i < Math.ceil(comparisonResults.referenceLength / binSize); i++) {
+            for (let i = 0; i < Math.ceil(comparisonResults.metadata.referenceLength / binSize); i++) {
                 const start = i * binSize + 1;
-                const end = Math.min((i + 1) * binSize, comparisonResults.referenceLength);
+                const end = Math.min((i + 1) * binSize, comparisonResults.metadata.referenceLength);
                 labels.push(`${start}-${end}`);
                 data.push(bins[i] || 0);
             }
@@ -662,7 +677,7 @@ function processSequenceData(data, type) {
         
         // Check if Chart.js is available
         if (typeof Chart === 'undefined') {
-            // If Chart.js is not available, create a simple HTML chart
+            console.warn('Chart.js not found, falling back to simple chart');
             createSimpleMutationChart(labels, data);
             return;
         }
