@@ -1,6 +1,8 @@
 const express = require('express');
-const router = express.Router();
 const admin = require('firebase-admin');
+
+// Create the router
+const router = express.Router();
 
 // Authentication middleware
 const requireAuth = (req, res, next) => {
@@ -186,4 +188,6 @@ router.post('/save-ncbi-credentials', requireAuth, async (req, res) => {
     }
 });
 
+// Export both the router and middleware
 module.exports = router;
+module.exports.requireAuth = requireAuth;

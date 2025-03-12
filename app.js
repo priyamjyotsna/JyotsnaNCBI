@@ -7,8 +7,9 @@ const session = require('express-session');
 const admin = require('firebase-admin');
 const axios = require('axios');
 
-// Import auth routes and middleware
-const { router: authRouter, requireAuth } = require('./routes/auth');
+// Import auth router and middleware
+const authRouter = require('./routes/auth');
+const requireAuth = authRouter.requireAuth;
 
 // Validate required environment variables
 const requiredEnvVars = [
