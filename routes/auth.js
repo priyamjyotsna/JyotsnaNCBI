@@ -14,14 +14,24 @@ const requireAuth = (req, res, next) => {
 
 // Check if user is already authenticated
 const checkAuth = (req, res, next) => {
+    // Clear any existing session if present
     if (req.session.user) {
-        return res.redirect('/auth/welcome');
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Session destruction error:', err);
+            }
+            // Continue to login page
+            next();
+        });
+    } else {
+        next();
     }
-    next();
 };
 
 // Clear Firebase session on login page load
 router.get('/login', checkAuth, (req, res) => {
+    // Set cache control headers to prevent caching
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.render('auth/login', { user: null });
 });
 

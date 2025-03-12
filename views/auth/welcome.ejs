@@ -144,14 +144,19 @@
                 });
                 
                 if (response.ok) {
-                    window.location.href = '/auth/login';
+                    // Clear any cached auth state
+                    sessionStorage.clear();
+                    localStorage.clear();
+                    
+                    // Force reload to login page to clear any cached state
+                    window.location.replace('/auth/login');
                 } else {
                     throw new Error('Server logout failed');
                 }
             } catch (error) {
                 console.error('Logout error:', error);
-                // If anything fails, force redirect to login
-                window.location.href = '/auth/login';
+                // If anything fails, force reload to login
+                window.location.replace('/auth/login');
             }
         }
 
@@ -164,6 +169,14 @@
                 if (!firebase.apps.length) {
                     firebase.initializeApp(firebaseConfig);
                 }
+                
+                // Set up auth state listener
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (!user) {
+                        // If Firebase shows no user, redirect to login
+                        window.location.replace('/auth/login');
+                    }
+                });
                 
                 const db = firebase.firestore();
                 const rtdb = firebase.database();
