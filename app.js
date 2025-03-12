@@ -175,11 +175,17 @@ app.get('/nucleotide-download', requireAuth, (req, res) => {
 });
 
 // NCBI API endpoint for nucleotide download
-app.post('/nucleotide-download/fetch', requireAuth, async (req, res) => {
+app.get('/api/nucleotide/sequence', requireAuth, async (req, res) => {
     try {
-        const { id } = req.body;
-        const user = req.session.user;
+        const { id } = req.query;
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                error: 'No sequence ID provided'
+            });
+        }
 
+        const user = req.session.user;
         if (!user.ncbiCredentials) {
             return res.status(400).json({
                 success: false,
@@ -198,7 +204,7 @@ app.post('/nucleotide-download/fetch', requireAuth, async (req, res) => {
         if (!searchResponse.data.esearchresult.idlist || searchResponse.data.esearchresult.idlist.length === 0) {
             return res.status(404).json({
                 success: false,
-                error: 'Nucleotide sequence not found'
+                error: `Nucleotide sequence not found for ID: ${id}`
             });
         }
 
@@ -209,14 +215,16 @@ app.post('/nucleotide-download/fetch', requireAuth, async (req, res) => {
 
         res.json({
             success: true,
-            data: fetchResponse.data
+            data: fetchResponse.data,
+            id: id
         });
 
     } catch (error) {
-        console.error('Error fetching nucleotide sequence:', error);
+        console.error(`Error fetching nucleotide sequence ${req.query.id}:`, error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch nucleotide sequence'
+            error: 'Failed to fetch nucleotide sequence',
+            details: error.message
         });
     }
 });
@@ -300,3 +308,6 @@ boot().catch(error => {
 });
 
 module.exports = app;
+
+const apiRoutes = require('./routes/api');
+app.use('/api', apiRoutes);
