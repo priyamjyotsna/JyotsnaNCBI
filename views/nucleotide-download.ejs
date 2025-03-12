@@ -9,65 +9,70 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <nav class="top-nav">
-            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
-        </nav>
+    <%- include('partials/header') %>
 
-        <header>
-            <h1>Nucleotide Sequence Download</h1>
-            <p class="subtitle">Download and export nucleotide sequences from NCBI database</p>
-        </header>
-
-        <div class="input-section">
-            <div class="range-input">
-                <div class="input-group">
-                    <label for="startId">Start Genbank Accession:</label>
-                    <input type="text" id="startId" value="MN223758" placeholder="e.g., MN223758">
-                </div>
-                
-                <div class="input-group">
-                    <label for="endId">End Genbank Accession:</label>
-                    <input type="text" id="endId" value="MN223767" placeholder="e.g., MN223767">
-                </div>
-                
-                <div class="input-group">
-                    <label for="previewLength">Preview Length:</label>
-                    <select id="previewLength">
-                        <option value="50">50 bp</option>
-                        <option value="100">100 bp</option>
-                        <option value="200">200 bp</option>
-                        <option value="500">500 bp</option>
-                        <option value="1000">1000 bp</option>
-                    </select>
-                </div>
-            </div>
-            
-            <button id="downloadBtn" class="primary-button">
-                <i class="fas fa-download"></i> Download Sequences
-            </button>
-        </div>
+    <div class="container mt-5">
+        <h1>Nucleotide Sequence Downloader</h1>
         
-        <div id="status" class="status-section"></div>
-        
-        <div id="preview" class="preview-section">
-            <h2>Sequence Preview</h2>
-            <div class="table-container">
-                <table id="previewTable">
-                    <thead>
-                        <tr>
-                            <th>Accession ID</th>
-                            <th>Sequence (first 50 bp)</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+        <div class="card">
+            <div class="card-body">
+                <form id="download-form">
+                    <div class="form-group">
+                        <label for="sequenceIds">Enter Sequence IDs</label>
+                        <textarea 
+                            id="sequenceIds" 
+                            class="form-control" 
+                            rows="5" 
+                            placeholder="Enter sequence IDs (one per line or comma-separated)&#10;Example: MN223758, MN223759"
+                            required></textarea>
+                        <small class="form-text text-muted">
+                            Enter multiple sequence IDs separated by commas or newlines.
+                        </small>
+                    </div>
+                    
+                    <button type="submit" id="downloadBtn" class="btn btn-primary">
+                        Download Sequences
+                    </button>
+                </form>
+                
+                <div id="status" class="alert mt-3"></div>
+                <div id="progress" class="progress-bar mt-3"></div>
+                <div id="result" class="mt-4"></div>
             </div>
         </div>
     </div>
 
-    <!-- Add this before your closing </body> tag -->
-        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-        <script src="/js/nucleotide-download.js"></script>
-    </body>
+    <style>
+    .error {
+        color: #dc3545;
+        margin: 5px 0;
+    }
+
+    .info {
+        color: #0d6efd;
+    }
+
+    .sequence-result {
+        margin-top: 15px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .progress-bar {
+        height: 20px;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        padding: 5px;
+        text-align: center;
+        font-size: 12px;
+    }
+    </style>
+
+    <%- include('partials/footer') %>
+</body>
 </html>
