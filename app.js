@@ -229,6 +229,27 @@ app.get('/api/nucleotide/sequence', requireAuth, async (req, res) => {
     }
 });
 
+// Add NCBI credentials endpoint
+app.get('/api/user/ncbi-credentials', requireAuth, (req, res) => {
+    try {
+        const user = req.session.user;
+        const hasCredentials = !!(user && user.ncbiCredentials && user.ncbiCredentials.email && user.ncbiCredentials.apiKey);
+        
+        res.json({
+            success: true,
+            credentials: {
+                exists: hasCredentials
+            }
+        });
+    } catch (error) {
+        console.error('Error checking NCBI credentials:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to check NCBI credentials'
+        });
+    }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Global error handler:', err);

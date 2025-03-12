@@ -5,24 +5,37 @@ class NucleotideDownloader {
         this.progressDiv = document.getElementById('progress');
         this.hasCredentials = false;
         this.init();
+        this.bindEvents();
     }
 
     async init() {
         await this.checkCredentials();
-        this.attachEventListeners();
+    }
+
+    bindEvents() {
+        if (this.downloadBtn) {
+            this.downloadBtn.addEventListener('click', () => this.handleDownload());
+        }
     }
 
     async checkCredentials() {
         try {
             const response = await fetch('/api/user/ncbi-credentials', {
-                credentials: 'include'
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json'
+                }
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
-            
-            this.hasCredentials = data.success && data.credentials;
+            this.hasCredentials = data.success && data.credentials && data.credentials.exists;
             
             if (!this.hasCredentials) {
-                this.updateStatus('Please add your NCBI credentials in your profile settings to download sequences. <a href="/profile">Go to Profile</a>', 'warning');
+                this.updateStatus('Please add your NCBI credentials in your profile settings. <a href="/profile">Go to Profile</a>', 'warning');
                 if (this.downloadBtn) {
                     this.downloadBtn.disabled = true;
                 }
@@ -31,7 +44,10 @@ class NucleotideDownloader {
             return true;
         } catch (error) {
             console.error('Error checking credentials:', error);
-            this.updateStatus('Failed to verify NCBI credentials. Please try again.', 'error');
+            this.updateStatus('Failed to verify NCBI credentials. Please refresh the page or try again later.', 'error');
+            if (this.downloadBtn) {
+                this.downloadBtn.disabled = true;
+            }
             return false;
         }
     }
