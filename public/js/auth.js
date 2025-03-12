@@ -50,28 +50,18 @@ async function initializeAuth() {
         };
         console.log('[' + new Date().toLocaleTimeString() + '] URL parameters', JSON.stringify(params));
 
-        // Handle redirect result if coming from a redirect
-        if (params.authType === 'signInViaRedirect') {
-            try {
-                console.log('[' + new Date().toLocaleTimeString() + '] Handling redirect sign-in');
-                const result = await auth.getRedirectResult();
-                if (result.user) {
-                    console.log('[' + new Date().toLocaleTimeString() + '] Got user from redirect');
-                    await handleAuthSuccess(result.user);
-                    return;
+        // Set up auth state listener
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                console.log('[' + new Date().toLocaleTimeString() + '] Auth state changed - user signed in:', user.email);
+                try {
+                    await handleAuthSuccess(user);
+                } catch (error) {
+                    console.error('[' + new Date().toLocaleTimeString() + '] Error handling auth success:', error);
+                    showError('Error completing sign-in. Please try again.');
                 }
-            } catch (redirectError) {
-                console.log('[' + new Date().toLocaleTimeString() + '] No redirect result:', redirectError);
             }
-        }
-
-        // Check if user is already signed in
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-            console.log('[' + new Date().toLocaleTimeString() + '] User already signed in:', currentUser.email);
-            await handleAuthSuccess(currentUser);
-            return;
-        }
+        });
 
         // Add click handler for sign in button
         if (signInBtn) {
@@ -88,11 +78,19 @@ async function initializeAuth() {
                         prompt: 'select_account'
                     });
 
-                    // Always use popup for initial sign-in
-                    console.log('[' + new Date().toLocaleTimeString() + '] Attempting popup sign-in...');
-                    const result = await auth.signInWithPopup(provider);
-                    console.log('[' + new Date().toLocaleTimeString() + '] Popup sign-in successful');
-                    await handleAuthSuccess(result.user);
+                    // Try popup sign-in
+                    try {
+                        console.log('[' + new Date().toLocaleTimeString() + '] Attempting popup sign-in...');
+                        await auth.signInWithPopup(provider);
+                        // handleAuthSuccess will be called by onAuthStateChanged
+                    } catch (popupError) {
+                        if (popupError.code === 'auth/popup-blocked') {
+                            console.log('[' + new Date().toLocaleTimeString() + '] Popup blocked, trying redirect...');
+                            await auth.signInWithRedirect(provider);
+                        } else {
+                            throw popupError;
+                        }
+                    }
                 } catch (error) {
                     let errorMsg = 'Login failed: ';
                     
@@ -109,6 +107,9 @@ async function initializeAuth() {
                     }
                     
                     showError(errorMsg, error);
+                } finally {
+                    if (signInBtn) signInBtn.disabled = false;
+                    if (loading) loading.style.display = 'none';
                 }
             });
         }
@@ -156,8 +157,11 @@ async function handleAuthSuccess(user) {
             const cleanUrl = window.location.origin + window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
             
-            console.log('[' + new Date().toLocaleTimeString() + '] Redirecting to welcome page...');
-            window.location.href = '/auth/welcome';
+            // Only redirect if we're not already on the welcome page
+            if (!window.location.pathname.includes('/auth/welcome')) {
+                console.log('[' + new Date().toLocaleTimeString() + '] Redirecting to welcome page...');
+                window.location.href = '/auth/welcome';
+            }
         } else {
             throw new Error(data.error || 'Server authentication failed');
         }

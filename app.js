@@ -71,11 +71,14 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
-// Security headers
+// Add security headers middleware
 app.use((req, res, next) => {
+    // Allow Firebase Auth popups
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    // Add other security headers
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     next();
 });
 
