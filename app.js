@@ -1,3 +1,6 @@
+// Load environment variables first
+require('dotenv').config();
+
 const express = require('express');
 const path = require('path');
 const axios = require('axios');
@@ -10,25 +13,20 @@ const csv = require('csv-parse');
 
 // Initialize Firebase Admin with error handling
 try {
-    console.log('Initializing Firebase with project ID:', process.env.FIREBASE_PROJECT_ID);
+    console.log('Starting Firebase initialization...');
     
     if (!admin.apps.length) {
+        const privateKey = process.env.FIREBASE_PRIVATE_KEY
+            ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+            : undefined;
+            
         const firebaseConfig = {
             credential: admin.credential.cert({
                 projectId: process.env.FIREBASE_PROJECT_ID,
                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                // Handle the private key properly
-                privateKey: process.env.FIREBASE_PRIVATE_KEY
-                    ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-                    : undefined
+                privateKey: privateKey
             })
         };
-        
-        console.log('Firebase config prepared:', {
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            hasPrivateKey: !!process.env.FIREBASE_PRIVATE_KEY
-        });
         
         admin.initializeApp(firebaseConfig);
         console.log('Firebase initialized successfully');
@@ -46,31 +44,35 @@ try {
 const db = admin.firestore();
 
 const authRoutes = require('./routes/auth');
-require('dotenv').config();
 const app = express();
 
+// View engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+
+// Middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Update your session middleware
+// Session middleware
 app.use(session({
-    secret: 'jyotsna-ncbi-secret-key',
-    resave: true,
-    saveUninitialized: true,
+    secret: process.env.SESSION_SECRET || 'jyotsna-ncbi-secret-key',
+    resave: false,
+    saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
 
-// Add this middleware to check authentication
+// Make user data available to views
 app.use((req, res, next) => {
     res.locals.user = req.session.user || null;
     next();
 });
 
-// Add this authentication middleware
+// Authentication middleware
 const requireAuth = (req, res, next) => {
     if (!req.session.user) {
         return res.redirect('/auth/login');
@@ -78,6 +80,7 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
+// Security headers
 app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
@@ -85,11 +88,10 @@ app.use((req, res, next) => {
     next();
 });
 
-// View engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'ejs');
-
+// Static files
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Routes
 app.use('/auth', authRoutes);
 
 // Add this route to handle NCBI credentials

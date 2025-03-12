@@ -1,19 +1,28 @@
-// Import Firebase
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getAuth, signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+// Initialize Firebase with configuration from server
+let app;
+let auth;
 
-// Remove the imports since we're using the compat version
-// Initialize Firebase with your config
-const app = firebase.initializeApp({
-    apiKey: "AIzaSyDtVu6eDSpPzCM9OvmsnHk9Gf1yPBA3TIw",
-    authDomain: "jyotsnancbi.firebaseapp.com",
-    projectId: "jyotsnancbi",
-    storageBucket: "jyotsnancbi.firebasestorage.app",
-    messagingSenderId: "576710168225",
-    appId: "1:576710168225:web:8ba7cf57d14edbe21e2ae0"
-});
+async function initializeFirebase() {
+    try {
+        const response = await fetch('/api/firebase-config');
+        if (!response.ok) {
+            throw new Error('Failed to load Firebase configuration');
+        }
+        
+        const config = await response.json();
+        app = firebase.initializeApp(config);
+        auth = firebase.auth();
+        
+        console.log('Firebase initialized successfully');
+    } catch (error) {
+        console.error('Firebase initialization error:', error);
+        document.getElementById('errorMessage').textContent = 'Failed to initialize authentication';
+        document.getElementById('errorMessage').style.display = 'block';
+    }
+}
 
-const auth = firebase.auth();
+// Initialize Firebase when the page loads
+initializeFirebase();
 
 document.getElementById('googleSignIn').addEventListener('click', async () => {
     const button = document.getElementById('googleSignIn');
@@ -29,8 +38,7 @@ document.getElementById('googleSignIn').addEventListener('click', async () => {
         const result = await auth.signInWithPopup(provider);
         const user = result.user;
         
-        // Log user data for debugging
-        console.log('Google sign-in successful:', user);
+        console.log('Google sign-in successful:', user.email);
 
         const idToken = await user.getIdToken();
         

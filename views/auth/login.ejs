@@ -10,101 +10,15 @@
 <body>
     <div class="auth-container">
         <h2>Login to NCBI Tools</h2>
-        <h3>You need to login before access NCBI tools</h3>
+        <h3>You need to login before accessing NCBI tools</h3>
         <button id="googleSignIn" class="google-btn">
             <img src="https://www.google.com/favicon.ico" width="20" height="20" alt="Google">
             Sign in with Google
         </button>
-        <div id="loading" class="loading">Authenticating...</div>
+        <div id="loadingIndicator" class="loading" style="display: none;">Authenticating...</div>
+        <div id="errorMessage" class="error" style="display: none;"></div>
     </div>
 
-    <script>
-        // Load Firebase config from server
-        fetch('/api/firebase-config')
-            .then(response => response.json())
-            .then(firebaseConfig => {
-                // Initialize Firebase
-                if (!firebase.apps || !firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-                
-                const auth = firebase.auth();
-                const signInBtn = document.getElementById('googleSignIn');
-                const loading = document.getElementById('loading');
-
-                signInBtn.addEventListener('click', async () => {
-                    try {
-                        signInBtn.disabled = true;
-                        loading.classList.add('active');
-                        console.log('Google sign-in button clicked');
-
-                        const provider = new firebase.auth.GoogleAuthProvider();
-                        // Add additional scopes if needed
-                        provider.addScope('email');
-                        provider.addScope('profile');
-                        
-                        // Try popup first, fallback to redirect
-                        try {
-                            const result = await auth.signInWithPopup(provider);
-                            const user = result.user;
-                            if (user) {
-                                const token = await user.getIdToken();
-                                await handleServerAuth(token, user);
-                            }
-                        } catch (popupError) {
-                            console.log('Popup blocked, falling back to redirect...');
-                            await auth.signInWithRedirect(provider);
-                        }
-                    } catch (error) {
-                        console.error('Login error:', error);
-                        alert('Login failed: ' + error.message);
-                        signInBtn.disabled = false;
-                        loading.classList.remove('active');
-                    }
-                });
-
-                // Helper function for server authentication
-                async function handleServerAuth(token, user) {
-                    const response = await fetch('/auth/google-signin', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            token,
-                            userData: {
-                                name: user.displayName,
-                                email: user.email,
-                                photo: user.photoURL
-                            }
-                        }),
-                        credentials: 'include'
-                    });
-
-                    const data = await response.json();
-                    if (data.success) {
-                        window.location.href = data.redirect || '/auth/welcome';
-                    } else {
-                        throw new Error(data.error || 'Authentication failed');
-                    }
-                }
-
-                // Handle redirect result
-                auth.getRedirectResult().then(async (result) => {
-                    if (result && result.user) {
-                        const token = await result.user.getIdToken();
-                        await handleServerAuth(token, result.user);
-                    }
-                }).catch((error) => {
-                    console.error('Redirect error:', error);
-                    signInBtn.disabled = false;
-                    loading.classList.remove('active');
-                });
-            });
-            .catch(error => {
-                console.error('Error loading Firebase config:', error);
-                alert('Failed to initialize authentication. Please try again later.');
-            });
-    </script>
+    <script src="/js/auth.js"></script>
 </body>
 </html>
