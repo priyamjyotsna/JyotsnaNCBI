@@ -6,10 +6,20 @@ const path = require('path');
 const session = require('express-session');
 const admin = require('firebase-admin');
 
-// Generate a random session secret if not provided
-if (!process.env.SESSION_SECRET) {
-    console.warn('WARNING: SESSION_SECRET not set. Using a random secret. This will invalidate existing sessions on restart.');
-    process.env.SESSION_SECRET = require('crypto').randomBytes(32).toString('hex');
+// Validate required environment variables
+const requiredEnvVars = [
+    'FIREBASE_API_KEY',
+    'FIREBASE_AUTH_DOMAIN',
+    'FIREBASE_PROJECT_ID',
+    'FIREBASE_PRIVATE_KEY',
+    'FIREBASE_CLIENT_EMAIL',
+    'SESSION_SECRET'
+];
+
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingEnvVars.length > 0) {
+    console.error('Missing required environment variables:', missingEnvVars.join(', '));
+    process.exit(1);
 }
 
 // Initialize Firebase Admin
@@ -17,9 +27,7 @@ try {
     console.log('Starting Firebase initialization...');
     
     if (!admin.apps.length) {
-        const privateKey = process.env.FIREBASE_PRIVATE_KEY
-            ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-            : undefined;
+        const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
             
         const firebaseConfig = {
             credential: admin.credential.cert({
@@ -34,7 +42,7 @@ try {
     }
 } catch (error) {
     console.error('Firebase initialization error:', error);
-    process.exit(1); // Exit if Firebase fails to initialize
+    process.exit(1);
 }
 
 // Make Firestore available to your routes
@@ -53,17 +61,18 @@ app.use(express.urlencoded({ extended: true }));
 
 // Session middleware with secure configuration
 app.use(session({
-    secret: process.env.SESSION_SECRET || require('crypto').randomBytes(32).toString('hex'),
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     rolling: true, // Extends session expiry on activity
-    name: 'sessionId', // Custom cookie name
+    name: 'ncbi_session', // Custom cookie name
+    proxy: true, // Required for secure cookies behind a proxy (like Render)
     cookie: {
-        secure: 'auto', // This will automatically set secure based on the connection
-        httpOnly: true, // Prevents client side access to the cookie 
+        secure: process.env.NODE_ENV === 'production', // Force secure in production
+        httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        sameSite: 'lax', // Protects against CSRF
-        domain: process.env.NODE_ENV === 'production' ? '.jyotsnapriyam.com' : undefined // Set cookie domain in production
+        sameSite: 'lax',
+        domain: process.env.NODE_ENV === 'production' ? 'jyotsnapriyam.com' : undefined // Remove the leading dot
     }
 }));
 
@@ -81,21 +90,30 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
-// Add security headers middleware
+// Add security headers middleware with updated CORS
 app.use((req, res, next) => {
-    // Allow Firebase Auth popups
+    // Security headers
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-    // Add other security headers
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    // Add CORS headers for production
-    if (process.env.NODE_ENV === 'production') {
-        res.setHeader('Access-Control-Allow-Origin', 'https://ncbi.jyotsnapriyam.com');
+    
+    // Set CORS headers
+    const allowedOrigins = ['https://ncbi.jyotsnapriyam.com', 'https://jyotsnapriyam.com'];
+    const origin = req.headers.origin;
+    
+    if (process.env.NODE_ENV === 'production' && allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Access-Control-Allow-Credentials', 'true');
         res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     }
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    
     next();
 });
 
@@ -183,10 +201,37 @@ app.post('/auth/google-signin', async (req, res) => {
     }
 });
 
-// Start the server
+// Update the server startup code at the end of the file:
 const PORT = process.env.PORT || 3007;
-app.listen(PORT, () => {
+
+// Create HTTP server with error handling
+const server = app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('Auth Domain:', process.env.FIREBASE_AUTH_DOMAIN);
+}).on('error', (error) => {
+    console.error('Server failed to start:', error);
+    process.exit(1);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    // Attempt graceful shutdown
+    server.close(() => {
+        console.log('Server closed due to uncaught exception');
+        process.exit(1);
+    });
+    // If graceful shutdown fails, force exit after 1 second
+    setTimeout(() => {
+        console.error('Forced shutdown due to uncaught exception');
+        process.exit(1);
+    }, 1000);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Promise Rejection:', reason);
 });
 
 module.exports = app;
