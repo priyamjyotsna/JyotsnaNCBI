@@ -157,10 +157,19 @@ async function handleAuthSuccess(user) {
             const cleanUrl = window.location.origin + window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);
             
-            // Only redirect if we're not already on the welcome page
-            if (!window.location.pathname.includes('/auth/welcome')) {
-                console.log('[' + new Date().toLocaleTimeString() + '] Redirecting to welcome page...');
-                window.location.href = '/auth/welcome';
+            // Check if this is a popup window
+            if (window.opener && window.opener !== window) {
+                console.log('[' + new Date().toLocaleTimeString() + '] Closing popup window...');
+                // Signal the main window to redirect
+                window.opener.postMessage({ type: 'AUTH_SUCCESS' }, '*');
+                // Close the popup
+                window.close();
+            } else {
+                // Only redirect if we're not already on the welcome page
+                if (!window.location.pathname.includes('/auth/welcome')) {
+                    console.log('[' + new Date().toLocaleTimeString() + '] Redirecting to welcome page...');
+                    window.location.href = '/auth/welcome';
+                }
             }
         } else {
             throw new Error(data.error || 'Server authentication failed');
@@ -170,6 +179,14 @@ async function handleAuthSuccess(user) {
         throw error;
     }
 }
+
+// Add message listener to handle redirect in main window
+window.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'AUTH_SUCCESS') {
+        console.log('[' + new Date().toLocaleTimeString() + '] Received auth success message from popup');
+        window.location.href = '/auth/welcome';
+    }
+});
 
 // Initialize when the page loads
 document.addEventListener('DOMContentLoaded', initializeAuth);
