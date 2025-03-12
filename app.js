@@ -373,6 +373,85 @@ app.post('/api/analyze-uploaded-sequence', requireAuth, async (req, res) => {
     }
 });
 
+app.get('/sequence-fetch', requireAuth, (req, res) => {
+    try {
+        res.render('sequence-fetch', { user: req.session.user });
+    } catch (error) {
+        console.error('Error rendering sequence-fetch:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+app.get('/api/sequence/fetch', requireAuth, async (req, res) => {
+    try {
+        const { id } = req.query;
+        if (!id) {
+            return res.status(400).json({ success: false, error: 'No sequence ID provided' });
+        }
+
+        const userEmail = req.session?.user?.email;
+        const baseUrl = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
+        const tool = 'sequence-fetch';
+        const ncbiApiKey = process.env.NCBI_API_KEY;
+
+        // Fetch sequence data from NCBI
+        const searchUrl = `${baseUrl}/esearch.fcgi`;
+        const searchParams = {
+            db: 'nucleotide',
+            term: `${id}[accn]`,
+            retmode: 'json',
+            tool: tool,
+            email: userEmail,
+            api_key: ncbiApiKey
+        };
+
+        const searchResponse = await axios.get(searchUrl, { params: searchParams });
+        
+        if (!searchResponse.data?.esearchresult?.idlist?.[0]) {
+            return res.status(404).json({
+                success: false,
+                error: `Sequence ${id} not found`
+            });
+        }
+
+        // Fetch sequence details
+        const fetchUrl = `${baseUrl}/efetch.fcgi`;
+        const fetchParams = {
+            db: 'nucleotide',
+            id: searchResponse.data.esearchresult.idlist[0],
+            rettype: 'gb',
+            retmode: 'xml',
+            tool: tool,
+            email: userEmail,
+            api_key: ncbiApiKey
+        };
+
+        const fetchResponse = await axios.get(fetchUrl, { params: fetchParams });
+        
+        // Parse the response and extract required fields
+        const sequence = fetchResponse.data;
+        // Add parsing logic here to extract sequence, organism, moltype, etc.
+
+        return res.json({
+            success: true,
+            data: {
+                sequence: sequence,
+                organism: 'Parsed Organism',
+                length: sequence.length,
+                moltype: 'DNA/RNA',
+                update_date: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching sequence:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch sequence data'
+        });
+    }
+});
+
 app.get('/api/fetch-sequence', requireAuth, async (req, res) => {
     try {
         const { accession } = req.query;
