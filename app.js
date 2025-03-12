@@ -64,13 +64,14 @@ const app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-// Middleware setup
+// Basic middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Determine cookie domain based on environment
 const cookieDomain = process.env.NODE_ENV === 'production' 
-    ? '.jyotsnapriyam.com'  // Include subdomain support with leading dot
+    ? '.jyotsnapriyam.com'
     : undefined;
 
 console.log('Cookie domain:', cookieDomain);
@@ -136,10 +137,7 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
 });
 
-// Static files
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Routes
+// Mount auth routes
 app.use('/auth', authRouter);
 
 // Firebase config endpoint
