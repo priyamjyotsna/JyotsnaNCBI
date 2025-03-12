@@ -528,18 +528,44 @@ function processSequenceData(data, type) {
         const filteredMutations = getFilteredMutations();
         
         // Show results section
-        resultsSection.style.display = 'block';
+        if (resultsSection) {
+            resultsSection.style.display = 'block';
+        }
         
-        // Update summary statistics
-        document.getElementById('totalMutations').textContent = filteredMutations.length;
-        document.getElementById('sequenceLength').textContent = comparisonResults.referenceLength;
-        document.getElementById('mutationRate').textContent = 
-            ((filteredMutations.length / comparisonResults.referenceLength) * 100).toFixed(2) + '%';
+        // Update summary statistics with null checks
+        const totalMutationsElement = document.getElementById('totalMutations');
+        const sequenceLengthElement = document.getElementById('sequenceLength');
+        const mutationRateElement = document.getElementById('mutationRate');
+        
+        if (totalMutationsElement) {
+            totalMutationsElement.textContent = filteredMutations.length;
+        }
+        
+        if (sequenceLengthElement && comparisonResults.metadata && comparisonResults.metadata.referenceLength) {
+            sequenceLengthElement.textContent = comparisonResults.metadata.referenceLength;
+        }
+        
+        if (mutationRateElement && comparisonResults.metadata && comparisonResults.metadata.referenceLength) {
+            const rate = ((filteredMutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2);
+            mutationRateElement.textContent = rate + '%';
+        }
 
         // Update visualizations with filtered mutations
-        createMutationChart(filteredMutations);
-        displaySequenceAlignment(filteredMutations);
-        populateMutationTable(filteredMutations);
+        try {
+            if (document.getElementById('mutationChart')) {
+                createMutationChart(filteredMutations);
+            }
+            
+            if (document.getElementById('sequenceViewer')) {
+                displaySequenceAlignment(filteredMutations);
+            }
+            
+            if (document.getElementById('mutationTable')) {
+                populateMutationTable(filteredMutations);
+            }
+        } catch (error) {
+            console.error('Error updating visualizations:', error);
+        }
     }
 
 
