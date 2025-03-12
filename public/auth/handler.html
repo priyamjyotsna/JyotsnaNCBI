@@ -269,25 +269,41 @@
                     } else {
                         redirectTo('/auth/login');
                     }
-                }
-                
-                try {
-                    // Try a simpler approach - just redirect back to login
-                    // This avoids the hanging getRedirectResult() call
-                    log('Skipping getRedirectResult due to timeout issues');
-                    updateStatus('Completing authentication...');
+                } else if (authType === 'signInViaPopup') {
+                    // Handle popup auth
+                    log('Handling popup sign-in');
+                    updateStatus('Popup authentication completed');
                     
-                    // If we have a redirect URL, use it
-                    if (redirectUrl) {
-                        redirectTo(redirectUrl);
-                    } else {
-                        redirectTo('/auth/login');
-                    }
-                } catch (redirectError) {
-                    log('Redirect error', redirectError);
-                    updateStatus(`Authentication error: ${redirectError.message}`);
+                    // Clear timeout
+                    timeout.clear();
+                    
+                    // Just close the window for popup auth
+                    window.close();
+                } else {
+                    // Unknown auth type
+                    log('Unknown auth type', authType);
+                    updateStatus('Unknown authentication type');
                     showButtons();
                 }
+                
+                // REMOVE THIS DUPLICATE CODE BLOCK
+                // try {
+                //     // Try a simpler approach - just redirect back to login
+                //     // This avoids the hanging getRedirectResult() call
+                //     log('Skipping getRedirectResult due to timeout issues');
+                //     updateStatus('Completing authentication...');
+                //     
+                //     // If we have a redirect URL, use it
+                //     if (redirectUrl) {
+                //         redirectTo(redirectUrl);
+                //     } else {
+                //         redirectTo('/auth/login');
+                //     }
+                // } catch (redirectError) {
+                //     log('Redirect error', redirectError);
+                //     updateStatus(`Authentication error: ${redirectError.message}`);
+                //     showButtons();
+                // }
             } catch (error) {
                 log('Handler error', error);
                 updateStatus(`Error: ${error.message}`);
