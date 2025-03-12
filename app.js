@@ -353,3 +353,41 @@ module.exports = app;
 
 const apiRoutes = require('./routes/api');
 app.use('/api', apiRoutes);
+
+// DNA Analysis routes
+app.get('/dna-analysis', requireAuth, (req, res) => {
+    res.render('dna-analysis', { user: req.session.user });
+});
+
+app.post('/api/analyze-uploaded-sequence', requireAuth, async (req, res) => {
+    try {
+        if (!req.files || !req.files.sequenceFile) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+        const file = req.files.sequenceFile;
+        const sequence = file.data.toString();
+        res.json({ sequence });
+    } catch (error) {
+        console.error('Error analyzing sequence:', error);
+        res.status(500).json({ error: 'Failed to analyze sequence' });
+    }
+});
+
+app.get('/api/fetch-sequence', requireAuth, async (req, res) => {
+    try {
+        const { accession } = req.query;
+        if (!accession) {
+            return res.status(400).json({ error: 'No accession provided' });
+        }
+        
+        // Add NCBI API fetch logic here
+        // For now returning a mock response
+        const response = await fetch(`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=${accession}&rettype=fasta&retmode=text`);
+        const sequence = await response.text();
+        
+        res.json({ sequence });
+    } catch (error) {
+        console.error('Error fetching sequence:', error);
+        res.status(500).json({ error: 'Failed to fetch sequence' });
+    }
+});
