@@ -10,8 +10,16 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
-router.get('/login', (req, res) => {
-    res.render('auth/login', { user: req.session.user });
+// Check if user is already authenticated
+const checkAuth = (req, res, next) => {
+    if (req.session.user) {
+        return res.redirect('/auth/welcome');
+    }
+    next();
+};
+
+router.get('/login', checkAuth, (req, res) => {
+    res.render('auth/login', { user: null });
 });
 
 router.get('/signup', (req, res) => {
