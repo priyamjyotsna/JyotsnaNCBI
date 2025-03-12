@@ -354,6 +354,10 @@ module.exports = app;
 const apiRoutes = require('./routes/api');
 app.use('/api', apiRoutes);
 
+// Increase payload size limits for sequence data
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
 // DNA Analysis routes
 app.get('/dna-analysis', requireAuth, (req, res) => {
     res.render('dna-analysis', { user: req.session.user });
@@ -581,27 +585,42 @@ app.get('/sequence-comparison', requireAuth, (req, res) => {
 
 app.post('/api/compare-sequences', requireAuth, async (req, res) => {
     try {
-        const { reference, query } = req.body;
-        if (!reference || !query) {
+        // Check if request body is properly formatted
+        if (!req.body || typeof req.body !== 'object') {
             return res.status(400).json({
                 success: false,
-                error: 'Both reference and query sequences are required'
+                error: 'Invalid request format'
             });
         }
 
-        // Perform sequence comparison
-        const results = await compareSequences(reference, query);
+        const { reference, query } = req.body;
         
-        res.json({
+        // Validate input sequences
+        if (!reference || !query || typeof reference !== 'string' || typeof query !== 'string') {
+            return res.status(400).json({
+                success: false,
+                error: 'Both reference and query sequences are required and must be strings'
+            });
+        }
+
+        // Clean sequences (remove whitespace and normalize)
+        const cleanReference = reference.trim().toUpperCase();
+        const cleanQuery = query.trim().toUpperCase();
+
+        // Perform sequence comparison
+        const results = await compareSequences(cleanReference, cleanQuery);
+        
+        return res.json({
             success: true,
             data: results
         });
 
     } catch (error) {
         console.error('Error comparing sequences:', error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
-            error: 'Failed to compare sequences'
+            error: 'Failed to compare sequences',
+            details: error.message
         });
     }
 });
