@@ -185,53 +185,67 @@ app.get('/api/nucleotide/sequence', requireAuth, async (req, res) => {
             });
         }
 
-        // Get user's email from session
-        const userEmail = req.session.user.email;
-        
-        // Determine which credentials to use
-        let ncbiEmail = process.env.NCBI_EMAIL;
-        let ncbiApiKey = process.env.NCBI_API_KEY;
-
-        // Override email with user's email
-        ncbiEmail = userEmail;
-
-        // If user has provided both email and API key, use those instead
-        if (req.session.user.ncbiCredentials?.email && req.session.user.ncbiCredentials?.apiKey) {
-            ncbiEmail = req.session.user.ncbiCredentials.email;
-            ncbiApiKey = req.session.user.ncbiCredentials.apiKey;
-        }
-
-        const baseUrl = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
-        
-        // First, search for the ID
-        const searchResponse = await axios.get(
-            `${baseUrl}/esearch.fcgi?db=nucleotide&term=${id}[accn]&tool=nucleotide-downloader&email=${ncbiEmail}${ncbiApiKey ? `&api_key=${ncbiApiKey}` : ''}&retmode=json`
-        );
-
-        if (!searchResponse.data.esearchresult.idlist || searchResponse.data.esearchresult.idlist.length === 0) {
-            return res.status(404).json({
+        const userEmail = req.session?.user?.email;
+        if (!userEmail) {
+            return res.status(401).json({
                 success: false,
-                error: `Nucleotide sequence not found for ID: ${id}`
+                error: 'User not authenticated'
             });
         }
 
-        // Then fetch the sequence
-        const fetchResponse = await axios.get(
-            `${baseUrl}/efetch.fcgi?db=nucleotide&id=${searchResponse.data.esearchresult.idlist[0]}&rettype=fasta&retmode=text&tool=nucleotide-downloader&email=${ncbiEmail}${ncbiApiKey ? `&api_key=${ncbiApiKey}` : ''}`
-        );
+        const baseUrl = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
+        const tool = 'nucleotide-downloader';
+        const ncbiApiKey = process.env.NCBI_API_KEY;
+        
+        // Add delay between requests
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+        await delay(500); // 500ms delay to respect NCBI rate limits
 
-        res.json({
+        // First fetch sequence ID
+        const searchUrl = `${baseUrl}/esearch.fcgi`;
+        const searchParams = {
+            db: 'nucleotide',
+            term: `${id}[accn]`,
+            retmode: 'json',
+            tool: tool,
+            email: userEmail,
+            api_key: ncbiApiKey
+        };
+
+        const searchResponse = await axios.get(searchUrl, { params: searchParams });
+        
+        if (!searchResponse.data?.esearchresult?.idlist?.[0]) {
+            return res.status(404).json({
+                success: false,
+                error: `Sequence ${id} not found`
+            });
+        }
+
+        // Then fetch the actual sequence
+        const fetchUrl = `${baseUrl}/efetch.fcgi`;
+        const fetchParams = {
+            db: 'nucleotide',
+            id: searchResponse.data.esearchresult.idlist[0],
+            rettype: 'fasta',
+            retmode: 'text',
+            tool: tool,
+            email: userEmail,
+            api_key: ncbiApiKey
+        };
+
+        const fetchResponse = await axios.get(fetchUrl, { params: fetchParams });
+
+        return res.json({
             success: true,
-            data: fetchResponse.data,
-            id: id
+            data: fetchResponse.data
         });
 
     } catch (error) {
-        console.error(`Error fetching nucleotide sequence ${req.query.id}:`, error);
-        res.status(500).json({
+        console.error('NCBI API Error:', error.response?.data || error.message);
+        return res.status(500).json({
             success: false,
-            error: 'Failed to fetch nucleotide sequence',
-            details: error.message
+            error: 'Failed to fetch sequence',
+            details: error.response?.data || error.message
         });
     }
 });
