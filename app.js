@@ -116,7 +116,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Redis session store for production
+// Session configuration
 let sessionConfig = {
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -133,77 +133,8 @@ let sessionConfig = {
     }
 };
 
-// Initialize Redis connection and session store
-async function initializeRedisStore() {
-    if (process.env.NODE_ENV === 'production') {
-        const { createClient } = require('redis');
-        const RedisStore = require('connect-redis').default;
-        
-        console.log('Initializing Redis connection...');
-        console.log('REDIS_URL:', process.env.REDIS_URL ? 'Present' : 'Missing');
-        
-        if (!process.env.REDIS_URL) {
-            console.error('REDIS_URL environment variable is not set');
-            return;
-        }
-
-        const redisClient = createClient({
-            url: process.env.REDIS_URL,
-            socket: {
-                connectTimeout: 10000,
-                reconnectStrategy: (retries) => {
-                    if (retries > 3) {
-                        console.error('Max Redis reconnection attempts reached');
-                        return new Error('Max Redis reconnection attempts reached');
-                    }
-                    return Math.min(retries * 100, 3000);
-                }
-            }
-        });
-
-        redisClient.on('error', function(err) {
-            console.error('Redis connection error:', err);
-        });
-
-        redisClient.on('connect', function() {
-            console.log('Redis connected successfully');
-        });
-
-        redisClient.on('ready', function() {
-            console.log('Redis client is ready');
-        });
-
-        redisClient.on('end', function() {
-            console.log('Redis connection ended');
-        });
-
-        try {
-            if (!redisClient.isOpen) {
-                await redisClient.connect();
-                console.log('Redis connection established');
-            }
-
-            sessionConfig.store = new RedisStore({
-                client: redisClient,
-                prefix: 'ncbi:'
-            });
-            console.log('Redis store configured successfully');
-        } catch (error) {
-            console.error('Failed to connect to Redis:', error);
-            // Fallback to memory store if Redis connection fails
-            console.log('Falling back to memory store for sessions');
-        }
-    }
-}
-
-// Initialize Redis and then set up the session middleware
-initializeRedisStore().then(() => {
-    app.use(session(sessionConfig));
-}).catch(error => {
-    console.error('Failed to initialize Redis store:', error);
-    // Use default memory store
-    app.use(session(sessionConfig));
-});
+// Initialize session middleware
+app.use(session(sessionConfig));
 
 // Request logging middleware
 app.use((req, res, next) => {
