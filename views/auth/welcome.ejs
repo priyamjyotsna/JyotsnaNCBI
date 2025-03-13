@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://*.firebaseapp.com https://*.googleapis.com https://*.firebaseio.com https://apis.google.com; script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://*.firebaseapp.com https://*.googleapis.com https://*.firebaseio.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.gstatic.com; font-src 'self' https: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' https: data: blob: https://*.googleapis.com https://*.gstatic.com; connect-src 'self' https: https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com https://apis.google.com; frame-src 'self' https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com;">
     <title>Welcome - JyotsnaNCBI</title>
     <link rel="stylesheet" href="/styles/main.css">
     <link rel="stylesheet" href="/styles/auth.css">
@@ -9,6 +12,13 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script>
+        // Check if user is authenticated on page load
+        const userData = <%- JSON.stringify(user || null) %>;
+        if (!userData || !userData.uid) {
+            window.location.replace('/auth/login');
+        }
+    </script>
     <style>
         body {
             background: linear-gradient(135deg, #2c3e50, #4ca1af);
@@ -137,17 +147,22 @@
                     await firebase.auth().signOut();
                 }
                 
+                // Clear any cached auth state
+                sessionStorage.clear();
+                localStorage.clear();
+                
                 // Then call server logout endpoint
                 const response = await fetch('/auth/logout', {
                     method: 'POST',
-                    credentials: 'include'
+                    credentials: 'include',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
                 });
                 
                 if (response.ok) {
-                    // Clear any cached auth state
-                    sessionStorage.clear();
-                    localStorage.clear();
-                    
                     // Force reload to login page to clear any cached state
                     window.location.replace('/auth/login');
                 } else {

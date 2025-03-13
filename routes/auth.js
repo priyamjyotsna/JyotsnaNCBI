@@ -34,11 +34,25 @@ const checkAuth = (req, res, next) => {
 router.get('/login', checkAuth, (req, res) => {
     // Set cache control headers to prevent caching
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.render('auth/login', { user: null });
 });
 
 router.get('/signup', checkAuth, (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.render('auth/signup', { user: null });
+});
+
+// Add session verification endpoint
+router.get('/verify-session', (req, res) => {
+    if (req.session && req.session.user) {
+        res.json({ valid: true });
+    } else {
+        res.status(401).json({ valid: false });
+    }
 });
 
 // Single Google sign-in route
@@ -46,68 +60,61 @@ router.post('/google-signin', async (req, res) => {
     try {
         const { token, userData } = req.body;
         
-        if (!token) {
-            return res.status(400).json({ success: false, error: 'No token provided' });
+        console.log('Received sign-in request for user:', userData.email);
+        
+        // Verify the Firebase token
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        console.log('Token verified for user:', decodedToken.email);
+        
+        // Verify the UID matches
+        if (decodedToken.uid !== userData.uid) {
+            console.error('UID mismatch:', { token: decodedToken.uid, user: userData.uid });
+            throw new Error('UID mismatch');
         }
         
-        console.log('Received auth request for:', userData.email);
+        // Set up session data
+        req.session.user = {
+            uid: decodedToken.uid,
+            email: decodedToken.email,
+            name: userData.name,
+            photo: userData.photo
+        };
         
-        // Verify the token with a timeout and better error handling
-        try {
-            const decodedToken = await Promise.race([
-                admin.auth().verifyIdToken(token),
-                new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Authentication timeout')), 10000)
-                )
-            ]);
-            
-            console.log('Token verified successfully for:', userData.email);
-            
-            // Create or update user document in Firestore
-            try {
-                const userRef = admin.firestore().collection('users').doc(decodedToken.uid);
-                await userRef.set({
-                    email: userData.email,
-                    name: userData.name,
-                    photo: userData.photo,
-                    lastLogin: admin.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-            } catch (firestoreError) {
-                console.error('Firestore error:', firestoreError);
-                // Continue with authentication even if Firestore fails
+        console.log('Session data set:', req.session.user);
+        
+        // Ensure session is saved before responding
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error:', err);
+                return res.status(500).json({
+                    success: false,
+                    error: 'Failed to save session'
+                });
             }
             
-            // Store user data in session
-            req.session.user = {
-                uid: decodedToken.uid,
-                email: userData.email,
-                name: userData.name,
-                photo: userData.photo
-            };
-            
-            // Save session explicitly
-            req.session.save((err) => {
-                if (err) {
-                    console.error('Session save error:', err);
-                    return res.status(500).json({ success: false, error: 'Session error' });
-                }
-                
-                console.log('Session saved successfully for:', userData.email);
-                return res.json({ success: true });
+            console.log('Session saved successfully');
+            res.json({
+                success: true,
+                user: req.session.user
             });
-        } catch (verifyError) {
-            console.error('Token verification error:', verifyError);
-            return res.status(401).json({ success: false, error: 'Invalid authentication token' });
-        }
+        });
     } catch (error) {
         console.error('Authentication error:', error);
-        res.status(500).json({ success: false, error: 'Authentication failed. Please try again.' });
+        res.status(401).json({
+            success: false,
+            error: error.message || 'Authentication failed'
+        });
     }
 });
 
 // Welcome route
 router.get('/welcome', requireAuth, async (req, res) => {
     try {
+        // Set cache control headers to prevent caching
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+
         let userData = { ...req.session.user };
         
         // If user is authenticated, try to fetch additional data from Firestore
@@ -137,24 +144,32 @@ router.get('/welcome', requireAuth, async (req, res) => {
 });
 
 // Logout route - handle both GET and POST
-router.all('/logout', (req, res) => {
-    // Clear session
-    req.session.destroy((err) => {
-        if (err) {
-            console.error('Session destruction error:', err);
-            if (req.method === 'POST') {
-                return res.status(500).json({ success: false, error: 'Failed to clear session' });
+router.all('/logout', async (req, res) => {
+    try {
+        // Clear session
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Session destruction error:', err);
+                if (req.method === 'POST') {
+                    return res.status(500).json({ success: false, error: 'Failed to clear session' });
+                }
             }
-        }
-        
-        // For POST requests, send JSON response
+            
+            // For POST requests, send JSON response
+            if (req.method === 'POST') {
+                return res.json({ success: true });
+            }
+            
+            // For GET requests, redirect to login
+            res.redirect('/auth/login');
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
         if (req.method === 'POST') {
-            return res.json({ success: true });
+            return res.status(500).json({ success: false, error: 'Logout failed' });
         }
-        
-        // For GET requests, redirect to login
         res.redirect('/auth/login');
-    });
+    }
 });
 
 // Save NCBI credentials

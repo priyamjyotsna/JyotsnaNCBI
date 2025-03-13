@@ -29,19 +29,37 @@ async function initializeAuth() {
         console.log('[' + new Date().toLocaleTimeString() + '] Fetching Firebase configuration...');
         const response = await fetch('/api/firebase-config');
         if (!response.ok) {
-            throw new Error(`Failed to fetch config: ${response.status}`);
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Failed to fetch config: ${response.status}`);
         }
         
         const firebaseConfig = await response.json();
-        console.log('[' + new Date().toLocaleTimeString() + '] Firebase config loaded', JSON.stringify(firebaseConfig));
+        console.log('[' + new Date().toLocaleTimeString() + '] Firebase config loaded successfully');
+        
+        // Validate required config fields
+        const requiredFields = ['apiKey', 'authDomain', 'projectId', 'databaseURL', 'storageBucket', 'messagingSenderId', 'appId'];
+        const missingFields = requiredFields.filter(field => !firebaseConfig[field]);
+        if (missingFields.length > 0) {
+            throw new Error(`Missing required Firebase config fields: ${missingFields.join(', ')}`);
+        }
         
         // Initialize Firebase
         console.log('[' + new Date().toLocaleTimeString() + '] Initializing Firebase...');
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const analytics = getAnalytics(app);
         
-        console.log('[' + new Date().toLocaleTimeString() + '] Firebase initialized');
+        // Initialize Analytics only if measurementId is available
+        let analytics = null;
+        if (firebaseConfig.measurementId) {
+            try {
+                analytics = getAnalytics(app);
+                console.log('[' + new Date().toLocaleTimeString() + '] Analytics initialized');
+            } catch (error) {
+                console.warn('[' + new Date().toLocaleTimeString() + '] Analytics initialization skipped:', error.message);
+            }
+        }
+        
+        console.log('[' + new Date().toLocaleTimeString() + '] Firebase initialized successfully');
 
         // Set up auth state listener
         onAuthStateChanged(auth, async (user) => {
@@ -53,6 +71,8 @@ async function initializeAuth() {
                     console.error('[' + new Date().toLocaleTimeString() + '] Error handling auth success:', error);
                     showError('Error completing sign-in. Please try again.');
                 }
+            } else {
+                console.log('[' + new Date().toLocaleTimeString() + '] Auth state changed - user signed out');
             }
         });
 
@@ -99,6 +119,7 @@ async function initializeAuth() {
             });
         }
     } catch (error) {
+        console.error('[' + new Date().toLocaleTimeString() + '] Authentication initialization failed:', error);
         showError('Failed to initialize authentication. Please try again later.', error);
     }
 }

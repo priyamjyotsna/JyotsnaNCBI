@@ -687,13 +687,13 @@ function processSequenceData(data, type) {
     
     function createMutationChart() {
         try {
-            const canvas = document.getElementById('mutationChart');
-            if (!canvas) {
+        const canvas = document.getElementById('mutationChart');
+        if (!canvas) {
                 throw new Error('Mutation chart canvas element not found');
             }
 
             // Get the data ready
-            const stats = comparisonResults.distributionStats;
+                const stats = comparisonResults.distributionStats;
             const labels = [];
             const data = [];
             
@@ -711,12 +711,12 @@ function processSequenceData(data, type) {
                 const binSize = Math.floor(comparisonResults.metadata.referenceLength / 20);
                 const bins = new Array(Math.ceil(comparisonResults.metadata.referenceLength / binSize)).fill(0);
                 
-                comparisonResults.mutations.forEach(mutation => {
-                    const binIndex = Math.floor((mutation.position - 1) / binSize);
+                    comparisonResults.mutations.forEach(mutation => {
+                            const binIndex = Math.floor((mutation.position - 1) / binSize);
                     if (binIndex >= 0 && binIndex < bins.length) {
                         bins[binIndex]++;
-                    }
-                });
+                        }
+                    });
                 
                 bins.forEach((value, i) => {
                     const start = i * binSize + 1;
@@ -730,7 +730,7 @@ function processSequenceData(data, type) {
             if (window.mutationChart instanceof Chart) {
                 window.mutationChart.destroy();
             }
-
+            
             // Create new chart
             window.mutationChart = new Chart(canvas.getContext('2d'), {
                 type: 'bar',
@@ -1060,7 +1060,7 @@ function processSequenceData(data, type) {
             queryHeader: comparisonResults.metadata.queryHeader
         }));
     }
-
+    
     function exportToExcel() {
         try {
             if (!comparisonResults || !comparisonResults.mutations) {
@@ -1107,7 +1107,7 @@ function processSequenceData(data, type) {
             alert('Failed to export to CSV: ' + error.message);
         }
     }
-
+    
     function exportToPDF() {
         try {
             if (!comparisonResults || !comparisonResults.mutations) {

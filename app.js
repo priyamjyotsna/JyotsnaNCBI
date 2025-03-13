@@ -64,39 +64,14 @@ const isProd = process.env.NODE_ENV === 'production';
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: [
-                "'self'", 
-                "'unsafe-inline'",
-                "'unsafe-eval'",
-                "https://www.gstatic.com",
-                "https://cdn.jsdelivr.net",
-                "https://cdnjs.cloudflare.com",
-                "https://unpkg.com",
-                "https://html2canvas.hertzen.com"
-            ],
-            styleSrc: [
-                "'self'", 
-                "'unsafe-inline'", 
-                "https://www.gstatic.com",
-                "https://fonts.googleapis.com",
-                "https://cdnjs.cloudflare.com"
-            ],
-            imgSrc: [
-                "'self'", 
-                "data:", 
-                "blob:",
-                "https://www.gstatic.com", 
-                "https://*.googleapis.com",
-                "https://*.googleusercontent.com"
-            ],
-            connectSrc: ["'self'", "https://*.firebaseio.com", "https://*.googleapis.com"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
-            frameSrc: ["'self'", "blob:", "https://*.firebaseapp.com"],
-            objectSrc: ["'none'"],
-            workerSrc: ["'self'", "blob:"],
-            downloadSrc: ["'self'"],
-            baseUri: ["'self'"]
+            defaultSrc: ["'self'", "https:", "'unsafe-inline'", "'unsafe-eval'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://www.gstatic.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://*.firebaseio.com", "https://apis.google.com", "https://accounts.google.com", "https://*.google.com"],
+            scriptSrcElem: ["'self'", "'unsafe-inline'", "https://www.gstatic.com", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://*.firebaseio.com", "https://apis.google.com", "https://accounts.google.com", "https://*.google.com"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com", "https://www.gstatic.com", "https://*.google.com"],
+            fontSrc: ["'self'", "https:", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com", "https://*.google.com"],
+            imgSrc: ["'self'", "https:", "data:", "blob:", "https://*.googleapis.com", "https://*.gstatic.com", "https://*.google.com"],
+            connectSrc: ["'self'", "https:", "https://*.firebaseio.com", "https://*.googleapis.com", "https://*.firebaseapp.com", "https://apis.google.com", "https://accounts.google.com", "https://*.google.com"],
+            frameSrc: ["'self'", "https://*.firebaseapp.com", "https://*.googleapis.com", "https://apis.google.com", "https://accounts.google.com", "https://*.google.com"]
         }
     },
     crossOriginEmbedderPolicy: false,
@@ -129,12 +104,40 @@ let sessionConfig = {
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000,
         sameSite: 'lax',
-        domain: process.env.NODE_ENV === 'production' ? '.jyotsnapriyam.com' : undefined
+        path: '/'
     }
 };
 
+// Add domain only in production
+if (process.env.NODE_ENV === 'production') {
+    sessionConfig.cookie.domain = '.jyotsnapriyam.com';
+}
+
 // Initialize session middleware
 app.use(session(sessionConfig));
+
+// Add session debugging middleware
+app.use((req, res, next) => {
+    console.log('Session ID:', req.sessionID);
+    console.log('Session exists:', !!req.session);
+    console.log('Session user:', req.session?.user);
+    console.log('Request headers:', {
+        origin: req.headers.origin,
+        referer: req.headers.referer,
+        host: req.headers.host
+    });
+    next();
+});
+
+// Add CORS headers for development
+if (process.env.NODE_ENV === 'development') {
+    app.use((req, res, next) => {
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        next();
+    });
+}
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -203,15 +206,61 @@ app.use('/auth', authRouter);
 
 // Firebase config endpoint
 app.get('/api/firebase-config', (req, res) => {
-    res.json({
-        apiKey: process.env.FIREBASE_API_KEY,
-        authDomain: "jyotsnancbi.firebaseapp.com",
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        databaseURL: "https://jyotsnancbi-default-rtdb.firebaseio.com",
-        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "jyotsnancbi.appspot.com",
-        messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "123456789012",
-        appId: process.env.FIREBASE_APP_ID || "1:123456789012:web:abcdef1234567890"
-    });
+    try {
+        // Log environment for debugging
+        console.log('Environment:', process.env.NODE_ENV);
+        console.log('Firebase config check:', {
+            hasApiKey: !!process.env.FIREBASE_API_KEY,
+            hasAuthDomain: !!process.env.FIREBASE_AUTH_DOMAIN,
+            hasProjectId: !!process.env.FIREBASE_PROJECT_ID,
+            hasDatabaseUrl: !!process.env.FIREBASE_DATABASE_URL,
+            hasStorageBucket: !!process.env.FIREBASE_STORAGE_BUCKET,
+            hasMessagingSenderId: !!process.env.FIREBASE_MESSAGING_SENDER_ID,
+            hasAppId: !!process.env.FIREBASE_APP_ID
+        });
+
+        // Validate required environment variables
+        const requiredVars = [
+            'FIREBASE_API_KEY',
+            'FIREBASE_AUTH_DOMAIN',
+            'FIREBASE_PROJECT_ID',
+            'FIREBASE_DATABASE_URL',
+            'FIREBASE_STORAGE_BUCKET',
+            'FIREBASE_MESSAGING_SENDER_ID',
+            'FIREBASE_APP_ID'
+        ];
+
+        const missingVars = requiredVars.filter(varName => !process.env[varName]);
+        if (missingVars.length > 0) {
+            console.error('Missing Firebase environment variables:', missingVars);
+            return res.status(500).json({
+                success: false,
+                error: 'Firebase configuration is incomplete',
+                missing: missingVars
+            });
+        }
+
+        const config = {
+            apiKey: process.env.FIREBASE_API_KEY,
+            authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            databaseURL: process.env.FIREBASE_DATABASE_URL,
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+            messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+            appId: process.env.FIREBASE_APP_ID,
+            measurementId: process.env.FIREBASE_MEASUREMENT_ID || undefined
+        };
+
+        console.log('Firebase config loaded successfully');
+        res.json(config);
+    } catch (error) {
+        console.error('Error loading Firebase config:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to load Firebase configuration',
+            details: error.message
+        });
+    }
 });
 
 // Root route with error handling
