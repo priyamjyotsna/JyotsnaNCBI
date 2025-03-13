@@ -148,23 +148,14 @@
 
                         debugInfo.textContent += '\nAttempting to open popup...';
                         
-                        // Create a promise that resolves when the popup is ready
-                        const popupReady = new Promise((resolve) => {
-                            const checkPopup = setInterval(() => {
-                                const popup = provider.getPopupWindow();
-                                if (popup) {
-                                    clearInterval(checkPopup);
-                                    resolve();
-                                }
-                            }, 100);
-                        });
-
-                        // Wait for popup to be ready before proceeding
-                        await popupReady;
-                        debugInfo.textContent += '\nPopup window ready';
-
-                        // Now attempt the sign-in
-                        const popupResult = await auth.signInWithPopup(provider);
+                        // Attempt the sign-in with a timeout
+                        const popupResult = await Promise.race([
+                            auth.signInWithPopup(provider),
+                            new Promise((_, reject) => 
+                                setTimeout(() => reject(new Error('Popup communication timeout')), 120000)
+                            )
+                        ]);
+                        
                         debugInfo.textContent += '\nPopup authentication completed';
                         
                         if (popupResult.user) {
