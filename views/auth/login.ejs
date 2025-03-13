@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://www.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob: https://*.googleapis.com https://*.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com https://apis.google.com https://accounts.google.com; frame-src 'self' https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com https://accounts.google.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com https://accounts.google.com https://*.firebaseio.com; script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com https://accounts.google.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://www.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob: https://*.googleapis.com https://*.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com https://apis.google.com https://accounts.google.com; frame-src 'self' https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com https://accounts.google.com https://*.firebaseio.com https://*.google.com;">
     <title>Login</title>
     <link rel="stylesheet" href="/styles/main.css">
     <link rel="stylesheet" href="/styles/auth.css">
@@ -136,26 +136,39 @@
                             prompt: 'select_account'
                         });
 
+                        // Log popup attempt
+                        debugInfo.textContent += '\nAttempting to open popup...';
+                        
                         // Use signInWithPopup with additional error handling
                         const result = await auth.signInWithPopup(provider);
                         console.log('Popup result:', result);
+                        debugInfo.textContent += '\nPopup opened successfully';
                         
                         if (result.user) {
+                            debugInfo.textContent += '\nUser data received from popup';
                             await handleAuthSuccess(result.user);
                         } else {
                             throw new Error('No user data received from popup');
                         }
-                        
                     } catch (error) {
                         console.error('Login error:', error);
-                        if (error.code === 'auth/popup-blocked') {
-                            errorMessage.textContent = 'Please allow popups for this site and try again.';
+                        debugInfo.textContent += `\nError details: ${error.message}\nCode: ${error.code}\nStack: ${error.stack}`;
+                        
+                        let errorMsg = 'Failed to sign in: ';
+                        if (error.code === 'auth/popup-closed-by-user') {
+                            errorMsg = 'The sign-in popup was closed before completing. Please try again.';
+                        } else if (error.code === 'auth/popup-blocked') {
+                            errorMsg = 'The popup was blocked by your browser. Please allow popups for this site.';
+                        } else if (error.code === 'auth/network-request-failed') {
+                            errorMsg = 'Network error. Please check your internet connection.';
+                        } else if (error.code === 'auth/unauthorized-domain') {
+                            errorMsg = 'This domain is not authorized for Firebase Authentication.';
                         } else {
-                            errorMessage.textContent = `Failed to sign in: ${error.message}`;
+                            errorMsg += error.message;
                         }
+                        
+                        errorMessage.textContent = errorMsg;
                         errorMessage.style.display = 'block';
-                        debugInfo.textContent = `Error details: ${error.message}\nCode: ${error.code}`;
-                        debugInfo.style.display = 'block';
                     } finally {
                         signInBtn.disabled = false;
                         loading.style.display = 'none';
