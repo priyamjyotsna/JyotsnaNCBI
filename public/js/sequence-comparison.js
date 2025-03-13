@@ -1074,10 +1074,7 @@ function processSequenceData(data, type) {
     
     function exportToExcel() {
         try {
-            // Create a workbook with a worksheet
-            const workbook = XLSX.utils.book_new();
-            
-            // Prepare data for the worksheet
+            // Create worksheet data
             const data = [
                 ['Position', 'Reference', 'Query', 'Type']
             ];
@@ -1094,15 +1091,17 @@ function processSequenceData(data, type) {
             // Add summary information
             data.push([]);
             data.push(['Summary Information']);
-            data.push(['Reference Sequence', comparisonResults.metadata.referenceHeader]);
+            data.push(['Reference Sequence', comparisonResults.metadata.referenceHeader || 'N/A']);
             data.push(['Reference Length', comparisonResults.metadata.referenceLength]);
-            data.push(['Query Sequence', comparisonResults.metadata.queryHeader]);
+            data.push(['Query Sequence', comparisonResults.metadata.queryHeader || 'N/A']);
             data.push(['Query Length', comparisonResults.metadata.queryLength]);
             data.push(['Total Mutations', comparisonResults.mutations.length]);
             data.push(['Mutation Rate', ((comparisonResults.mutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2) + '%']);
             
-            // Convert data to worksheet
-            const worksheet = XLSX.utils.aoa_to_sheet(data);
+            // Create workbook
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Mutations');
             
             // Set column widths
             const wscols = [
@@ -1111,13 +1110,10 @@ function processSequenceData(data, type) {
                 {wch: 15}, // Query
                 {wch: 15}  // Type
             ];
-            worksheet['!cols'] = wscols;
+            ws['!cols'] = wscols;
             
-            // Add worksheet to workbook
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Mutations');
-            
-            // Save the file
-            XLSX.writeFile(workbook, 'sequence_comparison_results.xlsx');
+            // Save file
+            XLSX.writeFile(wb, 'sequence_comparison_results.xlsx');
             
         } catch (error) {
             console.error('Excel export error:', error);
@@ -1138,9 +1134,9 @@ function processSequenceData(data, type) {
             // Add summary information
             doc.setFontSize(12);
             doc.text('Summary Information:', 20, 30);
-            doc.text(`Reference: ${comparisonResults.metadata.referenceHeader}`, 20, 40);
+            doc.text(`Reference: ${comparisonResults.metadata.referenceHeader || 'N/A'}`, 20, 40);
             doc.text(`Reference Length: ${comparisonResults.metadata.referenceLength}`, 20, 50);
-            doc.text(`Query: ${comparisonResults.metadata.queryHeader}`, 20, 60);
+            doc.text(`Query: ${comparisonResults.metadata.queryHeader || 'N/A'}`, 20, 60);
             doc.text(`Query Length: ${comparisonResults.metadata.queryLength}`, 20, 70);
             doc.text(`Total Mutations: ${comparisonResults.mutations.length}`, 20, 80);
             doc.text(`Mutation Rate: ${((comparisonResults.mutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2)}%`, 20, 90);
@@ -1195,9 +1191,9 @@ function processSequenceData(data, type) {
             
             // Add summary information
             csvContent += '\nSummary Information\n';
-            csvContent += `Reference Sequence,${escapeCsvField(comparisonResults.metadata.referenceHeader)}\n`;
+            csvContent += `Reference Sequence,${escapeCsvField(comparisonResults.metadata.referenceHeader || 'N/A')}\n`;
             csvContent += `Reference Length,${comparisonResults.metadata.referenceLength}\n`;
-            csvContent += `Query Sequence,${escapeCsvField(comparisonResults.metadata.queryHeader)}\n`;
+            csvContent += `Query Sequence,${escapeCsvField(comparisonResults.metadata.queryHeader || 'N/A')}\n`;
             csvContent += `Query Length,${comparisonResults.metadata.queryLength}\n`;
             csvContent += `Total Mutations,${comparisonResults.mutations.length}\n`;
             csvContent += `Mutation Rate,${((comparisonResults.mutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2)}%\n`;
