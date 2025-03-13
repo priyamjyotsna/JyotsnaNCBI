@@ -141,24 +141,30 @@
 
                         const provider = new firebase.auth.GoogleAuthProvider();
                         provider.setCustomParameters({
-                            // Force account selection every time
                             prompt: 'select_account',
-                            // Add additional OAuth parameters
                             access_type: 'offline',
-                            // Ensure we're using the same cookie policy
                             cookie_policy: 'single_host_origin'
                         });
 
                         debugInfo.textContent += '\nAttempting to open popup...';
                         
-                        // Wrap the popup operation in a try-catch with timeout
-                        const popupResult = await Promise.race([
-                            auth.signInWithPopup(provider),
-                            new Promise((_, reject) => 
-                                setTimeout(() => reject(new Error('Popup communication timeout')), 120000)
-                            )
-                        ]);
+                        // Create a promise that resolves when the popup is ready
+                        const popupReady = new Promise((resolve) => {
+                            const checkPopup = setInterval(() => {
+                                const popup = provider.getPopupWindow();
+                                if (popup) {
+                                    clearInterval(checkPopup);
+                                    resolve();
+                                }
+                            }, 100);
+                        });
 
+                        // Wait for popup to be ready before proceeding
+                        await popupReady;
+                        debugInfo.textContent += '\nPopup window ready';
+
+                        // Now attempt the sign-in
+                        const popupResult = await auth.signInWithPopup(provider);
                         debugInfo.textContent += '\nPopup authentication completed';
                         
                         if (popupResult.user) {
@@ -172,7 +178,14 @@
                         let errorMsg;
                         switch (error.code) {
                             case 'auth/popup-closed-by-user':
-                                errorMsg = 'Authentication was interrupted. Please ensure pop-ups are allowed and try again.';
+                                // Check if we actually have a user despite the error
+                                const currentUser = firebase.auth().currentUser;
+                                if (currentUser) {
+                                    debugInfo.textContent += '\nUser authenticated despite popup error';
+                                    await handleAuthSuccess(currentUser);
+                                    return;
+                                }
+                                errorMsg = 'Authentication was interrupted. Please try again.';
                                 break;
                             case 'auth/network-request-failed':
                                 errorMsg = 'Network error during authentication. Please check your connection.';
@@ -192,11 +205,19 @@
                     }
                 });
 
-                // Check for existing auth state
-                auth.onAuthStateChanged((user) => {
+                // Modify the auth state listener to be more robust
+                let authStateUnsubscribe = null;
+                if (authStateUnsubscribe) {
+                    authStateUnsubscribe();
+                }
+                
+                authStateUnsubscribe = auth.onAuthStateChanged((user) => {
                     console.log('Auth state changed:', user ? `User is signed in: ${user.email}` : 'No user');
                     if (user) {
-                        handleAuthSuccess(user);
+                        // Only handle auth success if we're not already processing it
+                        if (!loading.style.display || loading.style.display === 'none') {
+                            handleAuthSuccess(user);
+                        }
                     }
                 });
 
