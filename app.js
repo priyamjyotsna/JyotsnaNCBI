@@ -134,8 +134,9 @@ let sessionConfig = {
 };
 
 if (process.env.NODE_ENV === 'production') {
-    const RedisStore = require('connect-redis').default;
     const { createClient } = require('redis');
+    const RedisStore = require('connect-redis').default;
+    
     const redisClient = createClient({
         url: process.env.REDIS_URL,
         legacyMode: false
