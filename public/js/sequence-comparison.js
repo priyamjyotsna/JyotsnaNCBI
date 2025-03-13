@@ -1047,154 +1047,168 @@ function processSequenceData(data, type) {
     }
     
     function exportResults(format) {
-        if (!comparisonResults) {
-            alert('No comparison results to export');
+        if (!comparisonResults || !comparisonResults.mutations) {
+            alert('No comparison results available to export');
             return;
         }
         
-        switch (format) {
-            case 'excel':
-                exportToExcel();
-                break;
-            case 'pdf':
-                exportToPDF();
-                break;
-            case 'csv':
-                exportToCSV();
-                break;
-            default:
-                alert('Unsupported export format');
+        try {
+            switch (format) {
+                case 'excel':
+                    exportToExcel();
+                    break;
+                case 'pdf':
+                    exportToPDF();
+                    break;
+                case 'csv':
+                    exportToCSV();
+                    break;
+                default:
+                    alert('Unsupported export format');
+            }
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('Failed to export results. Please try again.');
         }
     }
     
     function exportToExcel() {
-        // Create CSV content that Excel can open
-        let csvContent = 'Position,Reference,Query,Type\n';
-        
-        comparisonResults.mutations.forEach(mutation => {
-            csvContent += `${mutation.position},${mutation.reference || '-'},${mutation.query || '-'},${mutation.type}\n`;
-        });
-        
-        // Add summary information
-        csvContent += '\nSummary Information\n';
-        csvContent += `Reference Sequence,${comparisonResults.metadata.referenceHeader}\n`;
-        csvContent += `Reference Length,${comparisonResults.metadata.referenceLength}\n`;
-        csvContent += `Query Sequence,${comparisonResults.metadata.queryHeader}\n`;
-        csvContent += `Query Length,${comparisonResults.metadata.queryLength}\n`;
-        csvContent += `Total Mutations,${comparisonResults.mutations.length}\n`;
-        csvContent += `Mutation Rate,${((comparisonResults.mutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2)}%\n`;
-        
-        // Create blob and download
-        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'sequence_comparison_results.xlsx';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(link.href), 100);
+        try {
+            // Create a workbook with a worksheet
+            const workbook = XLSX.utils.book_new();
+            
+            // Prepare data for the worksheet
+            const data = [
+                ['Position', 'Reference', 'Query', 'Type']
+            ];
+            
+            comparisonResults.mutations.forEach(mutation => {
+                data.push([
+                    mutation.position,
+                    mutation.reference || '-',
+                    mutation.query || '-',
+                    mutation.type || 'Unknown'
+                ]);
+            });
+            
+            // Add summary information
+            data.push([]);
+            data.push(['Summary Information']);
+            data.push(['Reference Sequence', comparisonResults.metadata.referenceHeader]);
+            data.push(['Reference Length', comparisonResults.metadata.referenceLength]);
+            data.push(['Query Sequence', comparisonResults.metadata.queryHeader]);
+            data.push(['Query Length', comparisonResults.metadata.queryLength]);
+            data.push(['Total Mutations', comparisonResults.mutations.length]);
+            data.push(['Mutation Rate', ((comparisonResults.mutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2) + '%']);
+            
+            // Convert data to worksheet
+            const worksheet = XLSX.utils.aoa_to_sheet(data);
+            
+            // Set column widths
+            const wscols = [
+                {wch: 10}, // Position
+                {wch: 15}, // Reference
+                {wch: 15}, // Query
+                {wch: 15}  // Type
+            ];
+            worksheet['!cols'] = wscols;
+            
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Mutations');
+            
+            // Save the file
+            XLSX.writeFile(workbook, 'sequence_comparison_results.xlsx');
+            
+        } catch (error) {
+            console.error('Excel export error:', error);
+            alert('Failed to export Excel. Falling back to CSV export...');
+            exportToCSV();
+        }
     }
     
     function exportToPDF() {
-        // Create a printable HTML version that can be saved as PDF
-        const printWindow = window.open('', '_blank');
-        
-        // Create styled HTML content
-        const htmlContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Sequence Comparison Results</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    h1 { color: #333; }
-                    table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                    th { background-color: #f5f5f5; }
-                    .summary { margin: 20px 0; }
-                    .summary p { margin: 5px 0; }
-                </style>
-            </head>
-            <body>
-                <h1>Sequence Comparison Results</h1>
-                
-                <div class="summary">
-                    <h2>Summary Information</h2>
-                    <p><strong>Reference Sequence:</strong> ${comparisonResults.metadata.referenceHeader}</p>
-                    <p><strong>Reference Length:</strong> ${comparisonResults.metadata.referenceLength}</p>
-                    <p><strong>Query Sequence:</strong> ${comparisonResults.metadata.queryHeader}</p>
-                    <p><strong>Query Length:</strong> ${comparisonResults.metadata.queryLength}</p>
-                    <p><strong>Total Mutations:</strong> ${comparisonResults.mutations.length}</p>
-                    <p><strong>Mutation Rate:</strong> ${((comparisonResults.mutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2)}%</p>
-                </div>
-                
-                <h2>Mutation List</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Position</th>
-                            <th>Reference</th>
-                            <th>Query</th>
-                            <th>Type</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${comparisonResults.mutations.map(mutation => `
-                            <tr>
-                                <td>${mutation.position}</td>
-                                <td>${mutation.reference || '-'}</td>
-                                <td>${mutation.query || '-'}</td>
-                                <td>${mutation.type}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-                
-                <script>
-                    window.onload = () => {
-                        window.print();
-                    };
-                </script>
-            </body>
-            </html>
-        `;
-        
-        printWindow.document.write(htmlContent);
-        printWindow.document.close();
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(16);
+            doc.text('Sequence Comparison Results', 105, 15, { align: 'center' });
+            
+            // Add summary information
+            doc.setFontSize(12);
+            doc.text('Summary Information:', 20, 30);
+            doc.text(`Reference: ${comparisonResults.metadata.referenceHeader}`, 20, 40);
+            doc.text(`Reference Length: ${comparisonResults.metadata.referenceLength}`, 20, 50);
+            doc.text(`Query: ${comparisonResults.metadata.queryHeader}`, 20, 60);
+            doc.text(`Query Length: ${comparisonResults.metadata.queryLength}`, 20, 70);
+            doc.text(`Total Mutations: ${comparisonResults.mutations.length}`, 20, 80);
+            doc.text(`Mutation Rate: ${((comparisonResults.mutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2)}%`, 20, 90);
+            
+            // Add mutations table
+            const tableData = comparisonResults.mutations.map(mutation => [
+                mutation.position,
+                mutation.reference || '-',
+                mutation.query || '-',
+                mutation.type || 'Unknown'
+            ]);
+            
+            doc.autoTable({
+                head: [['Position', 'Reference', 'Query', 'Type']],
+                body: tableData,
+                startY: 100,
+                margin: { top: 10 },
+                styles: { fontSize: 10 },
+                columnStyles: {
+                    0: { cellWidth: 40 },
+                    1: { cellWidth: 40 },
+                    2: { cellWidth: 40 },
+                    3: { cellWidth: 40 }
+                }
+            });
+            
+            // Save the PDF
+            doc.save('sequence_comparison_results.pdf');
+            
+        } catch (error) {
+            console.error('PDF export error:', error);
+            alert('Failed to export PDF. Falling back to CSV export...');
+            exportToCSV();
+        }
     }
     
     function exportToCSV() {
-        let csvContent = 'Position,Reference,Query,Type\n';
-        
-        comparisonResults.mutations.forEach(mutation => {
-            const escapeCsvField = (field) => {
-                field = field || '-';
-                if (field.includes(',') || field.includes('"') || field.includes('\n')) {
-                    return `"${field.replace(/"/g, '""')}"`;
-                }
-                return field;
-            };
+        try {
+            let csvContent = 'Position,Reference,Query,Type\n';
             
-            csvContent += `${mutation.position},${escapeCsvField(mutation.reference)},${escapeCsvField(mutation.query)},${escapeCsvField(mutation.type)}\n`;
-        });
-        
-        // Add summary information
-        csvContent += '\nSummary Information\n';
-        csvContent += `Reference Sequence,${comparisonResults.metadata.referenceHeader}\n`;
-        csvContent += `Reference Length,${comparisonResults.metadata.referenceLength}\n`;
-        csvContent += `Query Sequence,${comparisonResults.metadata.queryHeader}\n`;
-        csvContent += `Query Length,${comparisonResults.metadata.queryLength}\n`;
-        csvContent += `Total Mutations,${comparisonResults.mutations.length}\n`;
-        csvContent += `Mutation Rate,${((comparisonResults.mutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2)}%\n`;
-        
-        // Create blob and download
-        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'sequence_comparison_results.csv';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(link.href), 100);
+            comparisonResults.mutations.forEach(mutation => {
+                const escapeCsvField = (field) => {
+                    field = String(field || '-');
+                    if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+                        return `"${field.replace(/"/g, '""')}"`;
+                    }
+                    return field;
+                };
+                
+                csvContent += `${escapeCsvField(mutation.position)},${escapeCsvField(mutation.reference)},${escapeCsvField(mutation.query)},${escapeCsvField(mutation.type)}\n`;
+            });
+            
+            // Add summary information
+            csvContent += '\nSummary Information\n';
+            csvContent += `Reference Sequence,${escapeCsvField(comparisonResults.metadata.referenceHeader)}\n`;
+            csvContent += `Reference Length,${comparisonResults.metadata.referenceLength}\n`;
+            csvContent += `Query Sequence,${escapeCsvField(comparisonResults.metadata.queryHeader)}\n`;
+            csvContent += `Query Length,${comparisonResults.metadata.queryLength}\n`;
+            csvContent += `Total Mutations,${comparisonResults.mutations.length}\n`;
+            csvContent += `Mutation Rate,${((comparisonResults.mutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2)}%\n`;
+            
+            // Create blob and download
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            saveAs(blob, 'sequence_comparison_results.csv');
+            
+        } catch (error) {
+            console.error('CSV export error:', error);
+            alert('Failed to export CSV. Please try again or contact support.');
+        }
     }
 });
