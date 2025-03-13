@@ -148,9 +148,21 @@
 
                         debugInfo.textContent += '\nAttempting to open popup...';
                         
-                        // Attempt the sign-in with a timeout
+                        // Add event listener for auth state changes before popup
+                        const authStatePromise = new Promise((resolve, reject) => {
+                            const unsubscribe = auth.onAuthStateChanged((user) => {
+                                console.log('Auth state changed during popup:', user ? `User is signed in: ${user.email}` : 'No user');
+                                if (user) {
+                                    unsubscribe();
+                                    resolve(user);
+                                }
+                            });
+                        });
+
+                        // Attempt the sign-in with both popup and auth state promises
                         const popupResult = await Promise.race([
                             auth.signInWithPopup(provider),
+                            authStatePromise.then(user => ({ user })),
                             new Promise((_, reject) => 
                                 setTimeout(() => reject(new Error('Popup communication timeout')), 120000)
                             )
@@ -175,6 +187,24 @@
                                     debugInfo.textContent += '\nUser authenticated despite popup error';
                                     await handleAuthSuccess(currentUser);
                                     return;
+                                }
+                                // Check if we're in the auth handler URL
+                                if (window.location.href.includes('/__/auth/handler')) {
+                                    debugInfo.textContent += '\nDetected auth handler URL, attempting to complete auth';
+                                    const urlParams = new URLSearchParams(window.location.search);
+                                    const code = urlParams.get('code');
+                                    if (code) {
+                                        try {
+                                            const credential = firebase.auth.GoogleAuthProvider.credential(code);
+                                            const result = await auth.signInWithCredential(credential);
+                                            if (result.user) {
+                                                await handleAuthSuccess(result.user);
+                                                return;
+                                            }
+                                        } catch (credError) {
+                                            console.error('Credential error:', credError);
+                                        }
+                                    }
                                 }
                                 errorMsg = 'Authentication was interrupted. Please try again.';
                                 break;
