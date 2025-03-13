@@ -131,40 +131,57 @@
                         debugInfo.textContent = 'Starting sign-in process...';
                         debugInfo.style.display = 'block';
 
+                        // Clear all existing auth state and storage
+                        if (firebase.auth().currentUser) {
+                            await firebase.auth().signOut();
+                        }
+                        sessionStorage.clear();
+                        localStorage.clear();
+                        debugInfo.textContent += '\nCleared existing auth state and storage';
+
                         const provider = new firebase.auth.GoogleAuthProvider();
                         provider.setCustomParameters({
-                            prompt: 'select_account'
+                            // Force account selection every time
+                            prompt: 'select_account',
+                            // Add additional OAuth parameters
+                            access_type: 'offline',
+                            // Ensure we're using the same cookie policy
+                            cookie_policy: 'single_host_origin'
                         });
 
-                        // Log popup attempt
                         debugInfo.textContent += '\nAttempting to open popup...';
                         
-                        // Use signInWithPopup with additional error handling
-                        const result = await auth.signInWithPopup(provider);
-                        console.log('Popup result:', result);
-                        debugInfo.textContent += '\nPopup opened successfully';
+                        // Wrap the popup operation in a try-catch with timeout
+                        const popupResult = await Promise.race([
+                            auth.signInWithPopup(provider),
+                            new Promise((_, reject) => 
+                                setTimeout(() => reject(new Error('Popup communication timeout')), 120000)
+                            )
+                        ]);
+
+                        debugInfo.textContent += '\nPopup authentication completed';
                         
-                        if (result.user) {
-                            debugInfo.textContent += '\nUser data received from popup';
-                            await handleAuthSuccess(result.user);
-                        } else {
-                            throw new Error('No user data received from popup');
+                        if (popupResult.user) {
+                            debugInfo.textContent += '\nProcessing authentication...';
+                            await handleAuthSuccess(popupResult.user);
                         }
                     } catch (error) {
                         console.error('Login error:', error);
-                        debugInfo.textContent += `\nError details: ${error.message}\nCode: ${error.code}\nStack: ${error.stack}`;
+                        debugInfo.textContent += `\nError occurred: ${error.code || 'unknown'}`;
                         
-                        let errorMsg = 'Failed to sign in: ';
-                        if (error.code === 'auth/popup-closed-by-user') {
-                            errorMsg = 'The sign-in popup was closed before completing. Please try again.';
-                        } else if (error.code === 'auth/popup-blocked') {
-                            errorMsg = 'The popup was blocked by your browser. Please allow popups for this site.';
-                        } else if (error.code === 'auth/network-request-failed') {
-                            errorMsg = 'Network error. Please check your internet connection.';
-                        } else if (error.code === 'auth/unauthorized-domain') {
-                            errorMsg = 'This domain is not authorized for Firebase Authentication.';
-                        } else {
-                            errorMsg += error.message;
+                        let errorMsg;
+                        switch (error.code) {
+                            case 'auth/popup-closed-by-user':
+                                errorMsg = 'Authentication was interrupted. Please ensure pop-ups are allowed and try again.';
+                                break;
+                            case 'auth/network-request-failed':
+                                errorMsg = 'Network error during authentication. Please check your connection.';
+                                break;
+                            case 'auth/unauthorized-domain':
+                                errorMsg = 'Authentication domain not authorized. Please contact support.';
+                                break;
+                            default:
+                                errorMsg = `Authentication error: ${error.message}`;
                         }
                         
                         errorMessage.textContent = errorMsg;
