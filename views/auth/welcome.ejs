@@ -171,15 +171,15 @@
                 
                 if (response.ok) {
                     console.log('Server logout successful');
-                    // Force reload to login page to clear any cached state
-                    window.location.replace('/auth/login');
+                    // Redirect to homepage instead of login page
+                    window.location.replace('/');
                 } else {
                     throw new Error('Server logout failed');
                 }
             } catch (error) {
                 console.error('Logout error:', error);
-                // If anything fails, force reload to login
-                window.location.replace('/auth/login');
+                // If anything fails, redirect to homepage
+                window.location.replace('/');
             } finally {
                 // Reset button state
                 const logoutBtn = document.querySelector('.btn-danger');

@@ -173,12 +173,13 @@ router.all('/logout', async (req, res) => {
             if (req.method === 'POST') {
                 return res.json({ 
                     success: true,
-                    message: 'Logged out successfully'
+                    message: 'Logged out successfully',
+                    redirectUrl: '/' // Add redirect URL to response
                 });
             }
             
-            // For GET requests, redirect to login
-            res.redirect('/auth/login');
+            // For GET requests, redirect to homepage
+            res.redirect('/');
         });
     } catch (error) {
         console.error('Logout error:', error);
@@ -189,7 +190,7 @@ router.all('/logout', async (req, res) => {
                 details: error.message 
             });
         }
-        res.redirect('/auth/login');
+        res.redirect('/');
     }
 });
 
