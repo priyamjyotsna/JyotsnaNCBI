@@ -1,4 +1,8 @@
 // Firebase Authentication Handler
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
+import { getAnalytics } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics.js';
+
 async function initializeAuth() {
     const signInBtn = document.getElementById('googleSignIn');
     const loading = document.getElementById('loadingIndicator');
@@ -33,16 +37,14 @@ async function initializeAuth() {
         
         // Initialize Firebase
         console.log('[' + new Date().toLocaleTimeString() + '] Initializing Firebase...');
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const analytics = getAnalytics(app);
         
-        const auth = firebase.auth();
-        auth.useDeviceLanguage();
         console.log('[' + new Date().toLocaleTimeString() + '] Firebase initialized');
 
         // Set up auth state listener
-        auth.onAuthStateChanged(async (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 console.log('[' + new Date().toLocaleTimeString() + '] Auth state changed - user signed in:', user.email);
                 try {
@@ -64,13 +66,13 @@ async function initializeAuth() {
                     
                     console.log('[' + new Date().toLocaleTimeString() + '] Starting authentication...');
                     
-                    const provider = new firebase.auth.GoogleAuthProvider();
+                    const provider = new GoogleAuthProvider();
                     provider.setCustomParameters({
                         prompt: 'select_account'
                     });
 
                     // Use popup sign-in
-                    const result = await auth.signInWithPopup(provider);
+                    const result = await signInWithPopup(auth, provider);
                     if (result.user) {
                         await handleAuthSuccess(result.user);
                     }

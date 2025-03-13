@@ -59,7 +59,49 @@ try {
 }
 
 // Add security middleware
-app.use(helmet());
+const isProd = process.env.NODE_ENV === 'production';
+
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: [
+                "'self'", 
+                "'unsafe-inline'",
+                "'unsafe-eval'",
+                "https://www.gstatic.com",
+                "https://cdn.jsdelivr.net",
+                "https://cdnjs.cloudflare.com",
+                "https://unpkg.com",
+                "https://html2canvas.hertzen.com"
+            ],
+            styleSrc: [
+                "'self'", 
+                "'unsafe-inline'", 
+                "https://www.gstatic.com",
+                "https://fonts.googleapis.com",
+                "https://cdnjs.cloudflare.com"
+            ],
+            imgSrc: [
+                "'self'", 
+                "data:", 
+                "blob:",
+                "https://www.gstatic.com", 
+                "https://*.googleapis.com",
+                "https://*.googleusercontent.com"
+            ],
+            connectSrc: ["'self'", "https://*.firebaseio.com", "https://*.googleapis.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
+            frameSrc: ["'self'", "blob:", "https://*.firebaseapp.com"],
+            objectSrc: ["'none'"],
+            workerSrc: ["'self'", "blob:"],
+            downloadSrc: ["'self'"],
+            baseUri: ["'self'"]
+        }
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.use(compression());
 app.use(fileUpload({
     limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max file size
@@ -796,3 +838,11 @@ if (require.main === module) {
         });
     }
 }
+
+const config = {
+    port: process.env.PORT || 3007,
+    nodeEnv: process.env.NODE_ENV || 'development',
+    ncbiEmail: process.env.NCBI_EMAIL,
+    ncbiApiKey: process.env.NCBI_API_KEY,
+    // ... other config values
+};

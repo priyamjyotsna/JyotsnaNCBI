@@ -98,16 +98,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     clearBtn.addEventListener('click', clearAll);
     
-    document.getElementById('exportExcel').addEventListener('click', function() {
-        exportResults('excel');
-    });
-    
-    document.getElementById('exportPDF').addEventListener('click', function() {
-        exportResults('pdf');
-    });
-    
-    document.getElementById('exportCSV').addEventListener('click', function() {
-        exportResults('csv');
+    document.addEventListener('DOMContentLoaded', function() {
+        const resultsSection = document.getElementById('resultsSection');
+        if (resultsSection) {
+            resultsSection.addEventListener('click', function(e) {
+                if (e.target.matches('.export-excel-btn')) {
+                    exportToExcel();
+                }
+                if (e.target.matches('.export-csv-btn')) {
+                    exportToCSV();
+                }
+                if (e.target.matches('.export-pdf-btn')) {
+                    exportToPDF();
+                }
+            });
+        }
     });
     
     // Functions
@@ -514,15 +519,9 @@ function processSequenceData(data, type) {
                 <div class="results-header">
                     <h2>Comparison Results</h2>
                     <div class="export-options">
-                        <button id="exportExcel" class="export-btn">
-                            <i class="fas fa-file-excel"></i> Export to Excel
-                        </button>
-                        <button id="exportPDF" class="export-btn">
-                            <i class="fas fa-file-pdf"></i> Export to PDF
-                        </button>
-                        <button id="exportCSV" class="export-btn">
-                            <i class="fas fa-file-csv"></i> Export to CSV
-                        </button>
+                        <button class="export-excel-btn">Export to Excel</button>
+                        <button class="export-pdf-btn">Export to PDF</button>
+                        <button class="export-csv-btn">Export to CSV</button>
                     </div>
                 </div>
 
@@ -687,35 +686,19 @@ function processSequenceData(data, type) {
     }
     
     function createMutationChart() {
-        const canvas = document.getElementById('mutationChart');
-        if (!canvas) {
-            console.error('Mutation chart canvas element not found');
-            return;
-        }
+        try {
+            const canvas = document.getElementById('mutationChart');
+            if (!canvas) {
+                throw new Error('Mutation chart canvas element not found');
+            }
 
-        // Get the canvas context
-        let ctx;
-        try {
-            ctx = canvas.getContext('2d');
-        } catch (error) {
-            console.error('Failed to get canvas context:', error);
-            // Fall back to simple chart
-            createSimpleMutationChart([], []);
-            return;
-        }
-        
-        // Use distribution data from the API if available
-        let labels = [];
-        let data = [];
-        
-        try {
-            if (comparisonResults.distributionStats && 
-                comparisonResults.distributionStats.distribution && 
-                Array.isArray(comparisonResults.distributionStats.distribution) &&
-                comparisonResults.distributionStats.binSize) {
-                // Use the pre-calculated distribution from the API
-                const stats = comparisonResults.distributionStats;
-                const binSize = stats.binSize;
+            // Get the data ready
+            const stats = comparisonResults.distributionStats;
+            const labels = [];
+            const data = [];
+            
+            if (stats && stats.distribution && Array.isArray(stats.distribution)) {
+                const binSize = stats.binSize || Math.floor(comparisonResults.metadata.referenceLength / 20);
                 
                 stats.distribution.forEach((value, i) => {
                     const start = i * binSize + 1;
@@ -724,41 +707,32 @@ function processSequenceData(data, type) {
                     data.push(value);
                 });
             } else {
-                // Fall back to client-side calculation
-                const binSize = Math.max(1, Math.floor(comparisonResults.metadata.referenceLength / 20));
-                const bins = {};
+                // Fallback to using mutations directly
+                const binSize = Math.floor(comparisonResults.metadata.referenceLength / 20);
+                const bins = new Array(Math.ceil(comparisonResults.metadata.referenceLength / binSize)).fill(0);
                 
-                if (comparisonResults.mutations && Array.isArray(comparisonResults.mutations)) {
-                    comparisonResults.mutations.forEach(mutation => {
-                        if (mutation && typeof mutation.position === 'number') {
-                            const binIndex = Math.floor((mutation.position - 1) / binSize);
-                            bins[binIndex] = (bins[binIndex] || 0) + 1;
-                        }
-                    });
-                }
+                comparisonResults.mutations.forEach(mutation => {
+                    const binIndex = Math.floor((mutation.position - 1) / binSize);
+                    if (binIndex >= 0 && binIndex < bins.length) {
+                        bins[binIndex]++;
+                    }
+                });
                 
-                const numBins = Math.ceil(comparisonResults.metadata.referenceLength / binSize);
-                for (let i = 0; i < numBins; i++) {
+                bins.forEach((value, i) => {
                     const start = i * binSize + 1;
                     const end = Math.min((i + 1) * binSize, comparisonResults.metadata.referenceLength);
                     labels.push(`${start}-${end}`);
-                    data.push(bins[i] || 0);
-                }
+                    data.push(value);
+                });
             }
-            
-            // Check if Chart.js is available
-            if (typeof Chart === 'undefined') {
-                console.warn('Chart.js not found, falling back to simple chart');
-                createSimpleMutationChart(labels, data);
-                return;
-            }
-            
-            // Destroy previous chart if it exists
-            if (window.mutationChart && typeof window.mutationChart.destroy === 'function') {
+
+            // Destroy existing chart if it exists
+            if (window.mutationChart instanceof Chart) {
                 window.mutationChart.destroy();
             }
-            
-            window.mutationChart = new Chart(ctx, {
+
+            // Create new chart
+            window.mutationChart = new Chart(canvas.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: labels,
@@ -792,8 +766,7 @@ function processSequenceData(data, type) {
             });
         } catch (error) {
             console.error('Error creating chart:', error);
-            // Fallback to simple chart if anything fails
-            createSimpleMutationChart(labels, data);
+            createSimpleMutationChart([], []);
         }
     }
     
@@ -1072,139 +1045,104 @@ function processSequenceData(data, type) {
         }
     }
     
+    function getComparisonData() {
+        if (!comparisonResults || !comparisonResults.mutations) {
+            return [];
+        }
+
+        return comparisonResults.mutations.map(mutation => ({
+            position: mutation.position,
+            reference: mutation.reference || '-',
+            query: mutation.query || '-',
+            type: mutation.type || 'Unknown',
+            // Add metadata
+            referenceHeader: comparisonResults.metadata.referenceHeader,
+            queryHeader: comparisonResults.metadata.queryHeader
+        }));
+    }
+
     function exportToExcel() {
         try {
-            // Create worksheet data
-            const data = [
-                ['Position', 'Reference', 'Query', 'Type']
-            ];
-            
-            comparisonResults.mutations.forEach(mutation => {
-                data.push([
-                    mutation.position,
-                    mutation.reference || '-',
-                    mutation.query || '-',
-                    mutation.type || 'Unknown'
-                ]);
-            });
-            
-            // Add summary information
-            data.push([]);
-            data.push(['Summary Information']);
-            data.push(['Reference Sequence', comparisonResults.metadata.referenceHeader || 'N/A']);
-            data.push(['Reference Length', comparisonResults.metadata.referenceLength]);
-            data.push(['Query Sequence', comparisonResults.metadata.queryHeader || 'N/A']);
-            data.push(['Query Length', comparisonResults.metadata.queryLength]);
-            data.push(['Total Mutations', comparisonResults.mutations.length]);
-            data.push(['Mutation Rate', ((comparisonResults.mutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2) + '%']);
-            
-            // Create workbook
-            const ws = XLSX.utils.aoa_to_sheet(data);
+            if (!comparisonResults || !comparisonResults.mutations) {
+                throw new Error('No comparison results available');
+            }
+
+            const data = getComparisonData();
+            if (!data.length) {
+                throw new Error('No data to export');
+            }
+
+            const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Mutations');
-            
-            // Set column widths
-            const wscols = [
-                {wch: 10}, // Position
-                {wch: 15}, // Reference
-                {wch: 15}, // Query
-                {wch: 15}  // Type
-            ];
-            ws['!cols'] = wscols;
-            
-            // Save file
-            XLSX.writeFile(wb, 'sequence_comparison_results.xlsx');
-            
+            XLSX.utils.book_append_sheet(wb, ws, "Sequence Comparison");
+            XLSX.writeFile(wb, "sequence-comparison.xlsx");
         } catch (error) {
             console.error('Excel export error:', error);
-            alert('Failed to export Excel. Falling back to CSV export...');
-            exportToCSV();
-        }
-    }
-    
-    function exportToPDF() {
-        try {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // Add title
-            doc.setFontSize(16);
-            doc.text('Sequence Comparison Results', 105, 15, { align: 'center' });
-            
-            // Add summary information
-            doc.setFontSize(12);
-            doc.text('Summary Information:', 20, 30);
-            doc.text(`Reference: ${comparisonResults.metadata.referenceHeader || 'N/A'}`, 20, 40);
-            doc.text(`Reference Length: ${comparisonResults.metadata.referenceLength}`, 20, 50);
-            doc.text(`Query: ${comparisonResults.metadata.queryHeader || 'N/A'}`, 20, 60);
-            doc.text(`Query Length: ${comparisonResults.metadata.queryLength}`, 20, 70);
-            doc.text(`Total Mutations: ${comparisonResults.mutations.length}`, 20, 80);
-            doc.text(`Mutation Rate: ${((comparisonResults.mutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2)}%`, 20, 90);
-            
-            // Add mutations table
-            const tableData = comparisonResults.mutations.map(mutation => [
-                mutation.position,
-                mutation.reference || '-',
-                mutation.query || '-',
-                mutation.type || 'Unknown'
-            ]);
-            
-            doc.autoTable({
-                head: [['Position', 'Reference', 'Query', 'Type']],
-                body: tableData,
-                startY: 100,
-                margin: { top: 10 },
-                styles: { fontSize: 10 },
-                columnStyles: {
-                    0: { cellWidth: 40 },
-                    1: { cellWidth: 40 },
-                    2: { cellWidth: 40 },
-                    3: { cellWidth: 40 }
-                }
-            });
-            
-            // Save the PDF
-            doc.save('sequence_comparison_results.pdf');
-            
-        } catch (error) {
-            console.error('PDF export error:', error);
-            alert('Failed to export PDF. Falling back to CSV export...');
-            exportToCSV();
+            alert('Failed to export to Excel: ' + error.message);
         }
     }
     
     function exportToCSV() {
         try {
-            let csvContent = 'Position,Reference,Query,Type\n';
-            
-            comparisonResults.mutations.forEach(mutation => {
-                const escapeCsvField = (field) => {
-                    field = String(field || '-');
-                    if (field.includes(',') || field.includes('"') || field.includes('\n')) {
-                        return `"${field.replace(/"/g, '""')}"`;
-                    }
-                    return field;
-                };
-                
-                csvContent += `${escapeCsvField(mutation.position)},${escapeCsvField(mutation.reference)},${escapeCsvField(mutation.query)},${escapeCsvField(mutation.type)}\n`;
-            });
-            
-            // Add summary information
-            csvContent += '\nSummary Information\n';
-            csvContent += `Reference Sequence,${escapeCsvField(comparisonResults.metadata.referenceHeader || 'N/A')}\n`;
-            csvContent += `Reference Length,${comparisonResults.metadata.referenceLength}\n`;
-            csvContent += `Query Sequence,${escapeCsvField(comparisonResults.metadata.queryHeader || 'N/A')}\n`;
-            csvContent += `Query Length,${comparisonResults.metadata.queryLength}\n`;
-            csvContent += `Total Mutations,${comparisonResults.mutations.length}\n`;
-            csvContent += `Mutation Rate,${((comparisonResults.mutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2)}%\n`;
-            
-            // Create blob and download
-            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-            saveAs(blob, 'sequence_comparison_results.csv');
-            
+            if (!comparisonResults || !comparisonResults.mutations) {
+                throw new Error('No comparison results available');
+            }
+
+            const data = getComparisonData();
+            if (!data.length) {
+                throw new Error('No data to export');
+            }
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const csv = XLSX.utils.sheet_to_csv(ws);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "sequence-comparison.csv";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         } catch (error) {
             console.error('CSV export error:', error);
-            alert('Failed to export CSV. Please try again or contact support.');
+            alert('Failed to export to CSV: ' + error.message);
+        }
+    }
+
+    function exportToPDF() {
+        try {
+            if (!comparisonResults || !comparisonResults.mutations) {
+                throw new Error('No comparison results available');
+            }
+
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF) {
+                throw new Error('PDF library not loaded');
+            }
+
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(16);
+            doc.text('Sequence Comparison Results', 10, 10);
+            
+            // Add metadata
+            doc.setFontSize(12);
+            doc.text(`Reference: ${comparisonResults.metadata.referenceHeader}`, 10, 20);
+            doc.text(`Query: ${comparisonResults.metadata.queryHeader}`, 10, 30);
+            
+            // Add table
+            const data = getComparisonData();
+            doc.autoTable({
+                head: [['Position', 'Reference', 'Query', 'Type']],
+                body: data.map(row => [row.position, row.reference, row.query, row.type]),
+                startY: 40,
+                margin: { top: 40 }
+            });
+
+            doc.save("sequence-comparison.pdf");
+        } catch (error) {
+            console.error('PDF export error:', error);
+            alert('Failed to export to PDF: ' + error.message);
         }
     }
 });
