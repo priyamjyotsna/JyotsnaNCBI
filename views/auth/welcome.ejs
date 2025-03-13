@@ -142,9 +142,16 @@
     <script>
         async function handleLogout() {
             try {
+                // Show loading state
+                const logoutBtn = document.querySelector('.btn-danger');
+                const originalText = logoutBtn.textContent;
+                logoutBtn.textContent = 'Logging out...';
+                logoutBtn.disabled = true;
+
                 // Sign out from Firebase first
                 if (firebase.auth().currentUser) {
                     await firebase.auth().signOut();
+                    console.log('Firebase sign out successful');
                 }
                 
                 // Clear any cached auth state
@@ -163,6 +170,7 @@
                 });
                 
                 if (response.ok) {
+                    console.log('Server logout successful');
                     // Force reload to login page to clear any cached state
                     window.location.replace('/auth/login');
                 } else {
@@ -172,6 +180,11 @@
                 console.error('Logout error:', error);
                 // If anything fails, force reload to login
                 window.location.replace('/auth/login');
+            } finally {
+                // Reset button state
+                const logoutBtn = document.querySelector('.btn-danger');
+                logoutBtn.textContent = 'Logout';
+                logoutBtn.disabled = false;
             }
         }
 

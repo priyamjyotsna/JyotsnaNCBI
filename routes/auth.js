@@ -151,13 +151,30 @@ router.all('/logout', async (req, res) => {
             if (err) {
                 console.error('Session destruction error:', err);
                 if (req.method === 'POST') {
-                    return res.status(500).json({ success: false, error: 'Failed to clear session' });
+                    return res.status(500).json({ 
+                        success: false, 
+                        error: 'Failed to clear session',
+                        details: err.message 
+                    });
                 }
             }
             
+            // Clear session cookie
+            res.clearCookie('ncbi_session', {
+                path: '/',
+                domain: process.env.NODE_ENV === 'production' ? '.jyotsnapriyam.com' : undefined,
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 0
+            });
+            
             // For POST requests, send JSON response
             if (req.method === 'POST') {
-                return res.json({ success: true });
+                return res.json({ 
+                    success: true,
+                    message: 'Logged out successfully'
+                });
             }
             
             // For GET requests, redirect to login
@@ -166,7 +183,11 @@ router.all('/logout', async (req, res) => {
     } catch (error) {
         console.error('Logout error:', error);
         if (req.method === 'POST') {
-            return res.status(500).json({ success: false, error: 'Logout failed' });
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Logout failed',
+                details: error.message 
+            });
         }
         res.redirect('/auth/login');
     }
