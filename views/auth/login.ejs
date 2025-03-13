@@ -146,65 +146,46 @@
                             cookie_policy: 'single_host_origin'
                         });
 
-                        debugInfo.textContent += '\nAttempting to open popup...';
+                        debugInfo.textContent += '\nStarting redirect authentication...';
                         
-                        // Set up auth state listener before opening popup
-                        const authStatePromise = new Promise((resolve, reject) => {
-                            const unsubscribe = auth.onAuthStateChanged((user) => {
-                                console.log('Auth state changed during popup:', user ? `User is signed in: ${user.email}` : 'No user');
-                                if (user) {
-                                    unsubscribe();
-                                    resolve(user);
-                                }
-                            });
-                        });
-
-                        // Open popup but don't wait for its result
-                        auth.signInWithPopup(provider).catch(error => {
-                            console.log('Popup error (expected):', error);
-                            // Don't reject here - we'll wait for auth state change
-                        });
-
-                        // Wait for auth state change
-                        const user = await authStatePromise;
-                        debugInfo.textContent += '\nAuthentication successful';
+                        // Store the current URL to return to after auth
+                        sessionStorage.setItem('authReturnUrl', window.location.href);
                         
-                        if (user) {
-                            debugInfo.textContent += '\nProcessing authentication...';
-                            await handleAuthSuccess(user);
-                        }
+                        // Start the redirect flow
+                        await auth.signInWithRedirect(provider);
                     } catch (error) {
                         console.error('Login error:', error);
                         debugInfo.textContent += `\nError occurred: ${error.code || 'unknown'}`;
-                        
-                        let errorMsg;
-                        switch (error.code) {
-                            case 'auth/popup-closed-by-user':
-                                // Check if we actually have a user despite the error
-                                const currentUser = firebase.auth().currentUser;
-                                if (currentUser) {
-                                    debugInfo.textContent += '\nUser authenticated despite popup error';
-                                    await handleAuthSuccess(currentUser);
-                                    return;
-                                }
-                                errorMsg = 'Authentication was interrupted. Please try again.';
-                                break;
-                            case 'auth/network-request-failed':
-                                errorMsg = 'Network error during authentication. Please check your connection.';
-                                break;
-                            case 'auth/unauthorized-domain':
-                                errorMsg = 'Authentication domain not authorized. Please contact support.';
-                                break;
-                            default:
-                                errorMsg = `Authentication error: ${error.message}`;
-                        }
-                        
-                        errorMessage.textContent = errorMsg;
+                        errorMessage.textContent = 'Failed to start authentication. Please try again.';
                         errorMessage.style.display = 'block';
-                    } finally {
                         signInBtn.disabled = false;
                         loading.style.display = 'none';
                     }
+                });
+
+                // Handle redirect result
+                auth.getRedirectResult().then(async (result) => {
+                    try {
+                        if (result.user) {
+                            debugInfo.textContent += '\nRedirect authentication successful';
+                            await handleAuthSuccess(result.user);
+                        } else {
+                            // Check if we have a current user despite no redirect result
+                            const currentUser = auth.currentUser;
+                            if (currentUser) {
+                                debugInfo.textContent += '\nFound existing user after redirect';
+                                await handleAuthSuccess(currentUser);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Redirect result error:', error);
+                        errorMessage.textContent = 'Authentication failed. Please try again.';
+                        errorMessage.style.display = 'block';
+                    }
+                }).catch((error) => {
+                    console.error('Redirect error:', error);
+                    errorMessage.textContent = 'Authentication failed. Please try again.';
+                    errorMessage.style.display = 'block';
                 });
 
                 // Modify the auth state listener to be more robust
@@ -215,11 +196,8 @@
                 
                 authStateUnsubscribe = auth.onAuthStateChanged((user) => {
                     console.log('Auth state changed:', user ? `User is signed in: ${user.email}` : 'No user');
-                    if (user) {
-                        // Only handle auth success if we're not already processing it
-                        if (!loading.style.display || loading.style.display === 'none') {
-                            handleAuthSuccess(user);
-                        }
+                    if (user && !loading.style.display) {
+                        handleAuthSuccess(user);
                     }
                 });
 
