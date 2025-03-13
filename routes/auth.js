@@ -16,13 +16,12 @@ const requireAuth = (req, res, next) => {
 
 // Check if user is already authenticated
 const checkAuth = (req, res, next) => {
-    // Clear any existing session if present
-    if (req.session.user) {
+    // Only clear session if user is explicitly logged out
+    if (req.session.user && req.query.logout === 'true') {
         req.session.destroy((err) => {
             if (err) {
                 console.error('Session destruction error:', err);
             }
-            // Continue to login page
             next();
         });
     } else {
@@ -83,20 +82,21 @@ router.post('/google-signin', async (req, res) => {
         console.log('Session data set:', req.session.user);
         
         // Ensure session is saved before responding
-        req.session.save((err) => {
-            if (err) {
-                console.error('Session save error:', err);
-                return res.status(500).json({
-                    success: false,
-                    error: 'Failed to save session'
-                });
-            }
-            
-            console.log('Session saved successfully');
-            res.json({
-                success: true,
-                user: req.session.user
+        await new Promise((resolve, reject) => {
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Session save error:', err);
+                    reject(err);
+                } else {
+                    console.log('Session saved successfully');
+                    resolve();
+                }
             });
+        });
+        
+        res.json({
+            success: true,
+            user: req.session.user
         });
     } catch (error) {
         console.error('Authentication error:', error);

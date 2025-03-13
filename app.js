@@ -95,7 +95,7 @@ app.use(limiter);
 let sessionConfig = {
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
     rolling: true,
     name: 'ncbi_session',
     proxy: true,
@@ -111,6 +111,7 @@ let sessionConfig = {
 // Add domain only in production
 if (process.env.NODE_ENV === 'production') {
     sessionConfig.cookie.domain = '.jyotsnapriyam.com';
+    app.set('trust proxy', 1);
 }
 
 // Initialize session middleware
@@ -124,7 +125,8 @@ app.use((req, res, next) => {
     console.log('Request headers:', {
         origin: req.headers.origin,
         referer: req.headers.referer,
-        host: req.headers.host
+        host: req.headers.host,
+        cookie: req.headers.cookie
     });
     next();
 });
