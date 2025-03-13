@@ -209,6 +209,7 @@ app.get('/api/firebase-config', (req, res) => {
     try {
         // Log environment for debugging
         console.log('Environment:', process.env.NODE_ENV);
+        console.log('Request headers:', req.headers);
         console.log('Firebase config check:', {
             hasApiKey: !!process.env.FIREBASE_API_KEY,
             hasAuthDomain: !!process.env.FIREBASE_AUTH_DOMAIN,
@@ -236,7 +237,8 @@ app.get('/api/firebase-config', (req, res) => {
             return res.status(500).json({
                 success: false,
                 error: 'Firebase configuration is incomplete',
-                missing: missingVars
+                missing: missingVars,
+                environment: process.env.NODE_ENV
             });
         }
 
@@ -251,14 +253,26 @@ app.get('/api/firebase-config', (req, res) => {
             measurementId: process.env.FIREBASE_MEASUREMENT_ID || undefined
         };
 
-        console.log('Firebase config loaded successfully');
+        // Log successful config (without sensitive data)
+        console.log('Firebase config loaded successfully:', {
+            authDomain: config.authDomain,
+            projectId: config.projectId,
+            hasApiKey: !!config.apiKey,
+            hasDatabaseUrl: !!config.databaseURL,
+            hasStorageBucket: !!config.storageBucket,
+            hasMessagingSenderId: !!config.messagingSenderId,
+            hasAppId: !!config.appId
+        });
+
         res.json(config);
     } catch (error) {
         console.error('Error loading Firebase config:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to load Firebase configuration',
-            details: error.message
+            details: error.message,
+            stack: error.stack,
+            environment: process.env.NODE_ENV
         });
     }
 });
