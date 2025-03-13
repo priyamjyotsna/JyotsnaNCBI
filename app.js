@@ -137,21 +137,44 @@ if (process.env.NODE_ENV === 'production') {
     const { createClient } = require('redis');
     const RedisStore = require('connect-redis').default;
     
+    console.log('Initializing Redis connection...');
+    console.log('REDIS_URL:', process.env.REDIS_URL ? 'Present' : 'Missing');
+    
     const redisClient = createClient({
         url: process.env.REDIS_URL,
         legacyMode: false
     });
 
     redisClient.on('error', function(err) {
-        console.error('Redis error:', err);
+        console.error('Redis connection error:', err);
     });
 
-    redisClient.connect().catch(console.error);
-
-    sessionConfig.store = new RedisStore({
-        client: redisClient,
-        prefix: 'ncbi:'
+    redisClient.on('connect', function() {
+        console.log('Redis connected successfully');
     });
+
+    redisClient.on('ready', function() {
+        console.log('Redis client is ready');
+    });
+
+    redisClient.on('end', function() {
+        console.log('Redis connection ended');
+    });
+
+    try {
+        await redisClient.connect();
+        console.log('Redis connection established');
+
+        sessionConfig.store = new RedisStore({
+            client: redisClient,
+            prefix: 'ncbi:'
+        });
+        console.log('Redis store configured successfully');
+    } catch (error) {
+        console.error('Failed to connect to Redis:', error);
+        // Fallback to memory store if Redis connection fails
+        console.log('Falling back to memory store for sessions');
+    }
 }
 
 app.use(session(sessionConfig));
