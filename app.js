@@ -142,9 +142,23 @@ async function initializeRedisStore() {
         console.log('Initializing Redis connection...');
         console.log('REDIS_URL:', process.env.REDIS_URL ? 'Present' : 'Missing');
         
+        if (!process.env.REDIS_URL) {
+            console.error('REDIS_URL environment variable is not set');
+            return;
+        }
+
         const redisClient = createClient({
             url: process.env.REDIS_URL,
-            legacyMode: false
+            socket: {
+                connectTimeout: 10000,
+                reconnectStrategy: (retries) => {
+                    if (retries > 3) {
+                        console.error('Max Redis reconnection attempts reached');
+                        return new Error('Max Redis reconnection attempts reached');
+                    }
+                    return Math.min(retries * 100, 3000);
+                }
+            }
         });
 
         redisClient.on('error', function(err) {
@@ -164,8 +178,10 @@ async function initializeRedisStore() {
         });
 
         try {
-            await redisClient.connect();
-            console.log('Redis connection established');
+            if (!redisClient.isOpen) {
+                await redisClient.connect();
+                console.log('Redis connection established');
+            }
 
             sessionConfig.store = new RedisStore({
                 client: redisClient,
