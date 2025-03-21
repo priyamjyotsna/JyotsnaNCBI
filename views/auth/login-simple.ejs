@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Login Test</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
         button { padding: 10px 15px; background: #4285F4; color: white; border: none; border-radius: 4px; cursor: pointer; }
@@ -22,81 +20,22 @@
             const statusDiv = document.getElementById('status');
             const loginButton = document.getElementById('loginButton');
             
-            statusDiv.textContent = 'Loading Firebase configuration...';
+            statusDiv.textContent = 'Ready to sign in';
             
-            // Fetch Firebase config
-            fetch('/api/firebase-config')
-                .then(response => response.json())
-                .then(config => {
-                    statusDiv.textContent = 'Initializing Firebase...';
-                    
-                    // Initialize Firebase
-                    if (!firebase.apps.length) {
-                        firebase.initializeApp(config);
-                    }
-                    
-                    statusDiv.textContent = 'Firebase initialized. Ready to sign in.';
-                    
-                    // Set up auth state listener
-                    firebase.auth().onAuthStateChanged(function(user) {
-                        if (user) {
-                            statusDiv.textContent = `Signed in as: ${user.displayName} (${user.email})`;
-                            
-                            // Get token and send to server
-                            user.getIdToken().then(token => {
-                                return fetch('/auth/google-signin', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        token: token,
-                                        userData: {
-                                            name: user.displayName,
-                                            email: user.email,
-                                            photo: user.photoURL
-                                        }
-                                    })
-                                });
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    statusDiv.textContent = 'Authentication successful! Redirecting...';
-                                    setTimeout(() => {
-                                        window.location.href = '/auth/welcome';
-                                    }, 1000);
-                                } else {
-                                    statusDiv.textContent = 'Server authentication failed: ' + (data.error || 'Unknown error');
-                                }
-                            })
-                            .catch(error => {
-                                statusDiv.textContent = 'Error sending token to server: ' + error.message;
-                            });
-                        } else {
-                            statusDiv.textContent = 'Not signed in.';
-                        }
-                    });
-                    
-                    // Set up login button
-                    loginButton.addEventListener('click', function() {
-                        statusDiv.textContent = 'Starting Google sign-in...';
-                        
-                        const provider = new firebase.auth.GoogleAuthProvider();
-                        provider.addScope('profile');
-                        provider.addScope('email');
-                        
-                        firebase.auth().signInWithPopup(provider)
-                            .catch(function(error) {
-                                statusDiv.textContent = 'Sign-in error: ' + error.message;
-                                console.error('Sign-in error:', error);
-                            });
-                    });
-                })
-                .catch(error => {
-                    statusDiv.textContent = 'Error loading Firebase configuration: ' + error.message;
-                    console.error('Config error:', error);
-                });
+            loginButton.addEventListener('click', function() {
+                statusDiv.textContent = 'Starting sign-in...';
+                // Auth0 will handle the redirect
+                window.location.href = '/login';
+            });
+
+            // Check if we have a login status message
+            const urlParams = new URLSearchParams(window.location.search);
+            const loginStatus = urlParams.get('status');
+            if (loginStatus === 'success') {
+                statusDiv.textContent = 'Successfully logged in!';
+            } else if (loginStatus === 'error') {
+                statusDiv.textContent = 'Login failed. Please try again.';
+            }
         });
     </script>
 </body>

@@ -2,10 +2,11 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const https = require('https');
+const PDFDocument = require('pdfkit');
 
 // Create an optimized axios instance for all requests
 const axiosInstance = axios.create({
-    timeout: 8000, // Reduced timeout for faster failure/fallback
+    timeout: 30000, // Increased timeout to 30 seconds
     httpsAgent: new https.Agent({ 
         keepAlive: true
     }),
@@ -15,7 +16,7 @@ const axiosInstance = axios.create({
     }
 });
 
-// Render the sequence comparison tool page
+// Render the sequence comparison page
 router.get('/', (req, res) => {
     res.render('sequence-comparison');
 });
@@ -31,26 +32,33 @@ router.get('/api/fetch-sequence', async (req, res) => {
     try {
         console.log(`Fetching sequence for ID: ${accessionId}`);
         
-        // Try EBI first (fastest method based on your logs)
+        // Try NCBI first
         try {
-            console.log(`Fetching from EBI for ${accessionId}`);
-            const result = await fetchFromEBI(accessionId);
-            return res.json(result);
-        } catch (ebiError) {
-            console.log(`EBI fetch failed: ${ebiError.message}, trying NCBI...`);
-        }
-        
-        // Fall back to NCBI direct fetch if EBI fails
-        try {
+            console.log(`Fetching from NCBI for ${accessionId}`);
             const result = await fetchFromNCBI(accessionId);
-            return res.json(result);
+            return res.json({
+                success: true,
+                ...result
+            });
         } catch (ncbiError) {
-            console.log(`NCBI fetch failed: ${ncbiError.message}`);
-            throw new Error(`Could not fetch sequence for ${accessionId}`);
+            console.log(`NCBI fetch failed: ${ncbiError.message}, trying EBI...`);
+            
+            // Fall back to EBI if NCBI fails
+            try {
+                const result = await fetchFromEBI(accessionId);
+                return res.json({
+                    success: true,
+                    ...result
+                });
+            } catch (ebiError) {
+                console.log(`EBI fetch failed: ${ebiError.message}`);
+                throw new Error(`Could not fetch sequence for ${accessionId}`);
+            }
         }
     } catch (error) {
         console.error('Error fetching sequence:', error.message);
         res.status(500).json({ 
+            success: false,
             error: 'Failed to fetch sequence',
             details: error.message
         });
@@ -75,21 +83,31 @@ async function fetchFromEBI(accessionId) {
     throw new Error('EBI fetch failed or returned invalid data');
 }
 
-// Helper function to fetch from NCBI as fallback
+// Helper function to fetch from NCBI
 async function fetchFromNCBI(accessionId) {
-    // Determine if it's likely a protein or nucleotide sequence
-    const isProtein = /^[A-Z]P_|^[A-Z]{3}\d+/i.test(accessionId);
-    const db = isProtein ? 'protein' : 'nucleotide';
-    
-    console.log(`Trying NCBI ${db} database for ${accessionId}`);
-    
     const NCBI_API_BASE = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
     const email = process.env.NCBI_EMAIL || 'your.email@example.com';
     
-    // Direct fetch without search step
+    // First verify the sequence exists
+    const searchResponse = await axiosInstance.get(`${NCBI_API_BASE}/esearch.fcgi`, {
+        params: {
+            db: 'nucleotide',
+            term: `${accessionId}[accn]`,
+            retmode: 'json',
+            tool: 'sequence-comparison-tool',
+            email: email
+        }
+    });
+
+    const searchData = searchResponse.data;
+    if (!searchData.esearchresult || !searchData.esearchresult.count || parseInt(searchData.esearchresult.count) === 0) {
+        throw new Error(`Sequence ${accessionId} not found in NCBI`);
+    }
+
+    // Then fetch the sequence
     const fetchResponse = await axiosInstance.get(`${NCBI_API_BASE}/efetch.fcgi`, {
         params: {
-            db: db,
+            db: 'nucleotide',
             id: accessionId,
             rettype: 'fasta',
             retmode: 'text',
@@ -99,16 +117,15 @@ async function fetchFromNCBI(accessionId) {
     });
     
     const result = parseFastaResponse(fetchResponse.data);
-    if (result.sequence) {
-        console.log(`Successfully fetched ${db} sequence from NCBI, length: ${result.sequence.length}`);
-        return {
-            ...result,
-            type: db,
-            source: 'NCBI'
-        };
+    if (!result.sequence) {
+        throw new Error('NCBI returned empty sequence');
     }
-    
-    throw new Error('NCBI fetch failed or returned invalid data');
+
+    return {
+        ...result,
+        type: 'nucleotide',
+        source: 'NCBI'
+    };
 }
 
 // Helper function to parse FASTA response
@@ -158,37 +175,57 @@ function determineSequenceType(accessionId, sequence) {
 
 // New endpoint for sequence alignment and mutation detection
 router.post('/api/compare-sequences', async (req, res) => {
+    console.log('Received comparison request');
+    
     const { referenceSequence, querySequence } = req.body;
     
     if (!referenceSequence || !querySequence) {
-        return res.status(400).json({ error: 'Both reference and query sequences are required' });
+        console.error('Missing sequences:', { ref: !!referenceSequence, query: !!querySequence });
+        return res.status(400).json({ 
+            error: 'Both reference and query sequences are required',
+            success: false
+        });
     }
     
     try {
+        console.log('Sequences received:', {
+            refLength: referenceSequence.length,
+            queryLength: querySequence.length
+        });
+        
         console.log('Performing sequence alignment and mutation detection');
         
         // Perform local alignment to identify mutations
         const alignmentResult = performLocalAlignment(referenceSequence, querySequence);
+        console.log('Alignment complete');
         
         // Find mutations between the aligned sequences
         const mutations = findMutations(
             alignmentResult.alignedReference, 
             alignmentResult.alignedQuery
         );
+        console.log(`Found ${mutations.length} mutations`);
         
         // Calculate mutation distribution statistics
         const distributionStats = calculateMutationDistribution(mutations, referenceSequence.length);
+        console.log('Distribution stats calculated');
         
-        return res.json({
+        const response = {
+            success: true,
             alignment: alignmentResult,
             mutations: mutations,
             distributionStats: distributionStats,
             referenceLength: referenceSequence.length,
             queryLength: querySequence.length
-        });
+        };
+        
+        console.log('Sending response');
+        return res.json(response);
+        
     } catch (error) {
-        console.error('Error comparing sequences:', error.message);
-        res.status(500).json({ 
+        console.error('Error comparing sequences:', error);
+        return res.status(500).json({ 
+            success: false,
             error: 'Failed to compare sequences',
             details: error.message
         });
@@ -371,6 +408,114 @@ function calculateMutationDistribution(mutations, sequenceLength) {
         binSize,
         mutationTypes,
         totalMutations: mutations.length
+    };
+}
+
+// In your route handler where you generate the PDF
+router.post('/generate-pdf', async (req, res) => {
+    try {
+        const doc = new PDFDocument();
+        
+        // Set response headers
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=sequence-comparison-report.pdf');
+        
+        // Pipe the PDF to the response
+        doc.pipe(res);
+
+        // Add title
+        doc.fontSize(16)
+           .text('Sequence Comparison Report', { align: 'center' });
+        doc.moveDown();
+
+        // Add date
+        doc.fontSize(10)
+           .text(`Generated on: ${new Date().toLocaleString()}`, { align: 'right' });
+        doc.moveDown();
+
+        // Add sequence information
+        doc.fontSize(12)
+           .text('Sequence Information:', { underline: true });
+        doc.moveDown();
+
+        // Add comparison results from req.body
+        if (req.body.results) {
+            doc.text(`Similarity Score: ${req.body.results.similarityScore}%`);
+            doc.text(`Differences Found: ${req.body.results.differences}`);
+            doc.moveDown();
+
+            // Add sequence details
+            doc.text('Sequence Details:', { underline: true });
+            doc.moveDown();
+            doc.text(`Sequence 1 Length: ${req.body.results.seq1Length}`);
+            doc.text(`Sequence 2 Length: ${req.body.results.seq2Length}`);
+        }
+
+        // Add citation at bottom of the page
+        doc.moveDown(4);  // Add more space before citation
+
+        // Add separator line
+        doc.lineWidth(0.5)
+           .strokeColor('#999999')
+           .moveTo(72, doc.y)
+           .lineTo(doc.page.width - 72, doc.y)
+           .stroke();
+
+        doc.moveDown();
+
+        // Citation text
+        const year = new Date().getFullYear();
+        const url = req.protocol + '://' + req.get('host') + '/sequence-comparison';
+
+        doc.fontSize(10)
+           .fillColor('#333333')
+           .text('Citation:', {
+               continued: false,
+               align: 'left'
+           });
+
+        doc.moveDown(0.5);
+        
+        // APA style citation
+        doc.fontSize(9)
+           .fillColor('#666666')
+           .text('DNA Analysis Tool. (' + year + '). Sequence Comparison Tool. Retrieved from ' + url, {
+               align: 'left',
+               width: doc.page.width - 144  // Add proper margins
+           });
+
+        // End the PDF
+        doc.end();
+
+    } catch (error) {
+        console.error('PDF Generation Error:', error);
+        res.status(500).json({ error: 'Failed to generate PDF report' });
+    }
+});
+
+// In your sequence comparison function
+function compareSequences(seq1, seq2) {
+    // Clean the sequences first - remove any non-sequence characters
+    seq1 = seq1.replace(/[^ATCG\-]/gi, '');  // Only allow ATCG and gaps
+    seq2 = seq2.replace(/[^ATCG\-]/gi, '');  // Only allow ATCG and gaps
+
+    // Rest of your comparison logic
+    let differences = 0;
+    let comparedLength = Math.min(seq1.length, seq2.length);
+    
+    for (let i = 0; i < comparedLength; i++) {
+        if (seq1[i] !== seq2[i]) {
+            differences++;
+        }
+    }
+
+    const similarityScore = ((comparedLength - differences) / comparedLength * 100).toFixed(2);
+
+    return {
+        similarityScore: similarityScore,
+        differences: differences,
+        seq1Length: seq1.length,
+        seq2Length: seq2.length
     };
 }
 

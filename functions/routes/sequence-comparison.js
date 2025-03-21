@@ -5,14 +5,16 @@ const https = require('https');
 
 // Create an optimized axios instance for all requests
 const axiosInstance = axios.create({
-    timeout: 8000, // Reduced timeout for faster failure/fallback
+    timeout: 5000, // Further reduced timeout for faster response
     httpsAgent: new https.Agent({ 
-        keepAlive: true
+        keepAlive: true,
+        rejectUnauthorized: false // Allow self-signed certificates
     }),
     headers: {
-        'Accept': 'text/plain, application/json, */*',
+        'Accept': 'text/plain',
         'User-Agent': 'sequence-comparison-tool/1.0'
-    }
+    },
+    maxRedirects: 2 // Limit redirects
 });
 
 // Render the sequence comparison tool page

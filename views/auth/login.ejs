@@ -3,213 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com https://accounts.google.com https://*.firebaseio.com; script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com https://accounts.google.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://www.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob: https://*.googleapis.com https://*.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com https://apis.google.com https://accounts.google.com; frame-src 'self' https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com https://accounts.google.com https://*.firebaseio.com https://*.google.com;">
-    <title>Login</title>
-    <link rel="stylesheet" href="/styles/main.css">
-    <link rel="stylesheet" href="/styles/auth.css">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <title>Login - NCBI Tools</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a237e, #0d47a1);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+
+        .auth-box {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            color: #1a237e;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #1a237e;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+        }
+
+        .auth-button {
+            width: 100%;
+            padding: 14px;
+            background: #1a237e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .auth-button:hover {
+            background: #0d47a1;
+        }
+
+        .auth-button:disabled {
+            background: #90a4ae;
+            cursor: not-allowed;
+        }
+
+        .auth-links {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .auth-links a {
+            color: #1a237e;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .auth-links a:hover {
+            color: #0d47a1;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="auth-container">
-            <h2>Login to NCBI Tools</h2>
-            <h3>You need to login before accessing NCBI tools</h3>
-            <div id="loginStatus"></div>
-            <button id="googleSignIn" class="google-btn">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                Sign in with Google
-            </button>
-            <p class="auth-link">Don't have an account? <a href="/auth/signup">Sign up</a></p>
-            <div id="loadingIndicator" style="display: none;">
-                <i class="fa-spinner"></i> Signing in...
+    <div class="auth-container">
+        <div class="auth-box">
+            <h1>Welcome Back</h1>
+            <div id="error-message" class="error-message"></div>
+            <div id="success-message" class="success-message"></div>
+            <form id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Enter your password">
+                </div>
+                <button type="submit" class="auth-button">Sign In</button>
+            </form>
+            <div class="auth-links">
+                <p>Don't have an account? <a href="/auth/signup">Create one now</a></p>
             </div>
-            <div id="errorMessage" class="error-message"></div>
-            <div id="debugInfo" style="display: none; margin-top: 20px; padding: 10px; background: #f5f5f5; border-radius: 4px;"></div>
         </div>
     </div>
 
     <script>
-        // Initialize Firebase
-        async function initializeFirebase() {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const errorMessage = document.getElementById('error-message');
+            const successMessage = document.getElementById('success-message');
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            submitButton.disabled = true;
+            submitButton.textContent = 'Signing in...';
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
             try {
-                const response = await fetch('/api/firebase-config');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch Firebase config');
-                }
-                const firebaseConfig = await response.json();
-                
-                // Log Firebase config (without sensitive data)
-                console.log('Firebase config loaded:', {
-                    authDomain: firebaseConfig.authDomain,
-                    projectId: firebaseConfig.projectId,
-                    hasApiKey: !!firebaseConfig.apiKey,
-                    hasDatabaseUrl: !!firebaseConfig.databaseURL,
-                    hasStorageBucket: !!firebaseConfig.storageBucket,
-                    hasMessagingSenderId: !!firebaseConfig.messagingSenderId,
-                    hasAppId: !!firebaseConfig.appId
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
                 });
                 
-                // Validate required config fields
-                const requiredFields = ['apiKey', 'authDomain', 'projectId', 'databaseURL', 'storageBucket', 'messagingSenderId', 'appId'];
-                const missingFields = requiredFields.filter(field => !firebaseConfig[field]);
-                if (missingFields.length > 0) {
-                    throw new Error(`Missing required Firebase config fields: ${missingFields.join(', ')}`);
-                }
+                const data = await response.json();
                 
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                    console.log('Firebase initialized');
-                }
-                
-                const auth = firebase.auth();
-                const signInBtn = document.getElementById('googleSignIn');
-                const loading = document.getElementById('loadingIndicator');
-                const errorMessage = document.getElementById('errorMessage');
-                const debugInfo = document.getElementById('debugInfo');
-
-                // Handle successful authentication
-                async function handleAuthSuccess(user) {
-                    try {
-                        loading.style.display = 'block';
-                        errorMessage.style.display = 'none';
-                        debugInfo.textContent = `User authenticated: ${user.email}`;
-                        debugInfo.style.display = 'block';
-
-                        // Force token refresh
-                        const token = await user.getIdToken(true);
-                        console.log('Got fresh token');
-
-                        const response = await fetch('/auth/google-signin', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                token,
-                                userData: {
-                                    name: user.displayName,
-                                    email: user.email,
-                                    photo: user.photoURL,
-                                    uid: user.uid
-                                }
-                            }),
-                            credentials: 'include'
-                        });
-
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.error || `Server responded with status: ${response.status}`);
-                        }
-
-                        const data = await response.json();
-                        console.log('Server response:', data);
-
-                        if (data.success) {
-                            window.location.href = '/auth/welcome';
-                        } else {
-                            throw new Error(data.error || 'Authentication failed');
-                        }
-                    } catch (error) {
-                        console.error('Authentication error:', error);
-                        errorMessage.textContent = `Authentication error: ${error.message}`;
-                        errorMessage.style.display = 'block';
-                        debugInfo.textContent = `Error details: ${error.message}`;
-                        debugInfo.style.display = 'block';
-                    } finally {
-                        loading.style.display = 'none';
-                    }
-                }
-
-                // Handle sign-in button click
-                signInBtn.addEventListener('click', async () => {
-                    try {
-                        signInBtn.disabled = true;
-                        loading.style.display = 'block';
-                        errorMessage.style.display = 'none';
-                        debugInfo.textContent = 'Starting sign-in process...';
-                        debugInfo.style.display = 'block';
-
-                        // Clear all existing auth state and storage
-                        if (firebase.auth().currentUser) {
-                            await firebase.auth().signOut();
-                        }
-                        sessionStorage.clear();
-                        localStorage.clear();
-                        debugInfo.textContent += '\nCleared existing auth state and storage';
-
-                        const provider = new firebase.auth.GoogleAuthProvider();
-                        provider.setCustomParameters({
-                            prompt: 'select_account',
-                            access_type: 'offline',
-                            cookie_policy: 'single_host_origin'
-                        });
-
-                        debugInfo.textContent += '\nStarting redirect authentication...';
-                        
-                        // Store the current URL to return to after auth
-                        sessionStorage.setItem('authReturnUrl', window.location.href);
-                        
-                        // Start the redirect flow
-                        await auth.signInWithRedirect(provider);
-                    } catch (error) {
-                        console.error('Login error:', error);
-                        debugInfo.textContent += `\nError occurred: ${error.code || 'unknown'}`;
-                        errorMessage.textContent = 'Failed to start authentication. Please try again.';
-                        errorMessage.style.display = 'block';
-                        signInBtn.disabled = false;
-                        loading.style.display = 'none';
-                    }
-                });
-
-                // Handle redirect result
-                auth.getRedirectResult().then(async (result) => {
-                    try {
-                        if (result.user) {
-                            debugInfo.textContent += '\nRedirect authentication successful';
-                            await handleAuthSuccess(result.user);
-                        } else {
-                            // Check if we have a current user despite no redirect result
-                            const currentUser = auth.currentUser;
-                            if (currentUser) {
-                                debugInfo.textContent += '\nFound existing user after redirect';
-                                await handleAuthSuccess(currentUser);
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Redirect result error:', error);
-                        errorMessage.textContent = 'Authentication failed. Please try again.';
-                        errorMessage.style.display = 'block';
-                    }
-                }).catch((error) => {
-                    console.error('Redirect error:', error);
-                    errorMessage.textContent = 'Authentication failed. Please try again.';
+                if (response.ok) {
+                    // Store user data in session
+                    sessionStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    // Show success message
+                    successMessage.textContent = 'Login successful! Redirecting...';
+                    successMessage.style.display = 'block';
+                    
+                    // Redirect to welcome page
+                    window.location.href = '/auth/welcome';
+                } else {
+                    errorMessage.textContent = data.error || 'Login failed. Please try again.';
                     errorMessage.style.display = 'block';
-                });
-
-                // Modify the auth state listener to be more robust
-                let authStateUnsubscribe = null;
-                if (authStateUnsubscribe) {
-                    authStateUnsubscribe();
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Sign In';
                 }
-                
-                authStateUnsubscribe = auth.onAuthStateChanged((user) => {
-                    console.log('Auth state changed:', user ? `User is signed in: ${user.email}` : 'No user');
-                    if (user && !loading.style.display) {
-                        handleAuthSuccess(user);
-                    }
-                });
-
             } catch (error) {
-                console.error('Firebase initialization error:', error);
-                document.getElementById('errorMessage').textContent = `Failed to initialize: ${error.message}`;
-                document.getElementById('errorMessage').style.display = 'block';
+                console.error('Login error:', error);
+                errorMessage.textContent = 'An error occurred. Please try again.';
+                errorMessage.style.display = 'block';
+                submitButton.disabled = false;
+                submitButton.textContent = 'Sign In';
             }
-        }
-
-        // Initialize when the page loads
-        document.addEventListener('DOMContentLoaded', initializeFirebase);
+        });
     </script>
 </body>
 </html>

@@ -98,26 +98,30 @@ document.addEventListener('DOMContentLoaded', function() {
     
     clearBtn.addEventListener('click', clearAll);
     
-    document.addEventListener('DOMContentLoaded', function() {
-        const resultsSection = document.getElementById('resultsSection');
-        if (resultsSection) {
-            resultsSection.addEventListener('click', function(e) {
-                if (e.target.matches('.export-excel-btn')) {
-                    exportToExcel();
-                }
-                if (e.target.matches('.export-csv-btn')) {
-                    exportToCSV();
-                }
-                if (e.target.matches('.export-pdf-btn')) {
-                    exportToPDF();
-                }
-            });
-        }
-    });
+    // Export functionality has been removed
     
     // Functions
     function initializeDropzone(dropzone, fileInput, processFunction) {
-        dropzone.addEventListener('click', function() {
+        let clickTimer = null;
+        
+        // Remove any existing listeners to prevent duplicates
+        const newFileInput = fileInput.cloneNode(true);
+        fileInput.parentNode.replaceChild(newFileInput, fileInput);
+        fileInput = newFileInput;
+        
+        dropzone.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Prevent double clicks
+            if (clickTimer !== null) {
+                return;
+            }
+            
+            clickTimer = setTimeout(() => {
+                clickTimer = null;
+            }, 500);
+            
             fileInput.click();
         });
         
@@ -136,6 +140,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (e.dataTransfer.files.length > 0) {
                 processFunction(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                processFunction(e.target.files[0]);
             }
         });
     }
@@ -325,45 +335,114 @@ async function fetchSequenceFromNCBI(accessionId, type) {
     const statusElement = type === 'reference' ? referenceStatus : queryStatus;
     statusElement.innerHTML = '<span class="status-loading">⌛</span> Fetching sequence...';
     
+    const timeoutDiv = document.createElement('div');
+    timeoutDiv.className = 'timeout-message';
+    timeoutDiv.innerHTML = 'Initializing sequence fetch...';
+    statusElement.appendChild(timeoutDiv);
+    
+    let seconds = 0;
+    const progressInterval = setInterval(() => {
+        seconds++;
+        timeoutDiv.innerHTML = `Fetching sequence data... (${seconds}s)`;
+        if (seconds >= 15) {
+            timeoutDiv.innerHTML = 'Attempting alternative sources...';
+        }
+    }, 1000);
+
     try {
-        const response = await fetch(`/sequence-comparison/api/fetch-sequence?id=${encodeURIComponent(accessionId)}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'same-origin'
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-        // Check for authentication errors first
-        if (await handleAuthenticationError(response)) {
-            return;
+        try {
+            const response = await fetch(`/sequence-comparison/api/fetch-sequence?id=${encodeURIComponent(accessionId)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin',
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (await handleAuthenticationError(response)) {
+                clearInterval(progressInterval);
+                return;
+            }
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to fetch sequence');
+            }
+
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to fetch sequence');
+            }
+
+            clearInterval(progressInterval);
+            const sequence = {
+                header: data.header,
+                sequence: data.sequence
+            };
+
+            handleLargeSequence(sequence, type, accessionId);
+
+        } catch (primaryError) {
+            console.warn('Primary endpoint failed:', primaryError);
+            timeoutDiv.innerHTML = 'Trying alternative source...';
+
+            // Fallback to EBI or alternative source
+            const fallbackController = new AbortController();
+            const fallbackTimeoutId = setTimeout(() => fallbackController.abort(), 20000);
+
+            try {
+                const response = await fetch(`/api/nucleotide/sequence?id=${encodeURIComponent(accessionId)}`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    signal: fallbackController.signal
+                });
+
+                clearTimeout(fallbackTimeoutId);
+                
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                if (!data?.success || !data?.data?.sequence) {
+                    throw new Error('Invalid response format');
+                }
+
+                clearInterval(progressInterval);
+                const sequence = {
+                    header: data.data.id || accessionId,
+                    sequence: data.data.sequence
+                };
+                handleLargeSequence(sequence, type, accessionId);
+            } catch (fallbackError) {
+                clearTimeout(fallbackTimeoutId);
+                throw fallbackError;
+            }
         }
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to fetch sequence');
-        }
-
-        const data = await response.json();
-        if (!data.success) {
-            throw new Error(data.error || 'Failed to fetch sequence');
-        }
-
-        const sequence = {
-            header: data.header,
-            sequence: data.sequence
-        };
-
-        handleLargeSequence(sequence, type, accessionId);
-
     } catch (error) {
-        console.error('Error fetching sequence:', error);
+        clearInterval(progressInterval);
+        console.error('All fetch attempts failed:', error);
+        
         if (error.message.includes('<!DOCTYPE')) {
-            // If we get HTML response, likely a session timeout
             window.location.href = '/login';
             return;
         }
-        statusElement.innerHTML = `<span class="status-error">✗</span> Error: ${error.message}`;
+
+        const errorMessage = error.name === 'AbortError' ? 
+            'Request timed out. Please try again.' : 
+            error.message || 'Failed to fetch sequence';
+            
+        statusElement.innerHTML = `
+            <span class="status-error">✗</span> Error: ${errorMessage}
+            <button class="retry-button" onclick="fetchSequenceFromNCBI('${accessionId.replace(/'/g, "\\'")}, '${type}')">
+                Retry
+            </button>
+        `;
+        
         if (type === 'reference') referenceSequence = null;
         else querySequence = null;
         updateCompareButtonState();
@@ -453,131 +532,75 @@ function processSequenceData(data, type) {
         }
 
         compareBtn.disabled = true;
+        resultsSection.style.display = 'block';
         resultsSection.innerHTML = '<div class="loading">Comparing sequences... <div class="spinner"></div></div>';
 
         try {
-            // Ensure we're sending just the sequence strings as expected by the server
+            console.log('Starting sequence comparison...');
+            console.log('Reference sequence length:', referenceSequence.sequence.length);
+            console.log('Query sequence length:', querySequence.sequence.length);
+
+            // Ensure we're sending just the sequence strings
             const payload = {
-                referenceSequence: referenceSequence.sequence.toString().trim(),
-                querySequence: querySequence.sequence.toString().trim()
+                referenceSequence: referenceSequence.sequence,
+                querySequence: querySequence.sequence
             };
 
-            console.log('Sending comparison request with payload:', {
-                refLength: payload.referenceSequence.length,
-                queryLength: payload.querySequence.length,
-                refType: typeof payload.referenceSequence,
-                queryType: typeof payload.querySequence
-            });
-
+            console.log('Sending comparison request...');
+            
             const response = await fetch('/sequence-comparison/api/compare-sequences', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Content-Type': 'application/json'
                 },
-                credentials: 'same-origin',
                 body: JSON.stringify(payload)
             });
 
-            // First try to get the response as JSON
+            console.log('Response status:', response.status);
+            
+            // Get the response data
             let data;
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
+            try {
                 data = await response.json();
-            } else {
-                // If not JSON, get the text and log it for debugging
+                console.log('Response data:', data);
+            } catch (parseError) {
+                console.error('Error parsing response:', parseError);
                 const text = await response.text();
-                console.error('Received non-JSON response:', text);
-                throw new Error('Server returned invalid format');
+                console.error('Raw response:', text);
+                throw new Error('Invalid response format from server');
             }
 
             if (!response.ok) {
                 throw new Error(data.error || 'Failed to compare sequences');
             }
 
-            if (!data.success) {
-                throw new Error(data.error || 'Failed to compare sequences');
-            }
-
-            // Store the results with metadata
+            // Store the results
             comparisonResults = {
                 mutations: data.mutations || [],
-                alignment: data.alignment || null,
+                alignment: data.alignment || {},
                 distributionStats: data.distributionStats || {},
                 metadata: {
                     referenceLength: referenceSequence.sequence.length,
                     queryLength: querySequence.sequence.length,
                     referenceHeader: referenceSequence.header || '',
-                    queryHeader: querySequence.header || '',
-                    ...data.metadata
+                    queryHeader: querySequence.header || ''
                 }
             };
 
-            // Show results section before updating content
-            resultsSection.style.display = 'block';
-            resultsSection.innerHTML = `
-                <div class="results-header">
-                    <h2>Comparison Results</h2>
-                    <div class="export-options">
-                        <button class="export-excel-btn">Export to Excel</button>
-                        <button class="export-pdf-btn">Export to PDF</button>
-                        <button class="export-csv-btn">Export to CSV</button>
-                    </div>
-                </div>
+            console.log('Comparison results:', comparisonResults);
 
-                <div class="summary-stats">
-                    <div class="stat-card">
-                        <h4>Total Mutations</h4>
-                        <div class="stat-value" id="totalMutations">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <h4>Sequence Length</h4>
-                        <div class="stat-value" id="sequenceLength">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <h4>Mutation Rate</h4>
-                        <div class="stat-value" id="mutationRate">0%</div>
-                    </div>
-                </div>
-
-                <div class="visualization-section">
-                    <div class="chart-container">
-                        <h4>Mutation Distribution</h4>
-                        <canvas id="mutationChart" style="width: 100%; height: 300px;"></canvas>
-                    </div>
-                </div>
-
-                <div class="sequence-display">
-                    <h4>Sequence Alignment with Mutations Highlighted</h4>
-                    <div class="sequence-viewer" id="sequenceViewer">
-                        <!-- Sequence alignment will be displayed here -->
-                    </div>
-                </div>
-
-                <div class="mutation-list">
-                    <h4>Detailed Mutation List</h4>
-                    <table id="mutationTable">
-                        <thead>
-                            <tr>
-                                <th>Position</th>
-                                <th>Reference</th>
-                                <th>Query</th>
-                                <th>Type</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Mutation details will be added here -->
-                        </tbody>
-                    </table>
-                </div>
-            `;
-
-            // Now that the elements exist, update them
+            // Update the results section HTML
             displayResults();
 
         } catch (error) {
-            console.error('Error comparing sequences:', error);
-            resultsSection.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            console.error('Error in sequence comparison:', error);
+            resultsSection.innerHTML = `
+                <div class="error-message">
+                    <h3>Error Comparing Sequences</h3>
+                    <p>${error.message}</p>
+                    <p>Please try again or contact support if the problem persists.</p>
+                </div>
+            `;
         } finally {
             compareBtn.disabled = false;
         }
@@ -589,54 +612,372 @@ function processSequenceData(data, type) {
         const filteredMutations = getFilteredMutations();
         
         // Show results section
-        if (resultsSection) {
-            resultsSection.style.display = 'block';
-        }
-        
-        // Update summary statistics with null checks
-        const totalMutationsElement = document.getElementById('totalMutations');
-        const sequenceLengthElement = document.getElementById('sequenceLength');
-        const mutationRateElement = document.getElementById('mutationRate');
-        
-        if (totalMutationsElement) {
-            totalMutationsElement.textContent = filteredMutations.length;
-        }
-        
-        if (sequenceLengthElement && comparisonResults.metadata && comparisonResults.metadata.referenceLength) {
-            sequenceLengthElement.textContent = comparisonResults.metadata.referenceLength;
-        }
-        
-        if (mutationRateElement && comparisonResults.metadata && comparisonResults.metadata.referenceLength) {
-            const rate = ((filteredMutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2);
-            mutationRateElement.textContent = rate + '%';
-        }
+        resultsSection.style.display = 'block';
+        resultsSection.innerHTML = `
+            <div class="mutation-report visible">
+                <div class="report-header">
+                    <h2>Mutation Summary Report</h2>
+                    <p class="report-date">Generated on: ${new Date().toLocaleString()}</p>
+                </div>
 
-        // Update visualizations with filtered mutations
+                <div class="overview-stats">
+                    <div class="stat-card">
+                        <h4>Total Mutations</h4>
+                        <div class="stat-value" id="totalMutations">${filteredMutations.length}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Sequence Length</h4>
+                        <div class="stat-value" id="sequenceLength">${comparisonResults.metadata.referenceLength}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Mutation Rate</h4>
+                        <div class="stat-value" id="mutationRate">
+                            ${((filteredMutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2)}%
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sequence-info">
+                    <div class="info-card">
+                        <h4>Reference Sequence</h4>
+                        <p>Header: ${comparisonResults.metadata.referenceHeader || 'N/A'}</p>
+                        <p>Length: ${comparisonResults.metadata.referenceLength} bp</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>Query Sequence</h4>
+                        <p>Header: ${comparisonResults.metadata.queryHeader || 'N/A'}</p>
+                        <p>Length: ${comparisonResults.metadata.queryLength} bp</p>
+                    </div>
+                </div>
+
+                <div class="distribution-graph">
+                    <h3>Mutation Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="mutationChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="significant-mutations">
+                    <h3>Most Significant Mutations</h3>
+                    <div id="significantMutations">
+                        ${getSignificantMutations(filteredMutations)}
+                    </div>
+                </div>
+
+                <div class="sequence-display">
+                    <h3>Sequence Alignment with Mutations Highlighted</h3>
+                    <div class="sequence-viewer" id="sequenceViewer"></div>
+                </div>
+
+                <div class="mutation-list">
+                    <h3>Detailed Mutation List</h3>
+                    <table id="mutationTable" class="mutation-table">
+                        <thead>
+                            <tr>
+                                <th>Position</th>
+                                <th>Reference</th>
+                                <th>Query</th>
+                                <th>Type</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="export-options">
+                    <button class="export-btn pdf-export">
+                        <i class="fas fa-file-pdf"></i> Export as PDF
+                    </button>
+                    <button class="export-btn image-export">
+                        <i class="fas fa-file-image"></i> Export as Image
+                    </button>
+                </div>
+                </div>
+            `;
+
+        // Update visualizations
         try {
-            if (document.getElementById('mutationChart')) {
-                createMutationChart(filteredMutations);
-            }
+            createMutationChart();
+            displaySequenceAlignment();
+            populateMutationTable();
+
+            // Add event listeners to export buttons
+            const pdfButton = resultsSection.querySelector('.pdf-export');
+            const imageButton = resultsSection.querySelector('.image-export');
             
-            if (document.getElementById('sequenceViewer')) {
-                displaySequenceAlignment();
+            if (pdfButton) {
+                pdfButton.addEventListener('click', async () => {
+                    try {
+                        await exportAsPDF();
+        } catch (error) {
+                        console.error('PDF export error:', error);
+                        alert('Failed to generate PDF. Please try again.');
+                    }
+                });
             }
-            
-            if (document.getElementById('mutationTable')) {
-                populateMutationTable(filteredMutations);
+
+            if (imageButton) {
+                imageButton.addEventListener('click', async () => {
+                    try {
+                        await exportAsImage();
+                    } catch (error) {
+                        console.error('Image export error:', error);
+                        alert('Failed to generate image. Please try again.');
+                    }
+                });
             }
         } catch (error) {
             console.error('Error updating visualizations:', error);
         }
     }
 
+    // Add new helper function for significant mutations
+    function getSignificantMutations(mutations) {
+        // Sort mutations by position to find clusters
+        const sortedMutations = [...mutations].sort((a, b) => a.position - b.position);
+        
+        // Find mutation clusters (mutations that are close to each other)
+        const clusters = [];
+        let currentCluster = [sortedMutations[0]];
+        
+        for (let i = 1; i < sortedMutations.length; i++) {
+            if (sortedMutations[i].position - sortedMutations[i-1].position < 10) {
+                currentCluster.push(sortedMutations[i]);
+            } else {
+                if (currentCluster.length > 1) {
+                    clusters.push([...currentCluster]);
+                }
+                currentCluster = [sortedMutations[i]];
+            }
+        }
+        
+        if (currentCluster.length > 1) {
+            clusters.push(currentCluster);
+        }
+        
+        // Generate HTML for significant mutations
+        let html = '';
+        
+        // Add mutation clusters
+        if (clusters.length > 0) {
+            html += '<div class="mutation-highlight"><strong>Mutation Clusters:</strong><br>';
+            clusters.forEach(cluster => {
+                html += `Positions ${cluster[0].position}-${cluster[cluster.length-1].position}: ${cluster.length} mutations<br>`;
+            });
+            html += '</div>';
+        }
+        
+        // Add most frequent mutation types
+        const typeCounts = {};
+        mutations.forEach(mutation => {
+            typeCounts[mutation.type] = (typeCounts[mutation.type] || 0) + 1;
+        });
+        
+        const sortedTypes = Object.entries(typeCounts)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 3);
+        
+        if (sortedTypes.length > 0) {
+            html += '<div class="mutation-highlight"><strong>Most Common Mutation Types:</strong><br>';
+            sortedTypes.forEach(([type, count]) => {
+                html += `${type}: ${count} occurrences<br>`;
+            });
+            html += '</div>';
+        }
+        
+        return html || '<p>No significant mutations found.</p>';
+    }
 
+    // Add export functions
+    async function exportAsPDF() {
+        try {
+            const pdfButton = document.querySelector('.pdf-export');
+            pdfButton.disabled = true;
+            pdfButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
 
+            // Prepare the data to send to server
+            const reportData = {
+                metadata: comparisonResults.metadata,
+                mutations: getFilteredMutations(),
+                stats: {
+                    totalMutations: document.getElementById('totalMutations').textContent,
+                    sequenceLength: document.getElementById('sequenceLength').textContent,
+                    mutationRate: document.getElementById('mutationRate').textContent
+                },
+                chartData: {
+                    labels: window.mutationChart.data.labels,
+                    data: window.mutationChart.data.datasets[0].data
+                },
+                generatedDate: new Date().toLocaleString(),
+                currentUrl: window.location.href
+            };
 
+            // Send data to server
+            const response = await fetch('/sequence-comparison/api/generate-pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(reportData)
+            });
 
+            if (!response.ok) {
+                throw new Error('Failed to generate PDF');
+            }
 
+            // Get the PDF blob
+            const blob = await response.blob();
+            
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'mutation-report.pdf';
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
 
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Failed to generate PDF. Please try again.');
+        } finally {
+            const pdfButton = document.querySelector('.pdf-export');
+            pdfButton.disabled = false;
+            pdfButton.innerHTML = '<i class="fas fa-file-pdf"></i> Export as PDF';
+        }
+    }
 
+    async function exportAsImage() {
+        try {
+            const element = document.querySelector('.mutation-report');
+            if (!element) {
+                throw new Error('Report element not found');
+            }
 
+            // Create a clone of the element
+            const clone = element.cloneNode(true);
+            
+            // Remove export buttons from clone
+            const exportButtons = clone.querySelector('.export-options');
+            if (exportButtons) {
+                exportButtons.remove();
+            }
+            
+            // Set styles for proper rendering
+            clone.style.position = 'absolute';
+            clone.style.left = '-9999px';
+            clone.style.width = element.offsetWidth + 'px';
+            clone.style.background = 'white';
+            clone.style.padding = '20px';
+            document.body.appendChild(clone);
+
+            // Get the original chart canvas
+            const originalChart = document.getElementById('mutationChart');
+            const clonedChart = clone.querySelector('#mutationChart');
+
+            if (originalChart && clonedChart) {
+                // Wait for a moment to ensure DOM is updated
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                // Create a new chart in the cloned element with simplified options
+                const ctx = clonedChart.getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: window.mutationChart.data.labels,
+                        datasets: [{
+                            label: 'Mutations',
+                            data: window.mutationChart.data.datasets[0].data,
+                            backgroundColor: 'rgba(66, 133, 244, 0.7)',
+                            borderColor: 'rgba(66, 133, 244, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        animation: false,
+                        responsive: false,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    font: { family: 'Arial' }
+                                },
+                                grid: {
+                                    display: true
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: { family: 'Arial' }
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                labels: {
+                                    font: { family: 'Arial' }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Mutation Distribution',
+                                font: { family: 'Arial', size: 16 }
+                            }
+                        }
+                    }
+                });
+
+                // Wait for chart to render
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            // Configure html2canvas options
+            const options = {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+                removeContainer: true,
+                onclone: function(clonedDoc) {
+                    const clonedChart = clonedDoc.querySelector('#mutationChart');
+                    if (clonedChart) {
+                        clonedChart.style.height = '300px';
+                        clonedChart.style.width = '100%';
+                    }
+                }
+            };
+
+            // Generate canvas
+            const canvas = await html2canvas(clone, options);
+            
+            // Convert to image and download
+            const image = canvas.toDataURL('image/png', 1.0);
+            const link = document.createElement('a');
+            link.download = 'mutation-report.png';
+            link.href = image;
+            link.click();
+
+            // Cleanup
+            if (document.body.contains(clone)) {
+                document.body.removeChild(clone);
+            }
+
+        } catch (error) {
+            console.error('Error generating image:', error);
+            alert('Failed to generate image. Please try again.');
+        }
+    }
+
+    // ... existing code ...
     async function uploadSequenceInChunks(sequence, sessionId, type) {
         const chunkSize = 500000; // 500KB chunks
         const chunks = Math.ceil(sequence.length / chunkSize);
@@ -967,31 +1308,71 @@ function processSequenceData(data, type) {
     
     function populateMutationTable() {
         const tableBody = document.querySelector('#mutationTable tbody');
+        if (!tableBody || !comparisonResults || !comparisonResults.mutations) {
+            console.error('Missing required elements for mutation table');
+            return;
+        }
+
+        // Clear existing rows
         tableBody.innerHTML = '';
         
+        // Get filtered mutations
         const filteredMutations = getFilteredMutations();
+        console.log('Filtered mutations:', filteredMutations);
         
-        filteredMutations.forEach(mutation => {
+        // Sort mutations by position
+        const sortedMutations = filteredMutations.sort((a, b) => a.position - b.position);
+        
+        sortedMutations.forEach(mutation => {
             const row = document.createElement('tr');
             
+            // Position cell
             const positionCell = document.createElement('td');
             positionCell.textContent = mutation.position;
             row.appendChild(positionCell);
             
+            // Reference base cell
             const refCell = document.createElement('td');
-            refCell.textContent = mutation.reference === '-' || !mutation.reference ? '-' : mutation.reference;
+            refCell.textContent = mutation.referenceBase === '-' ? 'Gap' : mutation.referenceBase;
+            if (mutation.type === 'deletion') {
+                refCell.classList.add('deletion');
+            } else if (mutation.type === 'substitution') {
+                refCell.classList.add('substitution');
+            }
             row.appendChild(refCell);
             
+            // Query base cell
             const queryCell = document.createElement('td');
-            queryCell.textContent = mutation.query === '-' || !mutation.query ? '-' : mutation.query;
+            queryCell.textContent = mutation.queryBase === '-' ? 'Gap' : mutation.queryBase;
+            if (mutation.type === 'insertion') {
+                queryCell.classList.add('insertion');
+            } else if (mutation.type === 'substitution') {
+                queryCell.classList.add('substitution');
+            }
             row.appendChild(queryCell);
             
+            // Mutation type cell
             const typeCell = document.createElement('td');
-            typeCell.textContent = mutation.type || 'Unknown';
+            typeCell.textContent = mutation.type.charAt(0).toUpperCase() + mutation.type.slice(1);
+            typeCell.classList.add(mutation.type.toLowerCase());
             row.appendChild(typeCell);
             
             tableBody.appendChild(row);
         });
+
+        // Update summary counts
+        const totalMutations = document.getElementById('totalMutations');
+        const sequenceLength = document.getElementById('sequenceLength');
+        const mutationRate = document.getElementById('mutationRate');
+
+        if (totalMutations) totalMutations.textContent = sortedMutations.length;
+        if (sequenceLength && comparisonResults.metadata) {
+            sequenceLength.textContent = comparisonResults.metadata.referenceLength;
+        }
+        if (mutationRate && comparisonResults.metadata) {
+            const rate = ((sortedMutations.length / comparisonResults.metadata.referenceLength) * 100).toFixed(2);
+            mutationRate.textContent = rate + '%';
+        }
     }
     
     function clearAll() {
@@ -1019,130 +1400,177 @@ function processSequenceData(data, type) {
         compareBtn.disabled = true;
     }
     
-    function exportResults(format) {
-        if (!comparisonResults || !comparisonResults.mutations) {
-            alert('No comparison results available to export');
-            return;
-        }
-        
-        try {
-            switch (format) {
-                case 'excel':
-                    exportToExcel();
-                    break;
-                case 'pdf':
-                    exportToPDF();
-                    break;
-                case 'csv':
-                    exportToCSV();
-                    break;
-                default:
-                    alert('Unsupported export format');
-            }
-        } catch (error) {
-            console.error('Export error:', error);
-            alert('Failed to export results. Please try again.');
-        }
-    }
-    
-    function getComparisonData() {
-        if (!comparisonResults || !comparisonResults.mutations) {
-            return [];
-        }
 
-        return comparisonResults.mutations.map(mutation => ({
-            position: mutation.position,
-            reference: mutation.reference || '-',
-            query: mutation.query || '-',
-            type: mutation.type || 'Unknown',
-            // Add metadata
-            referenceHeader: comparisonResults.metadata.referenceHeader,
-            queryHeader: comparisonResults.metadata.queryHeader
-        }));
-    }
-    
-    function exportToExcel() {
-        try {
-            if (!comparisonResults || !comparisonResults.mutations) {
-                throw new Error('No comparison results available');
-            }
+}); // End of DOMContentLoaded
 
-            const data = getComparisonData();
-            if (!data.length) {
-                throw new Error('No data to export');
-            }
+// Add this function to handle PDF generation
+async function generatePDF() {
+    try {
+        // Create new jsPDF instance
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4',
+            putOnlyUsedFonts: true
+        });
 
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Sequence Comparison");
-            XLSX.writeFile(wb, "sequence-comparison.xlsx");
-        } catch (error) {
-            console.error('Excel export error:', error);
-            alert('Failed to export to Excel: ' + error.message);
-        }
-    }
-    
-    function exportToCSV() {
-        try {
-            if (!comparisonResults || !comparisonResults.mutations) {
-                throw new Error('No comparison results available');
-            }
+        // Set initial y position
+        let yPos = 20;
 
-            const data = getComparisonData();
-            if (!data.length) {
-                throw new Error('No data to export');
-            }
+        // Title
+        doc.setFontSize(16);
+        doc.text('Sequence Comparison Report', doc.internal.pageSize.width / 2, yPos, { align: 'center' });
+        yPos += 15;
 
-            const ws = XLSX.utils.json_to_sheet(data);
-            const csv = XLSX.utils.sheet_to_csv(ws);
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "sequence-comparison.csv";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch (error) {
-            console.error('CSV export error:', error);
-            alert('Failed to export to CSV: ' + error.message);
-        }
-    }
-    
-    function exportToPDF() {
-        try {
-            if (!comparisonResults || !comparisonResults.mutations) {
-                throw new Error('No comparison results available');
-            }
+        // Date
+        doc.setFontSize(10);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 20, yPos);
+        yPos += 15;
 
-            const { jsPDF } = window.jspdf;
-            if (!jsPDF) {
-                throw new Error('PDF library not loaded');
-            }
+        // Summary Statistics
+        const totalMutations = document.getElementById('totalMutations').textContent;
+        const sequenceLength = document.getElementById('sequenceLength').textContent;
+        const mutationRate = document.getElementById('mutationRate').textContent;
 
-            const doc = new jsPDF();
-            
-            // Add title
-            doc.setFontSize(16);
-            doc.text('Sequence Comparison Results', 10, 10);
-            
-            // Add metadata
-            doc.setFontSize(12);
-            doc.text(`Reference: ${comparisonResults.metadata.referenceHeader}`, 10, 20);
-            doc.text(`Query: ${comparisonResults.metadata.queryHeader}`, 10, 30);
-            
-            // Add table
-            const data = getComparisonData();
+        doc.setFontSize(12);
+        doc.text('Summary:', 20, yPos);
+        yPos += 10;
+
+        doc.setFontSize(10);
+        const summaryText = [
+            `Total Mutations: ${totalMutations}`,
+            `Sequence Length: ${sequenceLength}`,
+            `Mutation Rate: ${mutationRate}`
+        ];
+        summaryText.forEach(text => {
+            doc.text(text, 20, yPos);
+            yPos += 7;
+        });
+        yPos += 5;
+
+        // Mutation Table
+        const mutationTable = document.getElementById('mutationTable');
+        if (mutationTable) {
             doc.autoTable({
-                head: [['Position', 'Reference', 'Query', 'Type']],
-                body: data.map(row => [row.position, row.reference, row.query, row.type]),
-                startY: 40,
-                margin: { top: 40 }
+                html: '#mutationTable',
+                startY: yPos,
+                styles: { fontSize: 8 },
+                margin: { top: 20, bottom: 40 }, // Ensure space for citations
+                didDrawPage: function(data) {
+                    // Save the final Y position after the table
+                    yPos = data.cursor.y;
+                }
             });
-
-            doc.save("sequence-comparison.pdf");
-        } catch (error) {
-            console.error('PDF export error:', error);
-            alert('Failed to export to PDF: ' + error.message);
         }
+
+        // Ensure we have space for citations, if not, add new page
+        if (yPos > doc.internal.pageSize.height - 60) {
+            doc.addPage();
+            yPos = 20;
+        }
+
+        // Add separator line
+        yPos += 10;
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.5);
+        doc.line(20, yPos, doc.internal.pageSize.width - 20, yPos);
+
+        // Citations
+        yPos += 10;
+        doc.setFontSize(12);
+        doc.setTextColor(0);
+        doc.text('How to Cite This Tool', 20, yPos);
+
+        // Citation content
+        const currentYear = new Date().getFullYear();
+        const url = window.location.href;
+
+        yPos += 10;
+        doc.autoTable({
+            startY: yPos,
+            head: [['Format', 'Citation']],
+            body: [
+                ['APA', `DNA Analysis Tool. (${currentYear}). Sequence Comparison Tool. Retrieved from ${url}`],
+                ['MLA', `"Sequence Comparison Tool." DNA Analysis Tool, ${currentYear}, ${url}`],
+                ['BibTeX', `@software{sequence_comparison_tool,\ntitle={Sequence Comparison Tool},\nauthor={DNA Analysis Tool},\nyear={${currentYear}},\nurl={${url}}\n}`]
+            ],
+            styles: {
+                fontSize: 8,
+                cellPadding: 3,
+                overflow: 'linebreak',
+                valign: 'middle'
+            },
+            columnStyles: {
+                0: { fontStyle: 'bold', cellWidth: 30 },
+                1: { cellWidth: 'auto' }
+            },
+            margin: { left: 20, right: 20 },
+            theme: 'grid',
+            pageBreak: 'avoid' // Prevent citation table from breaking across pages
+        });
+
+        // Add citation page
+        doc.addPage();
+        doc.setFontSize(10);
+        doc.text('How to Cite:', 20, 30);
+        doc.setFontSize(9);
+        doc.text(`DNA Analysis Tool. (${new Date().getFullYear()}). Sequence Comparison Tool. Retrieved from ${window.location.href}`, 20, 45, {
+            maxWidth: 170
+        });
+
+        // Save the PDF
+        doc.save('sequence-comparison-report.pdf');
+
+    } catch (error) {
+        console.error('PDF Generation Error:', error);
+        alert('Error generating PDF: ' + error.message);
     }
-});
+}
+
+// Add this button to trigger PDF generation
+document.getElementById('resultsSection').innerHTML += `
+    <div style="text-align: center; margin: 20px 0;">
+        <button onclick="generatePDF()" class="primary-btn">
+            <i class="fas fa-file-pdf"></i> Download PDF Report
+        </button>
+    </div>
+`;
+
+function validateSequence(sequence) {
+    // Remove whitespace and non-sequence characters
+    sequence = sequence.replace(/\s+/g, '');
+    
+    // Check if sequence only contains valid nucleotides
+    const validSequence = sequence.match(/^[ATCG\-]+$/i);
+    
+    if (!validSequence) {
+        throw new Error('Invalid sequence. Only A, T, C, G characters and gaps (-) are allowed.');
+    }
+    
+    return sequence.toUpperCase();
+}
+
+function cleanSequence(sequence) {
+    // Remove any citation text that might have been copied
+    sequence = sequence.replace(/DNA\s*Analysis\s*Tool.*?localhost:[0-9]+\/[a-zA-Z-]+/g, '');
+    // Remove any non-sequence characters, keeping only valid nucleotides and gaps
+    sequence = sequence.replace(/[^ATCG\-]/gi, '');
+    return sequence.toUpperCase();
+}
+
+function compareSequences() {
+    try {
+        let seq1 = document.getElementById('referenceSequence').value;
+        let seq2 = document.getElementById('querySequence').value;
+        
+        // Clean sequences before comparison
+        seq1 = cleanSequence(seq1);
+        seq2 = cleanSequence(seq2);
+        
+        // Rest of your comparison code...
+    } catch (error) {
+        console.error('Comparison error:', error);
+        alert('Error comparing sequences: ' + error.message);
+    }
+}

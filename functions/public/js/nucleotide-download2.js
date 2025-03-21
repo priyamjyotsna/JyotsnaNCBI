@@ -286,12 +286,21 @@ class NucleotideDownloader {
             this.updateStatus(`Fetching ${accessionId}...`, 'loading');
             
             // Add timeout and retry logic
-            const fetchWithRetry = async (url, retries = 3, delay = 1000) => {
+            const fetchWithRetry = async (url, retries = 3, delay = 2000) => {
                 for (let i = 0; i < retries; i++) {
                     try {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+                        
                         const response = await fetch(url, { 
-                            signal: AbortSignal.timeout(30000) // 10 second timeout
+                            signal: controller.signal,
+                            headers: {
+                                'Accept': 'application/json',
+                                'User-Agent': 'Mozilla/5.0 (compatible; nucleotide-downloader/1.0)'
+                            }
                         });
+                        
+                        clearTimeout(timeoutId);
                         
                         if (!response.ok) {
                             const errorData = await response.json().catch(() => ({ error: `HTTP error! status: ${response.status}` }));
@@ -300,9 +309,13 @@ class NucleotideDownloader {
                         
                         return response;
                     } catch (error) {
+                        if (error.name === 'AbortError') {
+                            throw new Error('Request timed out');
+                        }
                         if (i === retries - 1) throw error;
+                        console.log(`Retry ${i + 1} for ${accessionId} after ${delay}ms`);
                         await new Promise(resolve => setTimeout(resolve, delay));
-                        delay *= 1.5; // Exponential backoff
+                        delay *= 2; // Exponential backoff
                     }
                 }
             };

@@ -123,4 +123,125 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
     });
+
+    // Update citations with current date and URL
+    updateCitations();
 });
+
+function updateCitations() {
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const url = window.location.href;
+    const month = currentDate.toLocaleString('en-US', { month: 'long' });
+    const day = currentDate.getDate();
+
+    // APA Format (7th Edition)
+    const apaCitation = `Priyam, J., & Saxena, U. (${year}). Nucleotide Download Tool [Computer software]. National Institute of Technology Warangal. Retrieved ${month} ${day}, ${year}, from ${url}`;
+    document.getElementById('apaCitation').textContent = apaCitation;
+
+    // MLA Format
+    const mlaCitation = `"Nucleotide Download Tool." National Institute of Technology Warangal, ${month} ${year}, ${url}`;
+    document.getElementById('mlaCitation').textContent = mlaCitation;
+
+    // BibTeX Format
+    const bibtexCitation = `@software{nucleotide_download_tool,
+    title={Nucleotide Download Tool},
+    author={Priyam, Jyotsna and Saxena, Urmila},
+    year={${year}},
+    institution={National Institute of Technology Warangal},
+    url={${url}},
+    note={Retrieved ${month} ${day}, ${year}}
+}`;
+    document.getElementById('bibtexCitation').textContent = bibtexCitation;
+}
+
+function copyCitation(format) {
+    let element;
+    switch(format) {
+        case 'apa':
+            element = document.getElementById('apaCitation');
+            break;
+        case 'mla':
+            element = document.getElementById('mlaCitation');
+            break;
+        case 'bibtex':
+            element = document.getElementById('bibtexCitation');
+            break;
+    }
+
+    const text = element.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = element.nextElementSibling;
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => {
+            btn.textContent = originalText;
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy citation. Please try selecting and copying manually.');
+    });
+}
+
+<style>
+.citation-section {
+    margin-top: 40px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.citation-section h3 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.citation-formats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.citation-box {
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #f9f9f9;
+}
+
+.citation-box h4 {
+    color: #444;
+    margin-bottom: 10px;
+}
+
+.citation-box p, .citation-box pre {
+    margin: 10px 0;
+    padding: 10px;
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.copy-btn {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s;
+}
+
+.copy-btn:hover {
+    background: #357abd;
+}
+
+.copy-btn:active {
+    transform: translateY(1px);
+}
+</style>

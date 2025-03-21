@@ -8,6 +8,11 @@
     <link rel="stylesheet" href="/styles/dna-analysis.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Add Google Scholar metadata -->
+    <meta name="citation_title" content="DNA Sequence Analysis and Visualization Tool">
+    <meta name="citation_author" content="DNA Analysis Tool">
+    <meta name="citation_publication_date" content="2024">
+    <meta name="citation_online_date" content="2024">
 </head>
 <body>
     <div class="container">
@@ -109,5 +114,165 @@
     <!-- Chart.js and custom JS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/dna-analysis.js"></script>
+
+    <!-- Updated citation section -->
+    <div id="citationSection" class="citation-section">
+        <h3>How to Cite</h3>
+        <div class="citation-formats">
+            <div class="citation-box">
+                <h4>APA</h4>
+                <div id="apaCitation" class="citation-text">
+                    DNA Analysis Tool. (2024). DNA Sequence Analysis and Visualization Tool. Retrieved from ${url}
+                </div>
+                <button onclick="copyCitation('apa')" class="copy-btn">Copy</button>
+            </div>
+            
+            <div class="citation-box">
+                <h4>MLA</h4>
+                <div id="mlaCitation" class="citation-text">
+                    "DNA Sequence Analysis and Visualization Tool." DNA Analysis Tool, 2024, ${url}
+                </div>
+                <button onclick="copyCitation('mla')" class="copy-btn">Copy</button>
+            </div>
+            
+            <div class="citation-box">
+                <h4>BibTeX</h4>
+                <div id="bibtexCitation" class="citation-text">
+@software{dna_analysis_tool,
+    title={DNA Sequence Analysis Tool},
+    author={DNA Analysis Tool},
+    year={2024},
+    url={${url}}
+}
+                </div>
+                <button onclick="copyCitation('bibtex')" class="copy-btn">Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    .citation-section {
+        margin: 20px auto;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        max-width: 1000px;
+    }
+
+    .citation-section h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+        text-align: left;
+    }
+
+    .citation-formats {
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .citation-box {
+        flex: 1;
+        min-width: 250px;
+        padding: 10px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        background: #f9f9f9;
+    }
+
+    .citation-box h4 {
+        color: #444;
+        margin-bottom: 8px;
+        font-size: 0.9em;
+    }
+
+    .citation-box p {
+        margin: 8px 0;
+        padding: 8px;
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        font-size: 0.8em;
+        line-height: 1.4;
+        height: 80px;
+        overflow-y: auto;
+    }
+
+    .copy-btn {
+        background: #4a90e2;
+        color: white;
+        border: none;
+        padding: 4px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8em;
+        transition: background 0.3s;
+    }
+
+    .copy-btn:hover {
+        background: #357abd;
+    }
+    </style>
+
+    <script>
+    function updateCitations() {
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+        const month = months[currentDate.getMonth()];
+        const day = currentDate.getDate();
+        const url = window.location.href;
+        const doi = "10.5281/zenodo.XXXXXX"; // Replace with your actual DOI if you have one
+
+        // Shorter APA Format
+        const apaCitation = `DNA Analysis Tool. (${year}). DNA Sequence Analysis Tool. ${url}`;
+        document.getElementById('apaCitation').textContent = apaCitation;
+
+        // Shorter MLA Format
+        const mlaCitation = `"DNA Sequence Analysis Tool." DNA Analysis Tool, ${year}, ${url}`;
+        document.getElementById('mlaCitation').textContent = mlaCitation;
+
+        // Shorter BibTeX Format
+        const bibtexCitation = `@software{dna_analysis_tool,
+  title={DNA Sequence Analysis Tool},
+  author={DNA Analysis Tool},
+  year={${year}},
+  url={${url}}
+}`;
+        document.getElementById('bibtexCitation').textContent = bibtexCitation;
+    }
+
+    function copyCitation(format) {
+        let element;
+        switch(format) {
+            case 'apa':
+                element = document.getElementById('apaCitation');
+                break;
+            case 'mla':
+                element = document.getElementById('mlaCitation');
+                break;
+            case 'bibtex':
+                element = document.getElementById('bibtexCitation');
+                break;
+        }
+
+        const text = element.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = element.nextElementSibling;
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy citation. Please try selecting and copying manually.');
+        });
+    }
+    </script>
 </body>
 </html>

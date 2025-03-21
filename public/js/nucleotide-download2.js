@@ -24,6 +24,7 @@ class NucleotideDownloader {
         this.downloadBtn = document.getElementById('downloadBtn');
         this.statusDiv = document.getElementById('status');
         this.previewTable = document.getElementById('previewTable').querySelector('tbody');
+        this.progressDiv = document.getElementById('progress');
     }
 
     bindEventListeners() {
@@ -115,15 +116,21 @@ class NucleotideDownloader {
     // Verify if an accession ID exists in NCBI
     async verifyAccessionExists(accessionId) {
         try {
+            console.log(`Verifying accession ID: ${accessionId}`);
             const response = await fetch(`/api/nucleotide/verify?id=${accessionId}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
             const data = await response.json();
+            
+            if (!response.ok) {
+                console.error(`Verification failed for ${accessionId}:`, data.error);
+                throw new Error(data.error || 'Failed to verify sequence');
+            }
+            
+            console.log(`Verification result for ${accessionId}:`, data);
             return data.success && data.exists;
         } catch (error) {
             console.error(`Error verifying ${accessionId}:`, error);
-            throw error;
+            // Don't throw the error, just return false
+            return false;
         }
     }
     
@@ -198,9 +205,6 @@ class NucleotideDownloader {
             const startId = this.startIdInput.value.trim();
             const endId = this.endIdInput.value.trim();
             
-            // Generate filename from range
-            const filename = `${startId}-${endId}.csv`;
-            
             const accessions = this.generateAccessionRange(startId, endId);
             const sequences = [];
             
@@ -218,7 +222,11 @@ class NucleotideDownloader {
                 await Promise.all(batch.map(async (accessionId) => {
                     try {
                         const sequence = await this.fetchSequence(accessionId);
-                        sequences.push({ accessionId, sequence });
+                        sequences.push({ 
+                            accessionId, 
+                            sequence: sequence,
+                            length: sequence.length 
+                        });
                         successCount++;
                         
                         // Update preview
@@ -248,9 +256,40 @@ class NucleotideDownloader {
                 }
             }
             
-            // Generate CSV with dynamic filename
-            const csvContent = this.generateCSV(sequences);
-            this.downloadCSV(csvContent, filename);
+            // Handle different download formats
+            if (sequences.length > 0) {
+                const selectedFormat = document.querySelector('input[name="downloadFormat"]:checked');
+                if (!selectedFormat) {
+                    throw new Error('No download format selected');
+                }
+
+                // Sort sequences by accession ID to maintain order
+                sequences.sort((a, b) => {
+                    const aNum = parseInt(a.accessionId.match(/\d+/)[0]);
+                    const bNum = parseInt(b.accessionId.match(/\d+/)[0]);
+                    return aNum - bNum;
+                });
+
+                const format = selectedFormat.value;
+                console.log('Selected format:', format);
+
+                switch (format) {
+                    case 'pdf':
+                        await this.downloadPDF(sequences);
+                        break;
+                    case 'separate-fasta':
+                        await this.downloadSeparateFiles(sequences, 'fasta');
+                        break;
+                    case 'separate-txt':
+                        await this.downloadSeparateFiles(sequences, 'txt');
+                        break;
+                    case 'single-fasta':
+                        await this.downloadSingleFasta(sequences);
+                        break;
+                    default:
+                        await this.generateCSV(sequences);
+                }
+            }
             
             const statusMessage = `Download complete! ${successCount} sequences downloaded successfully, ${errorCount} errors.`;
             this.updateStatus(statusMessage, errorCount > 0 ? 'warning' : 'success');
@@ -321,24 +360,187 @@ class NucleotideDownloader {
         }
     }
 
-    generateCSV(sequences) {
-        const header = 'Accession ID,Sequence\n';
-        const rows = sequences.map(({ accessionId, sequence }) => 
-            `${accessionId},"${sequence}"`
-        ).join('\n');
-        
-        return header + rows;
+    async generateCSV(sequences) {
+        try {
+            const validSequences = sequences.filter(seq => !seq.sequence.startsWith('ERROR'));
+            const header = 'Accession ID,Sequence Length,Sequence\n';
+            const rows = validSequences
+                .map(seq => `${seq.accessionId},${seq.length},"${seq.sequence}"`)
+                .join('\n');
+            
+            const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'nucleotide_sequences.csv';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error creating CSV:', error);
+            this.updateStatus('Error creating CSV file.', 'error');
+        }
     }
 
-    downloadCSV(content, filename) {
-        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    async downloadPDF(sequences) {
+        try {
+            if (typeof window.jsPDF !== 'function') {
+                throw new Error('jsPDF library not loaded properly');
+            }
+
+            const validSequences = sequences.filter(seq => !seq.sequence.startsWith('ERROR'));
+            const doc = new window.jsPDF();
+
+            // Add title and date
+            doc.setFontSize(16);
+            doc.text('Nucleotide Sequences Report', 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 25);
+
+            // Prepare table data
+            const tableData = validSequences.map(seq => [
+                seq.accessionId,
+                seq.length.toString(),
+                seq.sequence.substring(0, 50) + (seq.sequence.length > 50 ? '...' : '')
+            ]);
+
+            // Add summary table
+            doc.autoTable({
+                head: [['Accession ID', 'Length', 'Sequence Preview']],
+                body: tableData,
+                startY: 30,
+                margin: { top: 30 },
+                theme: 'grid',
+                columnStyles: {
+                    0: { cellWidth: 30 },
+                    1: { cellWidth: 30 },
+                    2: { cellWidth: 'auto' }
+                },
+                styles: {
+                    overflow: 'linebreak',
+                    cellPadding: 2,
+                    fontSize: 8
+                },
+                headStyles: {
+                    fillColor: [33, 150, 243],
+                    textColor: [255, 255, 255],
+                    fontSize: 9,
+                    fontStyle: 'bold'
+                }
+            });
+
+            // Add full sequences
+            let y = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(12);
+            doc.text('Full Sequences:', 14, y);
+            y += 10;
+
+            validSequences.forEach(seq => {
+                if (y > 270) {
+                    doc.addPage();
+                    y = 20;
+                }
+                doc.setFontSize(10);
+                doc.text(`${seq.accessionId}:`, 14, y);
+                y += 5;
+
+                const sequenceLines = seq.sequence.match(/.{1,80}/g) || [];
+                sequenceLines.forEach(line => {
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    doc.setFontSize(8);
+                    doc.text(line, 14, y);
+                    y += 4;
+                });
+                y += 6;
+            });
+
+            doc.save('nucleotide_sequences.pdf');
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            this.updateStatus('Error generating PDF. Please try another format.', 'error');
+        }
+    }
+
+    // Format sequence in FASTA format with 80 characters per line
+    formatFastaSequence(accessionId, sequence) {
+        const header = `>${accessionId}`;
+        const formattedSeq = sequence.match(/.{1,80}/g).join('\n');
+        return `${header}\n${formattedSeq}`;
+    }
+
+    async downloadSingleFasta(sequences) {
+        try {
+            const validSequences = sequences.filter(seq => !seq.sequence.startsWith('ERROR'));
+            const content = validSequences
+                .map(seq => this.formatFastaSequence(seq.accessionId, seq.sequence))
+                .join('\n\n');
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'nucleotide_sequences.fasta';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error creating FASTA file:', error);
+            this.updateStatus('Error creating FASTA file. Please try another format.', 'error');
+        }
+    }
+
+    async downloadSeparateFiles(sequences, format = 'fasta') {
+        try {
+            const validSequences = sequences.filter(seq => !seq.sequence.startsWith('ERROR'));
+            for (let i = 0; i < validSequences.length; i++) {
+                const seq = validSequences[i];
+                let content;
+                let extension;
+
+                if (format === 'fasta') {
+                    content = this.formatFastaSequence(seq.accessionId, seq.sequence);
+                    extension = 'fasta';
+                } else {
+                    content = seq.sequence;
+                    extension = 'txt';
+                }
+
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
+                link.href = url;
+                link.download = `${seq.accessionId}.${extension}`;
         link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                // Add delay between downloads
+                if (i < validSequences.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+        } catch (error) {
+            console.error('Error creating separate files:', error);
+            this.updateStatus(`Error creating ${format.toUpperCase()} files. Please try another format.`, 'error');
+        }
+    }
+
+    updateProgress(percent) {
+        if (this.progressDiv) {
+            this.progressDiv.setAttribute('data-progress', Math.round(percent));
+            this.progressDiv.style.setProperty('--progress', `${percent}%`);
+            this.progressDiv.style.setProperty('--width', `${percent}%`);
+        }
     }
 }
 

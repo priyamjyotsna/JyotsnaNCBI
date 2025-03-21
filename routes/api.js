@@ -4,18 +4,31 @@ const axios = require('axios');
 const { getOwnerEmail, getMaxSequenceLimit } = require('../utils/config');
 require('dotenv').config(); // Make sure dotenv is loaded
 
+// Helper function for retrying failed requests
+async function retryRequest(requestFn, maxAttempts = 3) {
+    let lastError;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            return await requestFn();
+        } catch (error) {
+            lastError = error;
+            if (attempt === maxAttempts) throw error;
+            // Exponential backoff: 2s, 4s, 8s
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+    }
+}
+
 // Get application configuration
 router.get('/config', (req, res) => {
-  // Access the email directly from process.env
-  const ownerEmail = process.env['owner-contact-email'];
-  
-  // Log the email to verify it's being read correctly
-  console.log('Sending config with owner email:', ownerEmail);
-  
-  res.json({
-    email: ownerEmail,
-    maxSequenceLimit: 25
-  });
+    const ownerEmail = process.env.OWNER_CONTACT_EMAIL;  // Changed from OWNER_EMAIL to OWNER_CONTACT_EMAIL
+    if (!ownerEmail) {
+        console.warn('Owner email not configured in environment variables');
+    }
+    res.json({
+        ownerEmail: ownerEmail || '',
+        maxSequenceLimit: 25
+    });
 });
 
 // Verify if a Genbank accession ID exists in NCBI
@@ -30,10 +43,18 @@ router.get('/nucleotide/verify', async (req, res) => {
   }
   
   try {
-    // Use NCBI's EUtils to check if the ID exists
-    const response = await axios.get(
-      `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=nucleotide&id=${accessionId}&retmode=json`
-    );
+    const response = await retryRequest(async () => {
+      return await axios.get(
+        `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=nucleotide&id=${accessionId}&retmode=json`,
+        {
+          timeout: 60000, // 60 second timeout
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; nucleotide-downloader/1.0)',
+            'Accept': 'application/json, */*'
+          }
+        }
+      );
+    });
     
     const data = response.data;
     
@@ -49,7 +70,7 @@ router.get('/nucleotide/verify', async (req, res) => {
       exists: exists 
     });
   } catch (error) {
-    console.error(`Error verifying accession ID ${accessionId}:`, error);
+    console.error(`Error verifying accession ID ${accessionId}:`, error.message);
     return res.status(500).json({ 
       success: false, 
       error: 'Failed to verify accession ID with NCBI' 
@@ -57,21 +78,25 @@ router.get('/nucleotide/verify', async (req, res) => {
   }
 });
 
-// PubMed API Routes
+// PubMed API Routes with retry logic
 router.get('/pubmed/search', async (req, res) => {
     try {
         const { query, retmax = 100, retstart = 0 } = req.query;
-        const response = await axios.get(
-            `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=${retmax}&retstart=${retstart}&retmode=json`,
-            {
-                headers: {
-                    'api-key': process.env.NCBI_API_KEY
+        const response = await retryRequest(async () => {
+            return await axios.get(
+                `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmax=${retmax}&retstart=${retstart}&retmode=json`,
+                {
+                    timeout: 60000, // 60 second timeout
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (compatible; nucleotide-downloader/1.0)',
+                        'api-key': process.env.NCBI_API_KEY
+                    }
                 }
-            }
-        );
+            );
+        });
         res.json(response.data);
     } catch (error) {
-        console.error('PubMed search error:', error);
+        console.error('PubMed search error:', error.message);
         res.status(500).json({ error: 'Failed to fetch from PubMed' });
     }
 });
@@ -79,17 +104,21 @@ router.get('/pubmed/search', async (req, res) => {
 router.get('/pubmed/article/:pmid', async (req, res) => {
     try {
         const { pmid } = req.params;
-        const response = await axios.get(
-            `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${pmid}&retmode=json&rettype=abstract`,
-            {
-                headers: {
-                    'api-key': process.env.NCBI_API_KEY
+        const response = await retryRequest(async () => {
+            return await axios.get(
+                `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${pmid}&retmode=json&rettype=abstract`,
+                {
+                    timeout: 60000, // 60 second timeout
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (compatible; nucleotide-downloader/1.0)',
+                        'api-key': process.env.NCBI_API_KEY
+                    }
                 }
-            }
-        );
+            );
+        });
         res.json(response.data);
     } catch (error) {
-        console.error('PubMed article fetch error:', error);
+        console.error('PubMed article fetch error:', error.message);
         res.status(500).json({ error: 'Failed to fetch article from PubMed' });
     }
 });
@@ -97,17 +126,21 @@ router.get('/pubmed/article/:pmid', async (req, res) => {
 router.get('/pubmed/summary', async (req, res) => {
     try {
         const { ids } = req.query;
-        const response = await axios.get(
-            `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids}&retmode=json`,
-            {
-                headers: {
-                    'api-key': process.env.NCBI_API_KEY
+        const response = await retryRequest(async () => {
+            return await axios.get(
+                `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids}&retmode=json`,
+                {
+                    timeout: 60000, // 60 second timeout
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (compatible; nucleotide-downloader/1.0)',
+                        'api-key': process.env.NCBI_API_KEY
+                    }
                 }
-            }
-        );
+            );
+        });
         res.json(response.data);
     } catch (error) {
-        console.error('PubMed summary fetch error:', error);
+        console.error('PubMed summary fetch error:', error.message);
         res.status(500).json({ error: 'Failed to fetch summaries from PubMed' });
     }
 });
@@ -119,15 +152,31 @@ router.get('/nucleotide/sequence', async (req, res) => {
             return res.status(400).json({ error: 'Accession ID is required' });
         }
 
-        // Use NCBI E-utilities to fetch the sequence
-        const response = await axios.get(
-            `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=${id}&rettype=fasta&retmode=text`
-        );
-
-        res.json({ 
-            success: true, 
-            sequence: response.data 
+        const response = await retryRequest(async () => {
+            return await axios.get(
+                `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=${id}&rettype=fasta&retmode=text`,
+                {
+                    timeout: 60000, // 60 second timeout
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (compatible; nucleotide-downloader/1.0)',
+                        'Accept': 'text/plain, */*'
+                    }
+                }
+            );
         });
+
+        if (response.data) {
+            const lines = response.data.split('\n');
+            const header = lines[0];
+            const sequence = lines.slice(1).join('').replace(/\s/g, '');
+            
+            return res.json({ 
+                success: true, 
+                data: { id, sequence, header } 
+            });
+        }
+        
+        throw new Error('Empty response from NCBI');
     } catch (error) {
         console.error('Error fetching sequence:', error);
         res.status(500).json({ 
@@ -136,4 +185,5 @@ router.get('/nucleotide/sequence', async (req, res) => {
         });
     }
 });
+
 module.exports = router;

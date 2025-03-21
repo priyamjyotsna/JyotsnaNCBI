@@ -1,30 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Add these meta tags -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; script-src 'self' https: 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://html2canvas.hertzen.com; style-src 'self' https: 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' https: data: blob:; connect-src 'self' https:;">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sequence Comparison Tool - Jyotsna's NCBI Tools</title>
+    
+    <!-- Update CSP to allow PDF generation -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval' blob:; 
+        script-src 'self' https: 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://html2canvas.hertzen.com; 
+        style-src 'self' https: 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; 
+        font-src 'self' https: https://fonts.gstatic.com https://cdnjs.cloudflare.com; 
+        img-src 'self' https: data: blob:; 
+        connect-src 'self' https:;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="/styles/main.css">
     <link rel="stylesheet" href="/styles/sequence-comparison.css">
+    <link rel="stylesheet" href="/css/mutation-report.css">
+    <link rel="stylesheet" href="/styles/modal.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Chart.js for visualizations -->
+    
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <!-- FileSaver.js for saving files -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <!-- SheetJS for Excel export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
-    <!-- jsPDF with autoTable plugin -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <!-- html2canvas for PDF screenshots -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <!-- Add this in the head section -->
-    <link rel="stylesheet" href="/styles/modal.css">
+    <script src="/js/sequence-comparison.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        .mutation-list table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .mutation-list th,
+        .mutation-list td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .mutation-list th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+
+        .mutation-list tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .mutation-list .deletion {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .mutation-list .insertion {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .mutation-list .substitution {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .citation-section {
+            margin: 20px auto;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            max-width: 1000px;
+        }
+
+        .citation-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            text-align: left;
+        }
+
+        .citation-formats {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .citation-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+
+        .citation-box h4 {
+            color: #444;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .citation-text {
+            margin: 8px 0;
+            padding: 8px;
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            font-size: 0.8em;
+            line-height: 1.4;
+            height: 80px;
+            overflow-y: auto;
+        }
+
+        .copy-btn {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: background 0.3s;
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        .copy-btn:hover {
+            background: #357abd;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -118,17 +228,7 @@
             <div class="results-section" id="resultsSection" style="display: none;">
                 <div class="results-header">
                     <h2>Comparison Results</h2>
-                    <div class="export-options">
-                        <button id="exportExcel" class="export-btn">
-                            <i class="fas fa-file-excel"></i> Export to Excel
-                        </button>
-                        <button id="exportPDF" class="export-btn">
-                            <i class="fas fa-file-pdf"></i> Export to PDF
-                        </button>
-                        <button id="exportCSV" class="export-btn">
-                            <i class="fas fa-file-csv"></i> Export to CSV
-                        </button>
-                    </div>
+                    
                 </div>
 
                 <div class="summary-stats">
@@ -187,10 +287,117 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="pdf-export" style="text-align: center; margin: 20px 0;">
+                    <button onclick="generatePDF()" class="primary-btn">
+                        <i class="fas fa-file-pdf"></i> Download PDF Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Citation Section -->
+    <div id="citationSection" class="citation-section">
+        <h3>How to Cite</h3>
+        <div class="citation-formats">
+            <div class="citation-box">
+                <h4>APA</h4>
+                <div id="apaCitation" class="citation-text"></div>
+                <button onclick="copyCitation('apa')" class="copy-btn">Copy</button>
+            </div>
+            
+            <div class="citation-box">
+                <h4>MLA</h4>
+                <div id="mlaCitation" class="citation-text"></div>
+                <button onclick="copyCitation('mla')" class="copy-btn">Copy</button>
+            </div>
+            
+            <div class="citation-box">
+                <h4>BibTeX</h4>
+                <div id="bibtexCitation" class="citation-text"></div>
+                <button onclick="copyCitation('bibtex')" class="copy-btn">Copy</button>
             </div>
         </div>
     </div>
 
     <script src="/js/sequence-comparison.js"></script>
+    <script>
+    // Add citation functions
+    function updateCitations() {
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const mainDomain = 'NCBI.jyotsnapriyam.com';
+        const currentUrl = window.location.href;
+        const month = currentDate.toLocaleString('en-US', { month: 'long' });
+        const day = currentDate.getDate();
+
+        // Get specific tool name based on current URL/page
+        let toolName = '';
+        switch(window.location.pathname) {
+            case '/nucleotide-download':
+                toolName = 'Nucleotide Sequence Download';
+                break;
+            case '/dna-analysis':
+                toolName = 'DNA Analysis';
+                break;
+            case '/sequence-comparison':
+                toolName = 'Sequence Comparison';
+                break;
+            // Add other tools as needed
+        }
+
+        // APA Format (7th Edition)
+        const apaCitation = `Priyam, J. (${year}). Jyot NCBI Tools (${toolName}) [Computer software]. Retrieved ${month} ${day}, ${year}, from ${currentUrl}`;
+        document.getElementById('apaCitation').textContent = apaCitation;
+
+        // MLA Format
+        const mlaCitation = `Priyam, Jyotsna. "Jyot NCBI Tools: ${toolName}." ${month} ${year}, ${currentUrl}. Main suite available at ${mainDomain}`;
+        document.getElementById('mlaCitation').textContent = mlaCitation;
+
+        // BibTeX Format
+        const bibtexCitation = `@software{jyot_ncbi_tools,
+        title={Jyot NCBI Tools: ${toolName}},
+        author={Priyam, Jyotsna},
+        year={${year}},
+        url={${currentUrl}},
+        note={Part of Jyot NCBI Tools suite. Main suite available at ${mainDomain}. Retrieved ${month} ${day}, ${year}}
+}`;
+        document.getElementById('bibtexCitation').textContent = bibtexCitation;
+    }
+
+    function copyCitation(format) {
+        let element;
+        switch(format) {
+            case 'apa':
+                element = document.getElementById('apaCitation');
+                break;
+            case 'mla':
+                element = document.getElementById('mlaCitation');
+                break;
+            case 'bibtex':
+                element = document.getElementById('bibtexCitation');
+                break;
+        }
+
+        const text = element.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = element.nextElementSibling;
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy citation. Please try selecting and copying manually.');
+        });
+    }
+
+    // Initialize citations when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCitations();
+    });
+    </script>
 </body>
 </html>

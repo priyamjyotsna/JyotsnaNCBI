@@ -162,7 +162,7 @@ class SequenceFetcher {
 
     async fetchSequenceData(accessionId) {
         try {
-            const response = await fetch(`/api/sequence/fetch?id=${accessionId}`);
+            const response = await fetch(`/sequence-fetch/api/fetch?id=${accessionId}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -201,3 +201,106 @@ class SequenceFetcher {
 document.addEventListener('DOMContentLoaded', () => {
     const fetcher = new SequenceFetcher();
 });
+
+function exportToCSV(data) {
+    // Headers for CSV
+    let csv = 'Accession ID,Organism,Sequence Length,Molecule Type,Update Date,Sequence\n';
+    
+    // Add each row of data
+    data.forEach(item => {
+        // Clean and format the sequence data
+        const sequence = item.sequence.replace(/,/g, '').replace(/\s+/g, '');
+        
+        // Format the row with proper escaping
+        const row = [
+            item.accessionId,
+            `"${item.organism.replace(/"/g, '""')}"`,  // Escape quotes in organism name
+            item.length,
+            item.moleculeType,
+            item.updateDate,
+            `"${sequence}"`  // Ensure sequence doesn't break CSV format
+        ].join(',');
+        
+        csv += row + '\n';
+    });
+
+    // Create and trigger download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'sequence_data.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Add this function to handle data display
+function updatePreviewTable(data) {
+    const tbody = document.querySelector('#previewTable tbody');
+    tbody.innerHTML = '';
+
+    data.forEach(item => {
+        // Clean the sequence before display
+        const cleanSequence = cleanSequenceData(item.sequence || '');
+        const previewLength = document.getElementById('previewLength').value;
+        const sequencePreview = cleanSequence.substring(0, parseInt(previewLength)) + 
+            (cleanSequence.length > parseInt(previewLength) ? '...' : '');
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.accessionId || ''}</td>
+            <td class="sequence-cell">${sequencePreview}</td>
+            <td>${item.organism || ''}</td>
+            <td>${item.length || ''}</td>
+            <td>${item.moltype || ''}</td>
+            <td>${item.update_date || ''}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function cleanSequenceData(sequence) {
+    // Remove citation text and any non-sequence data
+    sequence = sequence.replace(/Priyam,\s*J\..*?from\s*http:\/\/[^\s]+/g, '');  // Remove APA citation
+    sequence = sequence.replace(/Priyam,\s*Jyotsna\..*?jyotsnapriyam\.com/g, ''); // Remove MLA citation
+    sequence = sequence.replace(/@software{.*?}/gs, '');  // Remove BibTeX citation
+    sequence = sequence.replace(/[^ATCG\-\n]/gi, '');  // Keep only valid sequence characters
+    return sequence.trim();
+}
+
+// Update your data processing function
+function processSequenceData(data) {
+    return data.map(item => {
+        if (item.sequence) {
+            item.sequence = cleanSequenceData(item.sequence);
+        }
+        return item;
+    });
+}
+
+// Update your fetch function
+async function fetchSequences() {
+    const startId = document.getElementById('startId').value;
+    const endId = document.getElementById('endId').value;
+    const previewLength = document.getElementById('previewLength').value;
+
+    try {
+        const response = await fetch(`/sequence-fetch/api/fetch?startId=${startId}&endId=${endId}&previewLength=${previewLength}`);
+        if (!response.ok) throw new Error('Failed to fetch sequences');
+        
+        const data = await response.json();
+        const cleanedData = processSequenceData(data);
+        updatePreviewTable(cleanedData);
+        
+        // Enable export button if data exists
+        if (cleanedData.length > 0) {
+            document.getElementById('exportBtn').disabled = false;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('status').textContent = 'Error processing sequences: ' + error.message;
+    }
+}
+
+// Add event listener for the fetch button
+document.getElementById('fetchBtn').addEventListener('click', fetchSequences);

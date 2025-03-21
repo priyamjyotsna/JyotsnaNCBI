@@ -3,28 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://*.firebaseapp.com https://*.googleapis.com https://*.firebaseio.com https://apis.google.com; script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://*.firebaseapp.com https://*.googleapis.com https://*.firebaseio.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.gstatic.com; font-src 'self' https: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' https: data: blob: https://*.googleapis.com https://*.gstatic.com; connect-src 'self' https: https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com https://apis.google.com; frame-src 'self' https://*.firebaseapp.com https://*.googleapis.com https://apis.google.com https://*.firebaseio.com;">
-    <title>Welcome - JyotsnaNCBI</title>
-    <link rel="stylesheet" href="/styles/main.css">
-    <link rel="stylesheet" href="/styles/auth.css">
+    <title>Welcome - NCBI Tools</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script>
-        // Check if user is authenticated on page load
-        const userData = <%- JSON.stringify(user || null) %>;
-        if (!userData || !userData.uid) {
-            window.location.replace('/auth/login');
-        }
-    </script>
     <style>
         body {
             background: linear-gradient(135deg, #2c3e50, #4ca1af);
             min-height: 100vh;
             margin: 0;
             padding: 0;
+            font-family: 'Poppins', sans-serif;
         }
         
         .welcome-container {
@@ -33,13 +20,18 @@
             padding: 2rem;
         }
 
-        .profile-section{
+        .profile-section {
             background: linear-gradient(135deg, #91bbff, #5672ff);
             color: #2c3e50;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
         }
         
-        .user-email{
+        .user-email {
             color: #2c3e50;
+            font-size: 1.1rem;
+            margin: 1rem 0;
         }
         
         .ncbi-credentials {
@@ -101,15 +93,44 @@
             background-color: rgba(220, 53, 69, 0.2);
             color: #dc3545;
         }
+
+        .action-buttons {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: #1a237e;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
     <div class="welcome-container">
         <div class="profile-section">
-            <% if (user && user.photo) { %>
-                <img src="<%= user.photo %>" alt="Profile" class="welcome-profile-pic">
-            <% } %>
-            <h3>Welcome, <%= user && (user.name || user.username) || user.email %>!</h3>
+            <h3>Welcome, <%= user.email %>!</h3>
             <p class="user-email">Email: <%= user.email %></p>
             
             <div class="ncbi-credentials">
@@ -117,14 +138,13 @@
                 <p>Enter your NCBI email and API key to enhance your experience</p>
                 
                 <form id="ncbiCredentialsForm">
-                    <h3>Your NCBI API Credentials</h3>
                     <div class="form-group">
                         <label for="ncbiEmail">NCBI Email</label>
-                        <input type="email" id="ncbiEmail" name="ncbiEmail" value="<%= user.ncbiCredentials ? user.ncbiCredentials.email : '' %>" class="form-control" required>
+                        <input type="email" id="ncbiEmail" name="ncbiEmail" value="<%= user.ncbiEmail || '' %>" required>
                     </div>
                     <div class="form-group">
                         <label for="ncbiApiKey">NCBI API Key</label>
-                        <input type="text" id="ncbiApiKey" name="ncbiApiKey" value="<%= user.ncbiCredentials ? user.ncbiCredentials.apiKey : '' %>" class="form-control" required>
+                        <input type="text" id="ncbiApiKey" name="ncbiApiKey" value="<%= user.ncbiKey || '' %>" required>
                     </div>
                     <button type="submit" class="save-btn">Save Credentials</button>
                 </form>
@@ -140,202 +160,55 @@
     </div>
 
     <script>
-        async function handleLogout() {
+        // Handle NCBI credentials form submission
+        document.getElementById('ncbiCredentialsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('ncbiEmail').value;
+            const apiKey = document.getElementById('ncbiApiKey').value;
+            const statusMessage = document.getElementById('statusMessage');
+            
             try {
-                // Show loading state
-                const logoutBtn = document.querySelector('.btn-danger');
-                const originalText = logoutBtn.textContent;
-                logoutBtn.textContent = 'Logging out...';
-                logoutBtn.disabled = true;
-
-                // Sign out from Firebase first
-                if (firebase.auth().currentUser) {
-                    await firebase.auth().signOut();
-                    console.log('Firebase sign out successful');
-                }
-                
-                // Clear any cached auth state
-                sessionStorage.clear();
-                localStorage.clear();
-                
-                // Then call server logout endpoint
-                const response = await fetch('/auth/logout', {
+                const response = await fetch('/auth/save-ncbi-credentials', {
                     method: 'POST',
-                    credentials: 'include',
                     headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
-                    }
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, apiKey })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusMessage.textContent = 'Credentials saved successfully!';
+                    statusMessage.className = 'status-message status-success';
+                } else {
+                    statusMessage.textContent = data.error || 'Failed to save credentials';
+                    statusMessage.className = 'status-message status-error';
+                }
+            } catch (error) {
+                statusMessage.textContent = 'An error occurred. Please try again.';
+                statusMessage.className = 'status-message status-error';
+            }
+            
+            statusMessage.style.display = 'block';
+        });
+
+        // Handle logout
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/auth/logout', {
+                    method: 'POST'
                 });
                 
                 if (response.ok) {
-                    console.log('Server logout successful');
-                    // Redirect to homepage instead of login page
-                    window.location.replace('/');
-                } else {
-                    throw new Error('Server logout failed');
+                    window.location.href = '/auth/login';
                 }
             } catch (error) {
                 console.error('Logout error:', error);
-                // If anything fails, redirect to homepage
-                window.location.replace('/');
-            } finally {
-                // Reset button state
-                const logoutBtn = document.querySelector('.btn-danger');
-                logoutBtn.textContent = 'Logout';
-                logoutBtn.disabled = false;
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', async function() {
-            try {
-                // Initialize Firebase
-                const response = await fetch('/api/firebase-config');
-                const firebaseConfig = await response.json();
-                
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-                
-                // Set up auth state listener
-                firebase.auth().onAuthStateChanged(function(user) {
-                    if (!user) {
-                        // If Firebase shows no user, redirect to login
-                        window.location.replace('/auth/login');
-                    }
-                });
-                
-                // Add logout button event listener
-                document.getElementById('logoutBtn').addEventListener('click', handleLogout);
-                
-                const db = firebase.firestore();
-                const rtdb = firebase.database();
-                const userId = '<%= user.uid %>';
-                
-                // Set up form submission
-                const form = document.getElementById('ncbiCredentialsForm');
-                const statusMessage = document.getElementById('statusMessage');
-                
-                form.addEventListener('submit', async function(e) {
-                    e.preventDefault();
-                    
-                    const email = document.getElementById('ncbiEmail').value;
-                    const apiKey = document.getElementById('ncbiApiKey').value;
-                    
-                    try {
-                        // Save to both Firestore and Realtime Database
-                        const userRef = db.collection('users').doc(userId);
-                        const rtdbRef = rtdb.ref('users/' + userId + '/ncbiCredentials');
-                        
-                        await Promise.all([
-                            userRef.set({
-                                ncbiCredentials: { email, apiKey },
-                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                            }, { merge: true }),
-                            rtdbRef.set({ email, apiKey })
-                        ]);
-                        
-                        // Send to server to update session
-                        const response = await fetch('/auth/save-ncbi-credentials', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({ email, apiKey }),
-                            credentials: 'include'
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (data.success) {
-                            statusMessage.textContent = 'Credentials saved successfully!';
-                            statusMessage.className = 'status-message status-success';
-                        } else {
-                            throw new Error(data.error || 'Failed to save credentials');
-                        }
-                    } catch (error) {
-                        console.error('Error saving credentials:', error);
-                        statusMessage.textContent = 'Error saving credentials: ' + error.message;
-                        statusMessage.className = 'status-message status-error';
-                    }
-                    
-                    statusMessage.style.display = 'block';
-                });
-                
-                // Load existing credentials from Realtime Database
-                const rtdbRef = rtdb.ref('users/' + userId + '/ncbiCredentials');
-                rtdbRef.on('value', (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        document.getElementById('ncbiEmail').value = data.email || '';
-                        document.getElementById('ncbiApiKey').value = data.apiKey || '';
-                    }
-                });
-                
-            } catch (error) {
-                console.error('Error initializing Firebase:', error);
-                statusMessage.textContent = 'Error initializing application: ' + error.message;
-                statusMessage.className = 'status-message status-error';
-                statusMessage.style.display = 'block';
+                window.location.href = '/auth/login';
             }
         });
     </script>
-
-    <style>
-        .welcome-container {
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 2rem;
-            text-align: center;
-        }
-
-        .profile-section {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .welcome-profile-pic {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            margin-bottom: 1rem;
-            object-fit: cover;
-            border: 4px solid #fff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .action-buttons {
-            margin-top: 2rem;
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: #007bff;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-    </style>
 </body>
 </html>

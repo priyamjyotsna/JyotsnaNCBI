@@ -49,25 +49,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleFile(file) {
         if (!file) return;
+        
+        // Validate file size
+        if (file.size > 50 * 1024 * 1024) { // 50MB limit
+            alert('File too large. Maximum size is 50MB.');
+            return;
+        }
 
+        // Validate file type
+        const validTypes = ['text/plain', 'application/octet-stream', ''];
+        if (!validTypes.includes(file.type)) {
+            alert('Invalid file type. Please upload a text file.');
+            return;
+        }
+
+        const sequenceType = document.getElementById('uploadSequenceType').value;
         const formData = new FormData();
         formData.append('sequenceFile', file);
+        formData.append('sequenceType', sequenceType);
 
         loadingSpinner.style.display = 'block';
         resultsSection.style.display = 'none';
 
-        fetch('/api/analyze-uploaded-sequence', {
+        fetch('/dna-analysis/api/analyze-uploaded-sequence', {
             method: 'POST',
             body: formData
         })
         .then(response => {
-            if (!response.ok) throw new Error('Upload failed');
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Upload failed');
+                });
+            }
             return response.json();
         })
         .then(data => {
             const sequence = data.sequence.toUpperCase();
-            const counts = countNucleotides(sequence);
-            displayReports('Uploaded File', counts);
+            const counts = countNucleotides(sequence, sequenceType === 'RNA');
+            displayReports('Uploaded File', counts, sequenceType);
             loadingSpinner.style.display = 'none';
             resultsSection.style.display = 'block';
         })
@@ -92,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
         resultsSection.style.display = 'none';
 
         try {
-            const response = await fetch(`/api/fetch-sequence?accession=${accession}`);
+            const response = await fetch(`/dna-analysis/api/fetch-sequence?accession=${accession}`);
             const data = await response.json();
 
             if (!response.ok) {
@@ -108,37 +127,6 @@ document.addEventListener('DOMContentLoaded', function() {
             loadingSpinner.style.display = 'none';
             resultsSection.style.display = 'block';
         }
-    }
-
-    function handleFile(file) {
-        if (!file) return;
-        const sequenceType = document.getElementById('uploadSequenceType').value;
-        const formData = new FormData();
-        formData.append('sequenceFile', file);
-        formData.append('sequenceType', sequenceType);
-
-        loadingSpinner.style.display = 'block';
-        resultsSection.style.display = 'none';
-
-        fetch('/api/analyze-uploaded-sequence', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Upload failed');
-            return response.json();
-        })
-        .then(data => {
-            const sequence = data.sequence.toUpperCase();
-            const counts = countNucleotides(sequence, sequenceType === 'RNA');
-            displayReports('Uploaded File', counts, sequenceType);
-            loadingSpinner.style.display = 'none';
-            resultsSection.style.display = 'block';
-        })
-        .catch(error => {
-            alert('Error uploading file: ' + error.message);
-            loadingSpinner.style.display = 'none';
-        });
     }
 
     function countNucleotides(sequence, isRNA = false) {
@@ -285,11 +273,39 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function downloadChart() {
-        const canvas = document.getElementById('nucleotideChart');
-        const link = document.createElement('a');
-        link.download = 'nucleotide-distribution.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+        try {
+            const canvas = document.getElementById('nucleotideChart');
+            if (!canvas) {
+                throw new Error('Chart canvas not found');
+            }
+
+            // Create a new canvas with white background
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = canvas.width;
+            exportCanvas.height = canvas.height;
+            const exportCtx = exportCanvas.getContext('2d');
+
+            // Fill with white background
+            exportCtx.fillStyle = 'white';
+            exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+            // Draw the chart on top
+            exportCtx.drawImage(canvas, 0, 0);
+
+            // Create download link
+            const link = document.createElement('a');
+            link.download = 'nucleotide-distribution.jpg';
+            link.href = exportCanvas.toDataURL('image/jpeg', 1.0);
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+        } catch (error) {
+            console.error('Chart download error:', error);
+            alert('Error downloading chart: ' + error.message);
+        }
     }
 
     function createNucleotideChart(nucleotideData, accession, sequenceType) {
@@ -299,17 +315,26 @@ document.addEventListener('DOMContentLoaded', function() {
             nucleotideChart.destroy();
         }
 
-        const ctx = document.getElementById('nucleotideChart').getContext('2d');
-        const labels = Object.keys(percentages);
-        const data = Object.values(percentages);
-
+        const canvas = document.getElementById('nucleotideChart');
+        const ctx = canvas.getContext('2d');
+        
         nucleotideChart = new Chart(ctx, {
             type: 'bar',
+            plugins: [{
+                beforeDraw: (chart) => {
+                    const ctx = chart.canvas.getContext('2d');
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'destination-over';
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, chart.width, chart.height);
+                    ctx.restore();
+                }
+            }],
             data: {
-                labels: labels,
+                labels: Object.keys(percentages),
                 datasets: [{
                     label: 'Percentage (%)',
-                    data: data,
+                    data: Object.values(percentages),
                     backgroundColor: [
                         '#FF6B6B', // A - red
                         '#4ECDC4', // C - cyan
@@ -326,7 +351,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     title: {
                         display: true,
                         text: `Nucleotide Distribution for ${accession} - ${sequenceType}`,
-                        font: { size: 16 }
+                        font: { size: 16 },
+                        color: 'black'
                     },
                     legend: { display: false }
                 },
@@ -334,15 +360,31 @@ document.addEventListener('DOMContentLoaded', function() {
                     y: {
                         beginAtZero: true,
                         max: 100,
+                        grid: {
+                            color: '#E0E0E0',
+                            drawBorder: true
+                        },
+                        ticks: {
+                            color: 'black'
+                        },
                         title: {
                             display: true,
-                            text: 'Percentage (%)'
+                            text: 'Percentage (%)',
+                            color: 'black'
                         }
                     },
                     x: {
+                        grid: {
+                            color: '#E0E0E0',
+                            drawBorder: true
+                        },
+                        ticks: {
+                            color: 'black'
+                        },
                         title: {
                             display: true,
-                            text: 'Nucleotides'
+                            text: 'Nucleotides',
+                            color: 'black'
                         }
                     }
                 }
@@ -363,29 +405,56 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function exportToPDF(accession, sequenceType) {
         try {
+            if (!window.jspdf) {
+                throw new Error('PDF library not loaded');
+            }
+
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
             // Add title
             doc.setFontSize(16);
             doc.text(`DNA Analysis Report - ${accession}`, 14, 15);
+            
+            // Add URL and date
+            doc.setFontSize(10);
+            doc.setTextColor(100);  // Gray color
+            const currentDate = new Date().toLocaleDateString();
+            const currentTime = new Date().toLocaleTimeString();
+            const url = window.location.href;
+            doc.text(`Generated from: ${url}`, 14, 22);
+            doc.text(`Date: ${currentDate} ${currentTime}`, 14, 28);
+            
+            // Add sequence type
             doc.setFontSize(12);
-            doc.text(`Sequence Type: ${sequenceType}`, 14, 25);
+            doc.setTextColor(0);  // Back to black
+            doc.text(`Sequence Type: ${sequenceType}`, 14, 35);
 
             // Add retrieval info
+            const retrievalRow = document.getElementById('retrievalRow');
+            if (!retrievalRow) {
+                throw new Error('Report data not found');
+            }
+
             const retrievalData = [
                 ['Accession', 'Status', 'Length', 'Type'],
-                Array.from(document.getElementById('retrievalRow').children).map(td => td.textContent)
+                Array.from(retrievalRow.children).map(td => td.textContent)
             ];
+
             doc.autoTable({
-                startY: 35,
+                startY: 45,  // Adjusted starting position to accommodate header
                 head: [retrievalData[0]],
                 body: [retrievalData[1]]
             });
 
             // Add nucleotide distribution
-            const nucleotideRows = Array.from(document.getElementById('nucleotideReport')
-                .getElementsByTagName('tbody')[0].rows)
+            const nucleotideTable = document.getElementById('nucleotideReport')
+                .getElementsByTagName('tbody')[0];
+            if (!nucleotideTable) {
+                throw new Error('Nucleotide data not found');
+            }
+
+            const nucleotideRows = Array.from(nucleotideTable.rows)
                 .map(row => Array.from(row.cells).map(cell => cell.textContent));
 
             doc.autoTable({
@@ -394,11 +463,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: nucleotideRows
             });
 
-            // Add chart
-            const chartImg = document.getElementById('nucleotideChart').toDataURL('image/png');
-            const imgWidth = 180;
-            const imgHeight = 100;
-            doc.addImage(chartImg, 'PNG', 15, doc.lastAutoTable.finalY + 10, imgWidth, imgHeight);
+            // Add chart if it exists
+            const chartCanvas = document.getElementById('nucleotideChart');
+            if (chartCanvas) {
+                const chartImg = chartCanvas.toDataURL('image/png', 1.0);
+                const imgWidth = 180;
+                const imgHeight = 100;
+                doc.addImage(chartImg, 'PNG', 15, doc.lastAutoTable.finalY + 10, imgWidth, imgHeight);
+            }
 
             // Save PDF
             doc.save(`DNA_Analysis_${accession}.pdf`);
@@ -464,4 +536,34 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
     }
+
+    function updateCitations() {
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const url = window.location.href;
+        const month = currentDate.toLocaleString('en-US', { month: 'long' });
+        const day = currentDate.getDate();
+
+        // APA Format (7th Edition)
+        const apaCitation = `Priyam, J., & Saxena, U. (${year}). Jyotsna's NCBI Tools (Nucleotide Sequence Download) [Computer software]. National Institute of Technology Warangal. Retrieved ${month} ${day}, ${year}, from ${url}`;
+        document.getElementById('apaCitation').textContent = apaCitation;
+
+        // MLA Format
+        const mlaCitation = `"Jyotsna's NCBI Tools (Nucleotide Sequence Download)." National Institute of Technology Warangal, ${month} ${year}, ${url}`;
+        document.getElementById('mlaCitation').textContent = mlaCitation;
+
+        // BibTeX Format
+        const bibtexCitation = `@software{jyotsna_ncbi_tools,
+        title={Jyotsna's NCBI Tools (Nucleotide Sequence Download)},
+        author={Priyam, Jyotsna and Saxena, Urmila},
+        year={${year}},
+        institution={National Institute of Technology Warangal},
+        url={${url}},
+        note={Retrieved ${month} ${day}, ${year}}
+}`;
+        document.getElementById('bibtexCitation').textContent = bibtexCitation;
+    }
+
+    // Make sure this runs when page loads
+    updateCitations();
 });

@@ -7,6 +7,76 @@
     <link rel="stylesheet" href="/styles/sequence-fetch.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+    .citation-section {
+        margin: 20px auto;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        max-width: 1000px;
+    }
+
+    .citation-section h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+        text-align: left;
+    }
+
+    .citation-formats {
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .citation-box {
+        flex: 1;
+        min-width: 250px;
+        padding: 10px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        background: #f9f9f9;
+    }
+
+    .citation-box h4 {
+        color: #444;
+        margin-bottom: 8px;
+        font-size: 0.9em;
+    }
+
+    .citation-text {
+        margin: 8px 0;
+        padding: 8px;
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        font-size: 0.8em;
+        line-height: 1.4;
+        height: 80px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    .copy-btn {
+        background: #4a90e2;
+        color: white;
+        border: none;
+        padding: 4px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8em;
+        transition: background 0.3s;
+        width: 100%;
+        margin-top: 5px;
+    }
+
+    .copy-btn:hover {
+        background: #357abd;
+    }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -81,7 +151,93 @@
         </div>
     </div>
 
+    <!-- Add a separator -->
+    <hr class="section-separator" style="margin: 40px auto; max-width: 1000px; border: none; border-top: 1px solid #eee;">
+
+    <!-- Citation Section -->
+    <div id="citationSection" class="citation-section">
+        <h3>How to Cite</h3>
+        <div class="citation-formats">
+            <div class="citation-box">
+                <h4>APA</h4>
+                <div id="apaCitation" class="citation-text">
+                    Priyam, J. (2024). Jyot NCBI Tools (Sequence Fetch) [Computer software]. Retrieved March 18, 2024, from http://localhost:3000/sequence-fetch
+                </div>
+                <button onclick="copyCitation('apa')" class="copy-btn">Copy</button>
+            </div>
+            
+            <div class="citation-box">
+                <h4>MLA</h4>
+                <div id="mlaCitation" class="citation-text">
+                    Priyam, Jyotsna. "Jyot NCBI Tools: Sequence Fetch." March 2024, http://localhost:3000/sequence-fetch. Main suite available at NCBI.jyotsnapriyam.com
+                </div>
+                <button onclick="copyCitation('mla')" class="copy-btn">Copy</button>
+            </div>
+            
+            <div class="citation-box">
+                <h4>BibTeX</h4>
+                <div id="bibtexCitation" class="citation-text">
+@software{jyot_ncbi_tools,
+    title={Jyot NCBI Tools: Sequence Fetch},
+    author={Priyam, Jyotsna},
+    year={2024},
+    url={http://localhost:3000/sequence-fetch},
+    note={Part of Jyot NCBI Tools suite. Retrieved March 18, 2024}
+}</div>
+                <button onclick="copyCitation('bibtex')" class="copy-btn">Copy</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="/js/sequence-fetch.js"></script>
+    <script>
+    // Immediately set the citations when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = currentDate.toLocaleString('en-US', { month: 'long' });
+        const day = currentDate.getDate();
+        const currentUrl = window.location.href;
+        const mainDomain = 'NCBI.jyotsnapriyam.com';
+
+        // Set APA citation
+        document.getElementById('apaCitation').textContent = 
+            `Priyam, J. (${year}). Jyot NCBI Tools (Sequence Fetch) [Computer software]. Retrieved ${month} ${day}, ${year}, from ${currentUrl}`;
+
+        // Set MLA citation
+        document.getElementById('mlaCitation').textContent = 
+            `Priyam, Jyotsna. "Jyot NCBI Tools: Sequence Fetch." ${month} ${year}, ${currentUrl}. Main suite available at ${mainDomain}`;
+
+        // Set BibTeX citation
+        document.getElementById('bibtexCitation').textContent = 
+`@software{jyot_ncbi_tools,
+    title={Jyot NCBI Tools: Sequence Fetch},
+    author={Priyam, Jyotsna},
+    year={${year}},
+    url={${currentUrl}},
+    note={Part of Jyot NCBI Tools suite. Retrieved ${month} ${day}, ${year}}
+}`;
+    });
+
+    // Copy citation function
+    function copyCitation(format) {
+        const element = document.getElementById(format + 'Citation');
+        if (!element) return;
+
+        const text = element.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = element.nextElementSibling;
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy citation. Please try selecting and copying manually.');
+        });
+    }
+    </script>
 </body>
 </html>

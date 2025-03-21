@@ -1,87 +1,313 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://*.firebaseapp.com https://*.googleapis.com; script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://*.firebaseapp.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.gstatic.com; font-src 'self' https: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' https: data: blob: https://*.googleapis.com https://*.gstatic.com; connect-src 'self' https: https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.googleapis.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://www.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob: https://*.googleapis.com https://*.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com;">
     <title>Sign Up - NCBI Tools</title>
     <link rel="stylesheet" href="/styles/main.css">
     <link rel="stylesheet" href="/styles/auth.css">
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 2rem;
+        }
+
+        .auth-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            border-color: #4ca1af;
+            outline: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #4ca1af;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a19c;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #2c3e50;
+            color: white;
+            margin-top: 1rem;
+        }
+
+        .btn-secondary:hover {
+            background: #243342;
+            transform: translateY(-1px);
+        }
+
+        .error-message {
+            color: #dc3545;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .success-message {
+            color: #28a745;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            color: white;
+            font-weight: 500;
+        }
+
+        .step.active {
+            background: #4ca1af;
+        }
+
+        .step.completed {
+            background: #28a745;
+        }
+
+        #step1, #step2 {
+            display: none;
+        }
+
+        #step1.active, #step2.active {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .loading.active {
+            display: block;
+        }
+    </style>
 </head>
 <body>
-    <div class="auth-container">
-        <h2>Create Account</h2>
-        <button id="googleSignIn" class="google-btn">
-            <img src="https://www.google.com/favicon.ico" width="20" height="20" alt="Google">
-            Sign up with Google
-        </button>
-        <div id="loading" class="loading">Creating account...</div>
+    <div class="container">
+        <div class="auth-container">
+            <h2>Create Account</h2>
+            
+            <div class="step-indicator">
+                <div class="step active" id="step1-indicator">1</div>
+                <div class="step" id="step2-indicator">2</div>
+            </div>
+
+            <!-- Step 1: Basic Information -->
+            <div id="step1" class="active">
+                <form id="basicInfoForm">
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required>
+                        <div class="error-message" id="emailError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                        <div class="error-message" id="passwordError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required>
+                        <div class="error-message" id="confirmPasswordError"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Next</button>
+                </form>
+            </div>
+
+            <!-- Step 2: NCBI Credentials -->
+            <div id="step2">
+                <form id="ncbiForm">
+                    <p class="form-note">Step 1 fields are mandatory. NCBI credentials are optional and can be added later.</p>
+                    <div class="form-group">
+                        <label for="ncbiEmail">NCBI Email (Optional)</label>
+                        <input type="email" id="ncbiEmail" name="ncbiEmail" placeholder="Enter NCBI email if you have one">
+                        <div class="error-message" id="ncbiEmailError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="ncbiKey">NCBI API Key (Optional)</label>
+                        <input type="text" id="ncbiKey" name="ncbiKey" placeholder="Enter NCBI API key if you have one">
+                        <div class="error-message" id="ncbiKeyError"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Account</button>
+                    <button type="button" class="btn btn-secondary" id="backBtn">Back</button>
+                </form>
+            </div>
+
+            <div class="loading" id="loading">
+                Creating your account...
+            </div>
+
+            <div class="success-message" id="successMessage"></div>
+        </div>
     </div>
 
     <script>
-        // Load Firebase config from server
-        fetch('/api/firebase-config')
-            .then(response => response.json())
-            .then(firebaseConfig => {
-                // Initialize Firebase
-                if (!firebase.apps || !firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
+        document.addEventListener('DOMContentLoaded', function() {
+            const basicInfoForm = document.getElementById('basicInfoForm');
+            const ncbiForm = document.getElementById('ncbiForm');
+            const step1 = document.getElementById('step1');
+            const step2 = document.getElementById('step2');
+            const step1Indicator = document.getElementById('step1-indicator');
+            const step2Indicator = document.getElementById('step2-indicator');
+            const backBtn = document.getElementById('backBtn');
+            const loading = document.getElementById('loading');
+            const successMessage = document.getElementById('successMessage');
+
+            // Handle basic info form submission
+            basicInfoForm.addEventListener('submit', function(e) {
+                e.preventDefault();
                 
-                const auth = firebase.auth();
-                const signInBtn = document.getElementById('googleSignIn');
-                const loading = document.getElementById('loading');
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
 
-                signInBtn.addEventListener('click', async () => {
-                    try {
-                        signInBtn.disabled = true;
-                        loading.classList.add('active');
-                        console.log('Google signup button clicked');
+                // Basic validation
+                if (password !== confirmPassword) {
+                    document.getElementById('confirmPasswordError').textContent = 'Passwords do not match';
+                    document.getElementById('confirmPasswordError').style.display = 'block';
+                    return;
+                }
 
-                        const provider = new firebase.auth.GoogleAuthProvider();
-                        const result = await auth.signInWithPopup(provider);
-                        const user = result.user;
-                        const token = await user.getIdToken();
-                        
-                        console.log('Google signup successful, sending to server...');
+                // Store email for NCBI form
+                document.getElementById('ncbiEmail').value = email;
 
-                        const response = await fetch('/auth/google-signin', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                token,
-                                userData: {
-                                    name: user.displayName,
-                                    email: user.email,
-                                    photo: user.photoURL
-                                }
-                            }),
-                            credentials: 'include'
-                        });
-
-                        const data = await response.json();
-                        if (data.success) {
-                            window.location.href = data.redirect || '/auth/welcome';
-                        } else {
-                            throw new Error(data.error || 'Authentication failed');
-                        }
-                    } catch (error) {
-                        console.error('Signup error:', error);
-                        alert('Signup failed: ' + error.message);
-                    } finally {
-                        signInBtn.disabled = false;
-                        loading.classList.remove('active');
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('Error loading Firebase config:', error);
-                alert('Failed to initialize authentication. Please try again later.');
+                // Move to step 2
+                step1.classList.remove('active');
+                step2.classList.add('active');
+                step1Indicator.classList.remove('active');
+                step2Indicator.classList.add('active');
             });
+
+            // Handle back button
+            backBtn.addEventListener('click', function() {
+                step2.classList.remove('active');
+                step1.classList.add('active');
+                step2Indicator.classList.remove('active');
+                step1Indicator.classList.add('active');
+            });
+
+            // Handle NCBI form submission
+            ncbiForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Get values from both forms
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value.trim();
+                const ncbiEmail = document.getElementById('ncbiEmail').value.trim();
+                const ncbiKey = document.getElementById('ncbiKey').value.trim();
+
+                // Clear any previous error messages
+                document.getElementById('ncbiEmailError').style.display = 'none';
+                document.getElementById('ncbiEmailError').textContent = '';
+
+                // Show loading state
+                loading.classList.add('active');
+                loading.textContent = 'Creating your account...';
+
+                try {
+                    const response = await fetch('/auth/signup', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            email: email,
+                            password: password,
+                            ncbiEmail: ncbiEmail || undefined,
+                            ncbiKey: ncbiKey || undefined
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        successMessage.textContent = 'Account created successfully! Please check your email to verify your account.';
+                        successMessage.style.display = 'block';
+                        setTimeout(() => {
+                            window.location.href = '/auth/login';
+                        }, 3000);
+                    } else {
+                        throw new Error(data.error || 'Failed to create account');
+                    }
+                } catch (error) {
+                    document.getElementById('ncbiEmailError').textContent = error.message;
+                    document.getElementById('ncbiEmailError').style.display = 'block';
+                } finally {
+                    loading.classList.remove('active');
+                }
+            });
+        });
     </script>
 </body>
 </html>
