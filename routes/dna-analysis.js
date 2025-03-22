@@ -57,8 +57,8 @@ router.post('/api/analyze-uploaded-sequence', async (req, res) => {
         });
 
         // Validate file size
-        if (file.size > 50 * 1024 * 1024) { // 50MB limit
-            return res.status(413).json({ error: 'File too large. Maximum size is 50MB.' });
+        if (file.size > 20 * 1024 * 1024) { // 20MB limit
+            return res.status(413).json({ error: 'File too large. Maximum size is 20MB. For large datasets and commercial use, please contact us.' });
         }
 
         // Validate file type

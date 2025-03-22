@@ -226,3 +226,35 @@
 .results-container.visible {
     opacity: 1;
 }
+
+.alert-info {
+    display: flex;
+    align-items: center;
+    background-color: #f8f9fa;
+    border-left: 4px solid #17a2b8;
+    padding: 12px 15px;
+    margin-top: 15px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.alert-info i {
+    color: #17a2b8;
+    font-size: 1.2rem;
+    margin-right: 10px;
+}
+
+.alert-info p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.alert-info a {
+    color: #0056b3;
+    text-decoration: none;
+}
+
+.alert-info a:hover {
+    text-decoration: underline;
+}

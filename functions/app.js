@@ -31,7 +31,7 @@ require('dotenv').config();
 const app = express();
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
 // Update your session middleware
 app.use(session({
