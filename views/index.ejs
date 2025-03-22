@@ -127,5 +127,165 @@
     </div>
     <!-- Remove this duplicate section -->
     <!-- <div class="auth-links"> ... </div> -->
+
+    <!-- Citation Section -->
+    <div id="globalCitation" class="citation-section">
+        <h3>How to Cite</h3>
+        <div class="citation-formats">
+            <div class="citation-box">
+                <h4>APA</h4>
+                <div id="apaCitation" class="citation-text"></div>
+                <button onclick="copyCitation('apa')" class="copy-btn">Copy</button>
+            </div>
+            
+            <div class="citation-box">
+                <h4>MLA</h4>
+                <div id="mlaCitation" class="citation-text"></div>
+                <button onclick="copyCitation('mla')" class="copy-btn">Copy</button>
+            </div>
+            
+            <div class="citation-box">
+                <h4>BibTeX</h4>
+                <div id="bibtexCitation" class="citation-text"></div>
+                <button onclick="copyCitation('bibtex')" class="copy-btn">Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    /* Citation styles */
+    .citation-section {
+        margin: 40px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-width: 1000px;
+    }
+
+    .citation-section h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+        text-align: left;
+    }
+
+    .citation-formats {
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .citation-box {
+        flex: 1;
+        min-width: 250px;
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        background: #f9f9f9;
+    }
+
+    .citation-box h4 {
+        color: #444;
+        margin-bottom: 8px;
+        font-size: 0.9em;
+    }
+
+    .citation-text {
+        margin: 8px 0;
+        padding: 12px;
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        font-size: 0.9em;
+        line-height: 1.5;
+        height: 80px;
+        overflow-y: auto;
+        word-break: break-word;
+    }
+
+    .copy-btn {
+        background: #2196F3;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: background 0.3s;
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .copy-btn:hover {
+        background: #0d8aee;
+    }
+
+    @media (max-width: 768px) {
+        .citation-formats {
+            flex-direction: column;
+        }
+    }
+    </style>
+
+    <script>
+    // Citation functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update citations with site information
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const siteUrl = 'https://ncbi.jyotsnapriyam.com';
+        const siteName = 'Jyotsna NCBI Tools';
+        const authors = 'Priyam, J.';
+        
+        // Format citations
+        const apaCitation = `${authors} (${year}). ${siteName}. Retrieved from ${siteUrl}`;
+        const mlaCitation = `${authors} "${siteName}." ${year}, ${siteUrl}. Accessed ${currentDate.toLocaleDateString('en-US', {day: 'numeric', month: 'long', year: 'numeric'})}.`;
+        const bibtexCitation = `@misc{jyotsna_ncbi_tools,
+        author = {${authors}},
+        title = {${siteName}},
+        year = {${year}},
+        url = {${siteUrl}},
+        note = {Accessed: ${currentDate.toLocaleDateString('en-US', {day: 'numeric', month: 'long', year: 'numeric'})}}
+    }`;
+
+        // Set citation text
+        document.getElementById('apaCitation').textContent = apaCitation;
+        document.getElementById('mlaCitation').textContent = mlaCitation;
+        document.getElementById('bibtexCitation').textContent = bibtexCitation;
+    });
+
+    // Function to copy citation
+    function copyCitation(format) {
+        let element;
+        switch(format) {
+            case 'apa':
+                element = document.getElementById('apaCitation');
+                break;
+            case 'mla':
+                element = document.getElementById('mlaCitation');
+                break;
+            case 'bibtex':
+                element = document.getElementById('bibtexCitation');
+                break;
+        }
+
+        const text = element.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = element.nextElementSibling;
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy citation. Please try selecting and copying manually.');
+        });
+    }
+    </script>
+
+    <a href="#globalCitation">Cite Us</a>
 </body>
 </html>
