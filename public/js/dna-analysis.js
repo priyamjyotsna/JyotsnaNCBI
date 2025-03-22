@@ -98,6 +98,59 @@ document.addEventListener('DOMContentLoaded', function() {
 
     analyzeBtn.addEventListener('click', analyzeSequence);
 
+    // Add a function to check sequence size before downloading
+    async function checkSequenceSize(accession) {
+        try {
+            const response = await fetch(`/dna-analysis/api/check-sequence-size?accession=${accession}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to check sequence size');
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Error checking sequence size:', error);
+            throw error;
+        }
+    }
+
+    // Show direct download link for large sequences
+    function showDirectDownloadLink(sequenceData) {
+        const container = document.getElementById('directDownloadContainer');
+        const link = document.getElementById('directDownloadLink');
+        
+        // Set the download link
+        link.href = sequenceData.directDownloadUrl;
+        
+        // Show information about the sequence
+        const sizeInfo = document.createElement('p');
+        sizeInfo.innerHTML = `Sequence length: <strong>${sequenceData.length.toLocaleString()}</strong> bases | 
+                             Estimated size: <strong>${sequenceData.sizeInMB} MB</strong>`;
+        
+        // Add the size info before the link
+        const linkParent = link.parentNode;
+        linkParent.insertBefore(sizeInfo, link);
+        
+        // Show the container
+        container.style.display = 'block';
+    }
+
+    // Hide direct download link
+    function hideDirectDownloadLink() {
+        const container = document.getElementById('directDownloadContainer');
+        container.style.display = 'none';
+        
+        // Clear any dynamically added content
+        const link = document.getElementById('directDownloadLink');
+        const paragraphs = link.parentNode.querySelectorAll('p');
+        
+        // Remove any dynamically added paragraphs (keep the original ones)
+        for (let i = 2; i < paragraphs.length; i++) {
+            paragraphs[i].remove();
+        }
+    }
+
     async function analyzeSequence() {
         const accession = accessionInput.value.trim();
         const sequenceType = document.getElementById('sequenceType').value;
@@ -109,8 +162,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         loadingSpinner.style.display = 'block';
         resultsSection.style.display = 'none';
+        hideDirectDownloadLink();
 
         try {
+            // First check sequence size
+            const sizeData = await checkSequenceSize(accession);
+            
+            // If sequence is too large, show direct download link and abort analysis
+            if (sizeData.isTooLarge) {
+                showDirectDownloadLink(sizeData);
+                loadingSpinner.style.display = 'none';
+                return;
+            }
+            
+            // If size is OK, proceed with sequence download and analysis
             const response = await fetch(`/dna-analysis/api/fetch-sequence?accession=${accession}`);
             const data = await response.json();
 

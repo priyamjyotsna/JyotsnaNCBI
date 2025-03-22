@@ -36,6 +36,19 @@
                         </select>
                         <button id="analyzeBtn">Analyze Sequence</button>
                     </div>
+                    <!-- Add download link container for large sequences -->
+                    <div id="directDownloadContainer" class="direct-download-container" style="display: none;">
+                        <div class="alert-info">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <div>
+                                <p>This sequence is too large (>20MB) to process in the browser.</p>
+                                <p>You can download it directly from NCBI using this link:</p>
+                                <a id="directDownloadLink" href="#" target="_blank" class="download-link">
+                                    <i class="fas fa-download"></i> Download Sequence
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="sequence-upload">

@@ -258,3 +258,30 @@
 .alert-info a:hover {
     text-decoration: underline;
 }
+
+/* Direct download link styles */
+.direct-download-container {
+    margin-top: 15px;
+}
+
+.download-link {
+    display: inline-block;
+    background-color: #28a745;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    margin-top: 10px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.download-link:hover {
+    background-color: #218838;
+    color: white;
+    text-decoration: none;
+}
+
+.download-link i {
+    margin-right: 5px;
+}

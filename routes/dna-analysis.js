@@ -6,6 +6,50 @@ router.get('/', (req, res) => {
     res.render('dna-analysis');
 });
 
+// Add new endpoint to check sequence size
+router.get('/api/check-sequence-size', async (req, res) => {
+    const accession = req.query.accession;
+    
+    try {
+        // Use NCBI ESummary API to get sequence metadata
+        const response = await axios.get(
+            `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=nucleotide&id=${accession}&retmode=json`,
+            {
+                timeout: 10000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (compatible; dna-analysis/1.0)',
+                    'Accept': 'application/json'
+                }
+            }
+        );
+
+        if (!response.data || !response.data.result || !response.data.result[accession]) {
+            return res.status(404).json({ error: 'Sequence not found' });
+        }
+
+        const sequenceData = response.data.result[accession];
+        const length = sequenceData.length || 0;
+        
+        // Calculate estimated file size in bytes (1 byte per character + header overhead)
+        // FASTA format adds line breaks every ~70 characters plus a header line
+        const estimatedSize = length + Math.ceil(length / 70) + 100; // 100 bytes for header overhead
+        
+        res.json({
+            accession,
+            length,
+            sizeInBytes: estimatedSize,
+            sizeInMB: (estimatedSize / (1024 * 1024)).toFixed(2),
+            isTooLarge: estimatedSize > 20 * 1024 * 1024,
+            title: sequenceData.title || '',
+            organism: sequenceData.organism || '',
+            directDownloadUrl: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=${accession}&rettype=fasta&retmode=text`
+        });
+    } catch (error) {
+        console.error('Error checking sequence size:', error);
+        res.status(500).json({ error: 'Failed to check sequence size' });
+    }
+});
+
 router.get('/api/fetch-sequence', async (req, res) => {
     const accession = req.query.accession;
     
