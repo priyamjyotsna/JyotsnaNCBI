@@ -60,9 +60,12 @@ router.get('/api/check-sequence-size', async (req, res) => {
         // FASTA format adds line breaks every ~70 characters plus a header line
         const estimatedSize = length + Math.ceil(length / 70) + 100; // 100 bytes for header overhead
         const sizeInMB = (estimatedSize / (1024 * 1024)).toFixed(2);
-        const isTooLarge = estimatedSize > 20 * 1024 * 1024;
         
-        console.log(`Sequence ${accession}: Length=${length}, Size=${sizeInMB}MB, TooLarge=${isTooLarge}`);
+        // Check if the size is greater than 20MB (20 * 1024 * 1024 bytes)
+        const sizeThreshold = 20 * 1024 * 1024;
+        const isTooLarge = estimatedSize > sizeThreshold;
+        
+        console.log(`Sequence ${accession}: Length=${length}, Size=${sizeInMB}MB, EstimatedBytes=${estimatedSize}, Threshold=${sizeThreshold}, TooLarge=${isTooLarge}`);
         
         // Extract title from the DEFINITION line if available
         let title = accession;
@@ -122,6 +125,7 @@ router.get('/api/check-sequence-size', async (req, res) => {
         } catch (fallbackError) {
             // If we reach here with a specific error, the sequence likely exists but is too large
             if (fallbackError.name === 'AbortError' || fallbackError.code === 'ECONNABORTED') {
+                console.log(`Sequence ${accession} appears to be too large (aborted/timeout)`);
                 return res.json({
                     accession,
                     length: 20000000, // Estimate large length

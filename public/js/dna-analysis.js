@@ -108,6 +108,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(data.error || 'Failed to check sequence size');
             }
 
+            // Debug logging
+            console.log('Size check response:', {
+                accession: data.accession,
+                length: data.length,
+                sizeInMB: data.sizeInMB,
+                isTooLarge: data.isTooLarge,
+                estimatedBytes: data.sizeInBytes,
+                threshold: (20 * 1024 * 1024) + ' bytes'
+            });
+
             return data;
         } catch (error) {
             console.error('Error checking sequence size:', error);
@@ -125,11 +135,23 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show information about the sequence
         const sizeInfo = document.createElement('p');
-        sizeInfo.innerHTML = `Sequence length: <strong>${sequenceData.length.toLocaleString()}</strong> bases | 
-                             Estimated size: <strong>${sequenceData.sizeInMB} MB</strong>`;
+        if (sequenceData.length > 0) {
+            sizeInfo.innerHTML = `Sequence length: <strong>${sequenceData.length.toLocaleString()}</strong> bases | 
+                                Estimated size: <strong>${sequenceData.sizeInMB} MB</strong>`;
+        } else {
+            sizeInfo.innerHTML = `This sequence is too large to process in the browser.`;
+        }
         
         // Add the size info before the link
         const linkParent = link.parentNode;
+        
+        // Remove any previously added paragraphs
+        const existingInfo = linkParent.querySelector('.dynamic-size-info');
+        if (existingInfo) {
+            existingInfo.remove();
+        }
+        
+        sizeInfo.className = 'dynamic-size-info';
         linkParent.insertBefore(sizeInfo, link);
         
         // Show the container
@@ -168,25 +190,67 @@ document.addEventListener('DOMContentLoaded', function() {
             // First check sequence size
             const sizeData = await checkSequenceSize(accession);
             
+            // Double-check the size calculation on the client side to be safe
+            const calculatedTooLarge = sizeData.sizeInBytes > 20 * 1024 * 1024;
+            if (calculatedTooLarge !== sizeData.isTooLarge) {
+                console.warn('Server and client size calculations disagree:', {
+                    serverSays: sizeData.isTooLarge,
+                    clientSays: calculatedTooLarge,
+                    bytes: sizeData.sizeInBytes
+                });
+            }
+            
+            // Use our own calculation for safety
+            const isTooLarge = calculatedTooLarge;
+            
             // If sequence is too large, show direct download link and abort analysis
-            if (sizeData.isTooLarge) {
+            if (isTooLarge) {
                 showDirectDownloadLink(sizeData);
                 loadingSpinner.style.display = 'none';
                 return;
             }
             
             // If size is OK, proceed with sequence download and analysis
-            const response = await fetch(`/dna-analysis/api/fetch-sequence?accession=${accession}`);
-            const data = await response.json();
+            try {
+                const response = await fetch(`/dna-analysis/api/fetch-sequence?accession=${accession}`);
+                const data = await response.json();
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to retrieve sequence');
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to retrieve sequence');
+                }
+
+                const sequence = data.sequence.toUpperCase();
+                const counts = countNucleotides(sequence, sequenceType === 'RNA');
+                displayReports(accession, counts, sequenceType);
+            } catch (downloadError) {
+                console.error('Download error:', downloadError);
+                
+                // If the fetch fails, it might be too large. Show direct download link as fallback
+                const directUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=${accession}&rettype=fasta&retmode=text`;
+                
+                showDirectDownloadLink({
+                    accession,
+                    length: 0,
+                    sizeInMB: "20+",
+                    isTooLarge: true,
+                    directDownloadUrl: directUrl
+                });
+                
+                displayError(accession, downloadError.message);
             }
-
-            const sequence = data.sequence.toUpperCase();
-            const counts = countNucleotides(sequence, sequenceType === 'RNA');
-            displayReports(accession, counts, sequenceType);
         } catch (error) {
+            console.error('Sequence size check error:', error);
+            // Show a warning about possible large sequence
+            const directUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=${accession}&rettype=fasta&retmode=text`;
+            
+            showDirectDownloadLink({
+                accession,
+                length: 0,
+                sizeInMB: "Unknown",
+                isTooLarge: true,
+                directDownloadUrl: directUrl
+            });
+            
             displayError(accession, error.message);
         } finally {
             loadingSpinner.style.display = 'none';
