@@ -4,866 +4,564 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // DOM Elements
-    const blastForm = document.getElementById('blastForm');
+    // Elements
+    const searchForm = document.getElementById('blastSearchForm');
     const sequenceInput = document.getElementById('sequenceInput');
-    const fileUpload = document.getElementById('fileUpload');
-    const programSelect = document.getElementById('program');
-    const databaseSelect = document.getElementById('database');
-    const evalueInput = document.getElementById('evalue');
-    const wordSizeInput = document.getElementById('wordSize');
-    const maxResultsInput = document.getElementById('maxResults');
-    const loadExampleBtn = document.getElementById('loadExample');
-    const clearFormBtn = document.getElementById('clearForm');
+    const programSelect = document.getElementById('programSelect');
+    const databaseSelect = document.getElementById('databaseSelect');
+    const submitBtn = document.getElementById('submitSearch');
+    const resetBtn = document.getElementById('resetForm');
+    const fileUploadInput = document.getElementById('sequenceFile');
+    const advancedOptionsBtn = document.getElementById('advancedOptionsToggle');
+    const advancedOptionsContent = document.getElementById('advancedOptionsContent');
     const statusContainer = document.getElementById('statusContainer');
-    const jobStatus = document.getElementById('jobStatus');
-    const jobProgress = document.getElementById('jobProgress');
+    const progressBar = document.getElementById('progressBar');
     const statusMessage = document.getElementById('statusMessage');
-    const cancelSearchBtn = document.getElementById('cancelSearch');
     const resultsContainer = document.getElementById('resultsContainer');
-    const hitsContainer = document.getElementById('hitsContainer');
-    const graphicalOverview = document.getElementById('graphicalOverview');
-    const msaViewerContainer = document.getElementById('msaViewerContainer');
-    const downloadResultsBtn = document.getElementById('downloadResults');
-    const ncbiLink = document.getElementById('ncbiLink');
-    const searchHistory = document.getElementById('searchHistory');
+    const searchHistoryContainer = document.getElementById('searchHistory');
     const clearHistoryBtn = document.getElementById('clearHistory');
     
-    // Constants
-    const HISTORY_STORAGE_KEY = 'blastSearchHistory';
-    const POLLING_INTERVAL = 5000; // 5 seconds
-    const MAX_PROGRESS_TIME = 300000; // 5 minutes
-    const MAX_HISTORY_ITEMS = 10;
-    
-    // State variables
+    let searchHistory = JSON.parse(localStorage.getItem('blastSearchHistory') || '[]');
     let currentRid = null;
-    let pollingTimer = null;
-    let startTime = null;
-    let searchResults = null;
-    let sequences = [];
+    let pollingInterval = null;
     
-    // Example sequences
-    const exampleSequences = {
-        'blastn': '>NM_000518.5 Homo sapiens hemoglobin subunit beta (HBB), mRNA\nACATTTGCTTCTGACACAACTGTGTTCACTAGCAACCTCAAACAGACACCATGGTGCATCTGACTCCTGA\nGGAGAAGTCTGCCGTTACTGCCCTGTGGGGCAAGGTGAACGTGGATGAAGTTGGTGGTGAGGCCCTGGGC\nAGGTTGGTATCAGGGCACGTGGAGGGAGAAGTCTGCCGTTACTGCCCTGTGGGGCAAGGTGAACGTGGAT\nGAAGTTGGTGGTGAGGCCCTGGGCAGGTTGGTATCAGGGCAC',
-        'blastp': '>sp|P68871|HBB_HUMAN Hemoglobin subunit beta OS=Homo sapiens\nMVHLTPEEKSAVTALWGKVNVDEVGGEALGRLLVVYPWTQRFFESFGDLSTPDAVMGNPKVKAHGKKVLG\nAFSDGLAHLDNLKGTFATLSELHCDKLHVDPENFRLLGNVLVCVLAHHFGKEFTPPVQAAYQKVVAGVAN\nALAHKYH'
-    };
+    // Initialize
+    renderSearchHistory();
+    setupEventListeners();
     
-    // Event Listeners
-    blastForm.addEventListener('submit', submitBlastSearch);
-    fileUpload.addEventListener('change', handleFileUpload);
-    loadExampleBtn.addEventListener('click', loadExampleSequence);
-    clearFormBtn.addEventListener('click', clearForm);
-    cancelSearchBtn.addEventListener('click', cancelSearch);
-    downloadResultsBtn.addEventListener('click', downloadResults);
-    clearHistoryBtn.addEventListener('click', clearSearchHistory);
-    programSelect.addEventListener('change', updateDatabaseOptions);
-    
-    // Initialize the page
-    init();
-    
-    /**
-     * Initialize the page
-     */
-    function init() {
-        loadSearchHistory();
-        updateDatabaseOptions();
-    }
-    
-    /**
-     * Update database options based on selected BLAST program
-     */
-    function updateDatabaseOptions() {
-        const program = programSelect.value;
-        databaseSelect.innerHTML = '';
+    // Functions
+    function setupEventListeners() {
+        searchForm.addEventListener('submit', handleFormSubmit);
+        resetBtn.addEventListener('click', resetForm);
+        fileUploadInput.addEventListener('change', handleFileUpload);
+        advancedOptionsBtn.addEventListener('click', toggleAdvancedOptions);
+        clearHistoryBtn && clearHistoryBtn.addEventListener('click', clearSearchHistory);
         
-        let options = [];
-        
-        if (program === 'blastn') {
-            options = [
-                { value: 'nt', text: 'nt - Nucleotide collection' },
-                { value: 'refseq_rna', text: 'RefSeq RNA' },
-                { value: 'refseq_genomic', text: 'RefSeq Genomic' },
-                { value: 'est', text: 'EST - Expressed Sequence Tags' }
-            ];
-            wordSizeInput.value = '11';
-        } else if (program === 'blastp') {
-            options = [
-                { value: 'nr', text: 'nr - Non-redundant protein sequences' },
-                { value: 'refseq_protein', text: 'RefSeq Protein' },
-                { value: 'swissprot', text: 'SwissProt' },
-                { value: 'pdb', text: 'PDB protein database' }
-            ];
-            wordSizeInput.value = '3';
+        // Add load example button listener
+        const loadExampleBtn = document.getElementById('loadExample');
+        if (loadExampleBtn) {
+            loadExampleBtn.addEventListener('click', loadExampleSequence);
         }
         
-        options.forEach(option => {
-            const optionEl = document.createElement('option');
-            optionEl.value = option.value;
-            optionEl.textContent = option.text;
-            databaseSelect.appendChild(optionEl);
-        });
+        // Add cancel search button listener
+        const cancelSearchBtn = document.getElementById('cancelSearch');
+        if (cancelSearchBtn) {
+            cancelSearchBtn.addEventListener('click', cancelSearch);
+        }
     }
     
-    /**
-     * Submit BLAST search
-     */
-    async function submitBlastSearch(event) {
-        event.preventDefault();
+    function toggleAdvancedOptions() {
+        advancedOptionsContent.classList.toggle('active');
+        const isExpanded = advancedOptionsContent.classList.contains('active');
+        advancedOptionsBtn.innerHTML = isExpanded ? 
+            '<i class="fa fa-angle-up"></i> Hide Advanced Options' : 
+            '<i class="fa fa-angle-down"></i> Show Advanced Options';
+    }
+    
+    async function handleFormSubmit(e) {
+        e.preventDefault();
         
-        // Get sequence from input or file
-        let sequence = sequenceInput.value.trim();
-        const file = fileUpload.files[0];
-        
-        // Check if either sequence or file is provided
-        if (!sequence && !file) {
-            showAlert('Please enter a sequence or upload a FASTA file', 'danger');
+        const sequence = sequenceInput.value.trim();
+        if (!sequence) {
+            showAlert('Please enter a sequence or upload a file', 'danger');
             return;
         }
         
-        // Validate sequence if provided directly
-        if (sequence && !isValidSequence(sequence)) {
-            showAlert('Invalid sequence format. Please enter a valid FASTA format or raw sequence.', 'danger');
-            return;
-        }
+        submitBtn.disabled = true;
         
-        // Prepare form data
+        // Get form values
         const formData = new FormData();
-        
-        // Handle file or text input, but not both to avoid confusion
-        if (file) {
-            formData.append('fastaFile', file);
-            console.log('Uploading file:', file.name, file.size, 'bytes');
-        } else if (sequence) {
-            formData.append('sequence', sequence);
-            console.log('Using text sequence input, length:', sequence.length);
-        }
-        
-        // Add other parameters
+        formData.append('sequence', sequence);
         formData.append('program', programSelect.value);
         formData.append('database', databaseSelect.value);
-        formData.append('evalue', evalueInput.value);
-        formData.append('wordSize', wordSizeInput.value);
-        formData.append('maxResults', maxResultsInput.value);
         
-        // Show status container
-        showStatusContainer('Submitting job to NCBI BLAST...');
+        // Add file if present
+        if (fileUploadInput.files && fileUploadInput.files.length > 0) {
+            formData.append('fastaFile', fileUploadInput.files[0]);
+        }
+        
+        // Add advanced parameters if they exist
+        const evalueInput = document.getElementById('evalue');
+        const wordSizeInput = document.getElementById('wordSize');
+        const maxResultsInput = document.getElementById('maxResults');
+        
+        if (evalueInput) formData.append('evalue', evalueInput.value);
+        if (wordSizeInput) formData.append('wordSize', wordSizeInput.value);
+        if (maxResultsInput) formData.append('maxResults', maxResultsInput.value);
         
         try {
-            // Submit the search with proper Content-Type (browser will set it automatically for FormData)
+            showStatus('Submitting BLAST search...', 10);
             const response = await fetch('/blast-wrapper/submit', {
                 method: 'POST',
-                body: formData,
-                // Do NOT set Content-Type header manually here - let the browser handle it for multipart/form-data
+                body: formData
             });
             
-            // Check if response is OK before parsing JSON
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Server response error:', errorText);
-                
-                try {
-                    // Try to parse as JSON if possible
-                    const errorJson = JSON.parse(errorText);
-                    throw new Error(errorJson.error || errorJson.message || 'Server error');
-                } catch (jsonError) {
-                    // If not JSON or parsing fails, use status text
-                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
-                }
+                const errorData = await response.json();
+                throw new Error(errorData.message || errorData.error || 'Failed to submit BLAST search');
             }
             
-            // Parse JSON response
             const data = await response.json();
-            
-            if (data.success && data.rid) {
-                // Store the RID and start polling for results
+            if (data.rid) {
                 currentRid = data.rid;
-                startPolling(currentRid, data.estimatedTime || 60);
-                
-                // Save to history
-                saveToHistory({
-                    rid: data.rid,
-                    program: programSelect.value,
-                    database: databaseSelect.value,
-                    sequence: sequence ? 
-                        (sequence.length > 100 ? sequence.substring(0, 100) + '...' : sequence) : 
-                        `Uploaded file: ${file.name}`,
-                    timestamp: new Date().toISOString()
-                });
-                
-                // Update NCBI link
-                updateNCBILink(currentRid);
+                addToSearchHistory(data.rid, sequence, programSelect.value, databaseSelect.value);
+                startPolling(data.rid);
+                showStatus(`Search submitted (RID: ${data.rid}). Waiting for results...`, 30);
             } else {
-                throw new Error(data.error || 'Invalid response from server');
+                throw new Error('No RID received from NCBI');
             }
-        } catch (error) {
-            console.error('Error submitting BLAST search:', error);
-            showAlert(`Failed to submit BLAST search: ${error.message}`, 'danger');
-            hideStatusContainer();
-        }
-    }
-    
-    /**
-     * Start polling for BLAST results
-     */
-    function startPolling(rid, estimatedTime) {
-        if (pollingTimer) {
-            clearTimeout(pollingTimer);
-        }
-        
-        startTime = Date.now();
-        const totalTime = estimatedTime * 1000;
-        
-        updateProgress(0, totalTime);
-        showStatusContainer(`Searching... (estimated time: ${estimatedTime}s)`);
-        
-        checkResults(rid, totalTime);
-    }
-    
-    /**
-     * Check BLAST results
-     */
-    async function checkResults(rid, totalTime) {
-        try {
-            const response = await fetch(`/blast-wrapper/results/${rid}`);
+        } catch (err) {
+            console.error('BLAST search submission error:', err);
             
-            // Check if response is OK before parsing JSON
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Server response error:', errorText);
+            let errorMsg = err.message;
+            
+            // Check for timeout messages
+            if (errorMsg.includes('timeout') || errorMsg.includes('ETIMEDOUT') || errorMsg.includes('ECONNABORTED')) {
+                errorMsg = 'Connection to NCBI BLAST servers timed out. Please try again later or check your internet connection.';
+            }
+            
+            showAlert(`Error: ${errorMsg}`, 'danger');
+            hideStatus();
+            submitBtn.disabled = false;
+        }
+    }
+    
+    function startPolling(rid) {
+        let attempts = 0;
+        const maxAttempts = 120; // 10 minutes (5s intervals)
+        
+        pollingInterval = setInterval(async () => {
+            attempts++;
+            try {
+                showStatus(`Checking search status (attempt ${attempts})...`, 30 + Math.min(attempts * 0.5, 50));
                 
-                try {
-                    // Try to parse as JSON if possible
-                    const errorJson = JSON.parse(errorText);
-                    throw new Error(errorJson.error || errorJson.message || 'Server error');
-                } catch (jsonError) {
-                    // If not JSON or parsing fails, use status text
-                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                const response = await fetch(`/blast-wrapper/status?rid=${rid}`);
+                if (!response.ok) {
+                    throw new Error('Failed to check search status');
                 }
+                
+                const data = await response.json();
+                
+                if (data.status === 'READY') {
+                    clearInterval(pollingInterval);
+                    showStatus('Results ready! Fetching...', 90);
+                    fetchResults(rid);
+                } else if (data.status === 'FAILED') {
+                    clearInterval(pollingInterval);
+                    throw new Error('BLAST search failed: ' + (data.message || 'Unknown error'));
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(pollingInterval);
+                    throw new Error('Search timed out after 10 minutes');
+                }
+            } catch (err) {
+                clearInterval(pollingInterval);
+                console.error('Error checking BLAST status:', err);
+                showAlert(`Error: ${err.message}`, 'danger');
+                hideStatus();
+                submitBtn.disabled = false;
+            }
+        }, 5000);
+    }
+    
+    async function fetchResults(rid) {
+        try {
+            const response = await fetch(`/blast-wrapper/results?rid=${rid}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch BLAST results');
             }
             
             const data = await response.json();
+            showStatus('Rendering results...', 100);
             
-            const elapsedTime = Date.now() - startTime;
-            const progressPercent = Math.min(100, Math.round((elapsedTime / totalTime) * 100));
+            // Update the search history item with result info
+            updateSearchHistoryItem(rid, data);
             
-            updateProgress(progressPercent, totalTime);
+            // Render results
+            renderResults(data);
             
-            if (data.status === 'completed') {
-                // Results are ready
-                searchResults = data.results;
-                displayResults(data.results);
-                hideStatusContainer();
-                showResultsContainer();
-            } else if (data.status === 'running') {
-                // Still running, continue polling
-                statusMessage.textContent = `Job running... (${progressPercent}% estimated progress)`;
+            setTimeout(() => {
+                hideStatus();
+                submitBtn.disabled = false;
                 
-                if (elapsedTime < MAX_PROGRESS_TIME) {
-                    pollingTimer = setTimeout(() => checkResults(rid, totalTime), POLLING_INTERVAL);
-                } else {
-                    // Taking too long, give user the option to continue or cancel
-                    showStatusContainer('Search is taking longer than expected. You can wait or cancel and try again.');
-                    updateProgress(95, totalTime);
-                    pollingTimer = setTimeout(() => checkResults(rid, totalTime), POLLING_INTERVAL);
-                }
-            } else if (data.status === 'failed') {
-                // Search failed
-                throw new Error('BLAST search failed. Please try again with different parameters.');
-            } else if (data.status === 'not_found') {
-                // RID not found
-                throw new Error('BLAST search not found. It may have expired or been cancelled.');
-            } else if (data.status === 'error') {
-                // API error
-                throw new Error(data.error || data.message || 'Error retrieving BLAST results');
-            } else {
-                // Unknown status
-                console.warn('Unknown status from BLAST server:', data);
-                statusMessage.textContent = 'Waiting for BLAST server response...';
-                pollingTimer = setTimeout(() => checkResults(rid, totalTime), POLLING_INTERVAL);
-            }
-        } catch (error) {
-            console.error('Error checking BLAST results:', error);
-            showAlert(error.message, 'danger');
-            hideStatusContainer();
+                // Scroll to results
+                resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 1000);
+        } catch (err) {
+            console.error('Error fetching BLAST results:', err);
+            showAlert(`Error: ${err.message}`, 'danger');
+            hideStatus();
+            submitBtn.disabled = false;
         }
     }
     
-    /**
-     * Update progress bar
-     */
-    function updateProgress(percent, totalTime) {
-        jobProgress.style.width = `${percent}%`;
-        jobProgress.setAttribute('aria-valuenow', percent);
+    function renderResults(data) {
+        const resultsHTML = `
+        <div class="card">
+            <div class="card-header">
+                <h3>BLAST Results</h3>
+            </div>
+            <div class="tabs-container">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="summary">Summary</button>
+                    <button class="tab-btn" data-tab="hits">Hits (${data.hitCount || 0})</button>
+                    <button class="tab-btn" data-tab="alignments">Alignments</button>
+                    <button class="tab-btn" data-tab="taxonomy">Taxonomy</button>
+                </div>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="summary-tab">
+                        ${renderSummaryTab(data)}
+                    </div>
+                    <div class="tab-pane" id="hits-tab">
+                        ${renderHitsTab(data)}
+                    </div>
+                    <div class="tab-pane" id="alignments-tab">
+                        ${renderAlignmentsTab(data)}
+                    </div>
+                    <div class="tab-pane" id="taxonomy-tab">
+                        ${renderTaxonomyTab(data)}
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="results-actions">
+                    <button class="secondary-btn" id="downloadResults">
+                        <i class="fa fa-download"></i> Download Results
+                    </button>
+                    <button class="primary-btn" id="newSearch">
+                        <i class="fa fa-search"></i> New Search
+                    </button>
+                </div>
+            </div>
+        </div>
+        `;
         
-        if (percent < 33) {
-            jobProgress.classList.remove('bg-warning', 'bg-success');
-            jobProgress.classList.add('bg-primary');
-        } else if (percent < 66) {
-            jobProgress.classList.remove('bg-primary', 'bg-success');
-            jobProgress.classList.add('bg-warning');
-        } else {
-            jobProgress.classList.remove('bg-primary', 'bg-warning');
-            jobProgress.classList.add('bg-success');
-        }
+        resultsContainer.innerHTML = resultsHTML;
+        
+        // Set up tab switching
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all tabs and panes
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+                
+                // Add active class to this tab and its content
+                this.classList.add('active');
+                document.getElementById(`${this.getAttribute('data-tab')}-tab`).classList.add('active');
+            });
+        });
+        
+        // Set up button actions
+        document.getElementById('downloadResults').addEventListener('click', () => downloadResults(data));
+        document.getElementById('newSearch').addEventListener('click', resetForm);
     }
     
-    /**
-     * Display BLAST results
-     */
-    function displayResults(results) {
-        console.log('Displaying BLAST results:', results);
-        
-        // Clear previous results
-        hitsContainer.innerHTML = '';
-        graphicalOverview.innerHTML = '';
-        sequences = [];
-        
-        // Check if we have raw data (string) or parsed JSON
-        if (results.rawData) {
-            // Handle raw text data from NCBI
-            console.log('Received raw data format from NCBI');
-            
-            const rawData = results.rawData;
-            
-            // Try to extract basic information
-            hitsContainer.innerHTML = `
-                <div class="alert alert-info">
-                    <h5>BLAST Results Available</h5>
-                    <p>The results are available in text format. You can view them on NCBI using the link below.</p>
-                    <p><a href="https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Get&RID=${currentRid}" 
-                        target="_blank" class="btn btn-primary">
-                        <i class="fas fa-external-link-alt"></i> View Results on NCBI
-                    </a></p>
-                </div>
-                <div class="card">
-                    <div class="card-header">Raw Response</div>
-                    <div class="card-body">
-                        <pre class="raw-response">${escapeHtml(rawData.substring(0, 5000))}${rawData.length > 5000 ? '...' : ''}</pre>
-                    </div>
-                </div>
-            `;
-            return;
-        }
-        
-        // Check for BlastOutput2 format
-        if (results.BlastOutput2) {
-            try {
-                const report = results.BlastOutput2[0].report;
-                const program = report.program || 'blastn';
-                const queryDef = report.results.search.query_title || 'Query';
-                const queryLen = report.results.search.query_len || 0;
-                const hits = report.results.search.hits || [];
-                
-                // Display summary
-                const summaryHTML = `
-                    <div class="alert alert-success mb-4">
-                        <h5>BLAST Search Completed</h5>
-                        <dl class="row mb-0">
-                            <dt class="col-sm-3">Query:</dt>
-                            <dd class="col-sm-9">${escapeHtml(queryDef)}</dd>
-                            <dt class="col-sm-3">Length:</dt>
-                            <dd class="col-sm-9">${queryLen} bp</dd>
-                            <dt class="col-sm-3">Hits:</dt>
-                            <dd class="col-sm-9">${hits.length}</dd>
-                        </dl>
-                    </div>
-                `;
-                
-                hitsContainer.innerHTML = summaryHTML;
-                
-                // No hits?
-                if (hits.length === 0) {
-                    hitsContainer.innerHTML += `
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i> No significant matches found.
-                        </div>
-                    `;
-                    return;
-                }
-                
-                // Add query sequence for MSA
-                sequences.push({
-                    id: 'query',
-                    name: 'Query',
-                    seq: report.results.search.query_seq || ''
-                });
-                
-                // Process each hit
-                hits.forEach((hit, index) => {
-                    const hitHTML = displayHit(hit, index);
-                    hitsContainer.innerHTML += hitHTML;
-                    
-                    // Add hit sequence for MSA if available
-                    const hsps = hit.hsps || [];
-                    if (hsps.length > 0) {
-                        sequences.push({
-                            id: `hit_${index}`,
-                            name: hit.description[0].accession || `Hit ${index + 1}`,
-                            seq: hsps[0].hit_seq || ''
-                        });
-                    }
-                });
-                
-                // Initialize MSA viewer if we have sequences
-                if (sequences.length > 1) {
-                    initMSAViewer(sequences);
-                } else {
-                    document.getElementById('msa-tab').classList.add('disabled');
-                }
-                
-                return;
-            } catch (error) {
-                console.error('Error parsing BlastOutput2 format:', error);
-                // Fall through to generic display
-            }
-        }
-        
-        // Generic display for unknown format
-        hitsContainer.innerHTML = `
-            <div class="alert alert-warning">
-                <h5>Results Available</h5>
-                <p>The results format is not fully supported for detailed visualization. 
-                   You can view them on NCBI using the link below.</p>
-                <p><a href="https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Get&RID=${currentRid}" 
-                    target="_blank" class="btn btn-primary">
-                    <i class="fas fa-external-link-alt"></i> View Results on NCBI
-                </a></p>
+    function renderSummaryTab(data) {
+        return `
+        <div class="summary-content">
+            <div class="info-card">
+                <h4>Query Information</h4>
+                <ul>
+                    <li><strong>Program:</strong> ${data.program}</li>
+                    <li><strong>Database:</strong> ${data.database}</li>
+                    <li><strong>Query Length:</strong> ${data.queryLength} bp</li>
+                    <li><strong>RID:</strong> ${data.rid}</li>
+                </ul>
             </div>
-            <div class="card">
-                <div class="card-header">Response Data</div>
-                <div class="card-body">
-                    <pre>${escapeHtml(JSON.stringify(results, null, 2))}</pre>
-                </div>
+            
+            <div class="info-card">
+                <h4>Search Statistics</h4>
+                <ul>
+                    <li><strong>Total Hits:</strong> ${data.hitCount || 0}</li>
+                    <li><strong>E-value Threshold:</strong> ${data.params?.expect || 10}</li>
+                    <li><strong>Word Size:</strong> ${data.params?.wordSize || 'N/A'}</li>
+                    <li><strong>Filter:</strong> ${data.params?.filter ? 'Yes' : 'No'}</li>
+                </ul>
             </div>
+        </div>
         `;
     }
     
-    /**
-     * Escape HTML special characters
-     */
-    function escapeHtml(unsafe) {
-        return unsafe
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-    
-    /**
-     * Display a single BLAST hit
-     */
-    function displayHit(hit, index) {
-        // Extract hit information
-        const description = hit.description && hit.description.length > 0 ? hit.description[0] : {};
-        const title = description.title || 'Unknown';
-        const accession = description.accession || '';
-        const hsps = hit.hsps || [];
-        
-        if (hsps.length === 0) {
-            return ''; // No HSPs to display
+    function renderHitsTab(data) {
+        if (!data.hits || data.hits.length === 0) {
+            return `<p class="empty-message">No hits found for this query.</p>`;
         }
         
-        // Get the best HSP (first one)
-        const hsp = hsps[0];
-        const evalue = hsp.evalue || 0;
-        const identity = hsp.identity || 0;
-        const alignLen = hsp.align_len || 0;
-        const queryFrom = hsp.query_from || 0;
-        const queryTo = hsp.query_to || 0;
-        const hitFrom = hsp.hit_from || 0;
-        const hitTo = hsp.hit_to || 0;
-        const positives = hsp.positives || 0;
-        const gaps = hsp.gaps || 0;
-        const score = hsp.bit_score || 0;
+        let hitsHTML = '';
         
-        // Calculate identity percentage
-        const identityPercent = alignLen > 0 ? ((identity / alignLen) * 100).toFixed(1) : 0;
-        
-        // Determine class based on identity percentage
-        let hitClass = 'secondary';
-        if (identityPercent >= 90) {
-            hitClass = 'success';
-        } else if (identityPercent >= 70) {
-            hitClass = 'primary';
-        } else if (identityPercent >= 50) {
-            hitClass = 'info';
-        } else if (identityPercent >= 30) {
-            hitClass = 'warning';
-        }
-        
-        // Format the alignment
-        let alignmentHTML = '';
-        if (hsp.qseq && hsp.hseq && hsp.midline) {
-            alignmentHTML = `
-                <div class="alignment-view">
-                    <div>Query ${queryFrom} ${hsp.qseq} ${queryTo}</div>
-                    <div>${hsp.midline}</div>
-                    <div>Sbjct ${hitFrom} ${hsp.hseq} ${hitTo}</div>
-                </div>
-            `;
-        }
-        
-        // Build the hit HTML
-        return `
-            <div class="blast-hit" id="hit-${index}">
-                <div class="hit-header bg-${hitClass} text-white">
-                    <div>
-                        <strong>${index + 1}.</strong> ${title}
-                    </div>
-                    <div>
-                        Score: ${score} bits
-                    </div>
+        data.hits.forEach((hit, i) => {
+            // Use different background colors based on score
+            const scorePercent = Math.min(100, (hit.score / data.hits[0].score) * 100);
+            let bgColor = '';
+            
+            if (scorePercent > 90) bgColor = '#6c5ce7';
+            else if (scorePercent > 70) bgColor = '#74b9ff';
+            else if (scorePercent > 50) bgColor = '#00b894';
+            else if (scorePercent > 30) bgColor = '#fdcb6e';
+            else bgColor = '#e17055';
+            
+            hitsHTML += `
+            <div class="blast-hit">
+                <div class="hit-header" style="background-color: ${bgColor}">
+                    <h4>${hit.title || 'Unknown Sequence'}</h4>
+                    <span>Score: ${hit.score}</span>
                 </div>
                 <div class="hit-details">
-                    <div>Accession: <a href="https://www.ncbi.nlm.nih.gov/protein/${accession}" target="_blank">${accession}</a></div>
-                    <div>E-value: ${evalue}</div>
-                    <div>Identity: ${identity}/${alignLen} (${identityPercent}%)</div>
-                    <div>Positives: ${positives}/${alignLen} (${alignLen > 0 ? ((positives / alignLen) * 100).toFixed(1) : 0}%)</div>
-                    <div>Gaps: ${gaps}/${alignLen} (${alignLen > 0 ? ((gaps / alignLen) * 100).toFixed(1) : 0}%)</div>
+                    <div class="detail-item">
+                        <span class="detail-label">Accession:</span>
+                        <span class="detail-value">${hit.accession || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">E-value:</span>
+                        <span class="detail-value">${hit.evalue}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Identity:</span>
+                        <span class="detail-value">${hit.identity || 'N/A'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Coverage:</span>
+                        <span class="detail-value">${hit.queryCoverage || 'N/A'}</span>
+                    </div>
                 </div>
-                ${alignmentHTML}
             </div>
-        `;
-    }
-    
-    /**
-     * Initialize MSA Viewer
-     */
-    function initMSAViewer(sequences) {
-        // Clear the container
-        msaViewerContainer.innerHTML = '';
-        
-        // Check if we have the MSA library
-        if (!window.msa) {
-            const errorEl = document.createElement('div');
-            errorEl.className = 'alert alert-danger';
-            errorEl.textContent = 'MSA Viewer library not loaded. Please check your internet connection.';
-            msaViewerContainer.appendChild(errorEl);
-            return;
-        }
-        
-        try {
-            // Convert sequences to format expected by MSA Viewer
-            const msaSeqs = sequences.map((seq, i) => {
-                return {
-                    name: seq.id,
-                    id: i,
-                    seq: seq.seq
-                };
-            });
-            
-            // Create MSA Viewer instance
-            const opts = {
-                el: msaViewerContainer,
-                vis: {
-                    conserv: false,
-                    overviewbox: true,
-                    seqlogo: true
-                },
-                zoomer: {
-                    labelNameLength: 100,
-                    alignmentHeight: 225,
-                    rowHeight: 25
-                }
-            };
-            
-            const m = new msa.msa(opts);
-            
-            // Add sequences
-            m.seqs.reset(msaSeqs);
-            
-            // Render
-            m.render();
-        } catch (error) {
-            console.error('Error initializing MSA Viewer:', error);
-            const errorEl = document.createElement('div');
-            errorEl.className = 'alert alert-danger';
-            errorEl.textContent = 'Error initializing MSA Viewer: ' + error.message;
-            msaViewerContainer.appendChild(errorEl);
-        }
-    }
-    
-    /**
-     * Update the NCBI link
-     */
-    function updateNCBILink(rid) {
-        ncbiLink.href = `https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Get&RID=${rid}`;
-    }
-    
-    /**
-     * Cancel the current BLAST search
-     */
-    function cancelSearch() {
-        if (pollingTimer) {
-            clearTimeout(pollingTimer);
-            pollingTimer = null;
-        }
-        
-        currentRid = null;
-        hideStatusContainer();
-        showAlert('BLAST search cancelled', 'info');
-    }
-    
-    /**
-     * Download results
-     */
-    function downloadResults() {
-        if (!searchResults) {
-            showAlert('No results to download', 'warning');
-            return;
-        }
-        
-        try {
-            // Create a download link
-            const resultsStr = typeof searchResults === 'string' ? 
-                searchResults : JSON.stringify(searchResults, null, 2);
-            
-            const blob = new Blob([resultsStr], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `blast_results_${currentRid || Date.now()}.txt`;
-            a.click();
-            
-            URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error('Error downloading results:', error);
-            showAlert('Error downloading results: ' + error.message, 'danger');
-        }
-    }
-    
-    /**
-     * Handle file upload
-     */
-    function handleFileUpload(event) {
-        const file = event.target.files[0];
-        
-        if (!file) {
-            return;
-        }
-        
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            sequenceInput.value = e.target.result;
-        };
-        
-        reader.onerror = function() {
-            showAlert('Error reading file', 'danger');
-        };
-        
-        reader.readAsText(file);
-    }
-    
-    /**
-     * Load example sequence
-     */
-    function loadExampleSequence() {
-        const program = programSelect.value;
-        sequenceInput.value = exampleSequences[program] || '';
-    }
-    
-    /**
-     * Clear the form
-     */
-    function clearForm() {
-        sequenceInput.value = '';
-        fileUpload.value = '';
-        evalueInput.value = '0.01';
-        wordSizeInput.value = programSelect.value === 'blastn' ? '11' : '3';
-        maxResultsInput.value = '50';
-    }
-    
-    /**
-     * Save search to history
-     */
-    function saveToHistory(search) {
-        let history = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
-        
-        // Add new search to beginning of array
-        history.unshift(search);
-        
-        // Limit history size
-        if (history.length > MAX_HISTORY_ITEMS) {
-            history = history.slice(0, MAX_HISTORY_ITEMS);
-        }
-        
-        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
-        
-        // Update UI
-        loadSearchHistory();
-    }
-    
-    /**
-     * Load search history
-     */
-    function loadSearchHistory() {
-        const history = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || '[]');
-        
-        searchHistory.innerHTML = '';
-        
-        if (history.length === 0) {
-            searchHistory.innerHTML = '<p class="text-muted">No recent searches</p>';
-            return;
-        }
-        
-        history.forEach(search => {
-            const historyItem = document.createElement('div');
-            historyItem.className = 'search-history-item';
-            
-            // Format timestamp
-            const date = new Date(search.timestamp);
-            const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
-            
-            historyItem.innerHTML = `
-                <div><strong>${search.program}</strong> against <strong>${search.database}</strong></div>
-                <div class="text-muted small">${formattedDate}</div>
-                <div class="text-truncate small sequence-preview">${search.sequence}</div>
             `;
-            
-            historyItem.addEventListener('click', () => {
-                loadHistoryItem(search);
+        });
+        
+        return hitsHTML;
+    }
+    
+    function renderAlignmentsTab(data) {
+        if (!data.alignments || data.alignments.length === 0) {
+            return `<p class="empty-message">No alignment data available.</p>`;
+        }
+        
+        let alignmentsHTML = '';
+        
+        data.alignments.forEach((aln, i) => {
+            alignmentsHTML += `
+            <div class="blast-hit">
+                <div class="hit-header" style="background-color: #6c5ce7">
+                    <h4>${aln.title || `Alignment ${i+1}`}</h4>
+                </div>
+                <div class="alignment-view">
+${aln.qseq ? `Query  ${aln.qstart} ${aln.qseq} ${aln.qend}` : ''}
+${aln.midline ? `       ${aln.midline}` : ''}
+${aln.hseq ? `Sbjct  ${aln.hstart} ${aln.hseq} ${aln.hend}` : ''}
+                </div>
+            </div>
+            `;
+        });
+        
+        return alignmentsHTML;
+    }
+    
+    function renderTaxonomyTab(data) {
+        if (!data.taxonomy || data.taxonomy.length === 0) {
+            return `<p class="empty-message">No taxonomy data available.</p>`;
+        }
+        
+        let taxonomyHTML = '<ul class="taxonomy-list">';
+        
+        data.taxonomy.forEach(item => {
+            taxonomyHTML += `
+            <li class="taxonomy-item">
+                <span class="taxon-name">${item.name}</span>
+                <span class="taxon-rank">${item.rank}</span>
+            </li>
+            `;
+        });
+        
+        taxonomyHTML += '</ul>';
+        return taxonomyHTML;
+    }
+    
+    function addToSearchHistory(rid, sequence, program, database) {
+        const timestamp = new Date().toISOString();
+        const entry = {
+            rid,
+            timestamp,
+            sequence: sequence.substring(0, 30) + (sequence.length > 30 ? '...' : ''),
+            program,
+            database,
+            hasResults: false
+        };
+        
+        searchHistory.unshift(entry);
+        
+        // Limit history to 10 items
+        if (searchHistory.length > 10) {
+            searchHistory = searchHistory.slice(0, 10);
+        }
+        
+        localStorage.setItem('blastSearchHistory', JSON.stringify(searchHistory));
+        renderSearchHistory();
+    }
+    
+    function updateSearchHistoryItem(rid, results) {
+        const index = searchHistory.findIndex(item => item.rid === rid);
+        if (index !== -1) {
+            searchHistory[index].hasResults = true;
+            searchHistory[index].hitCount = results.hitCount || 0;
+            localStorage.setItem('blastSearchHistory', JSON.stringify(searchHistory));
+            renderSearchHistory();
+        }
+    }
+    
+    function renderSearchHistory() {
+        if (!searchHistoryContainer) return;
+        
+        if (searchHistory.length === 0) {
+            searchHistoryContainer.innerHTML = `<p class="empty-message">No recent searches</p>`;
+            if (clearHistoryBtn) clearHistoryBtn.style.display = 'none';
+            return;
+        }
+        
+        let historyHTML = '';
+        
+        searchHistory.forEach(entry => {
+            const date = new Date(entry.timestamp).toLocaleString();
+            historyHTML += `
+            <div class="search-history-item" data-rid="${entry.rid}">
+                <div>
+                    <strong>${entry.program}</strong> vs ${entry.database}
+                </div>
+                <div class="history-sequence">${entry.sequence}</div>
+                <div class="history-meta">
+                    <span>${date}</span>
+                    ${entry.hasResults ? `<span class="hit-count">${entry.hitCount} hits</span>` : ''}
+                </div>
+            </div>
+            `;
+        });
+        
+        searchHistoryContainer.innerHTML = historyHTML;
+        if (clearHistoryBtn) clearHistoryBtn.style.display = 'block';
+        
+        // Add click event to history items
+        document.querySelectorAll('.search-history-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const rid = this.getAttribute('data-rid');
+                const historyItem = searchHistory.find(entry => entry.rid === rid);
+                
+                if (historyItem && historyItem.hasResults) {
+                    currentRid = rid;
+                    showStatus('Fetching previous results...', 50);
+                    fetchResults(rid);
+                } else {
+                    showAlert('Results for this search are no longer available', 'warning');
+                }
             });
-            
-            searchHistory.appendChild(historyItem);
         });
     }
     
-    /**
-     * Load history item
-     */
-    function loadHistoryItem(search) {
-        // Set form values
-        programSelect.value = search.program;
-        updateDatabaseOptions();
-        databaseSelect.value = search.database;
-        
-        // If we have the full sequence, use it
-        if (!search.sequence.includes('...')) {
-            sequenceInput.value = search.sequence;
-        }
-        
-        // Check if we can load results directly using RID
-        if (search.rid) {
-            currentRid = search.rid;
-            startPolling(search.rid, 10);
-            updateNCBILink(search.rid);
-        }
-    }
-    
-    /**
-     * Clear search history
-     */
     function clearSearchHistory() {
-        if (confirm('Are you sure you want to clear your search history?')) {
-            localStorage.removeItem(HISTORY_STORAGE_KEY);
-            loadSearchHistory();
-        }
+        searchHistory = [];
+        localStorage.removeItem('blastSearchHistory');
+        renderSearchHistory();
+        showAlert('Search history cleared', 'info');
     }
     
-    /**
-     * Validate sequence format
-     */
-    function isValidSequence(sequence) {
-        sequence = sequence.trim();
+    async function handleFileUpload(e) {
+        const file = fileUploadInput.files[0];
+        if (!file) return;
         
-        // Check if it's FASTA format
-        if (sequence.startsWith('>')) {
-            // FASTA format, validate it has sequence after the header
-            const lines = sequence.split('\n');
-            if (lines.length < 2) {
-                return false;
-            }
-            
-            // Combine all non-header lines
-            const seqLines = lines.slice(1).join('').trim();
-            return seqLines.length > 0;
-        } else {
-            // Raw sequence, check if it contains valid nucleotide or protein characters
-            const validNucleotides = /^[ACGTURYKMSWBDHVN\s]+$/i;
-            const validAminoAcids = /^[ACDEFGHIKLMNPQRSTVWY\s]+$/i;
-            
-            return validNucleotides.test(sequence) || validAminoAcids.test(sequence);
+        try {
+            const text = await readFileAsText(file);
+            sequenceInput.value = text;
+        } catch (err) {
+            console.error('Error reading file:', err);
+            showAlert('Error reading file', 'danger');
         }
     }
     
-    /**
-     * Extract sequence from FASTA format
-     */
-    function extractSequenceFromFasta(fasta) {
-        fasta = fasta.trim();
-        
-        if (fasta.startsWith('>')) {
-            // FASTA format
-            const lines = fasta.split('\n');
-            if (lines.length < 2) {
-                return '';
-            }
-            
-            // Combine all non-header lines
-            return lines.slice(1).join('').replace(/\s/g, '');
-        } else {
-            // Raw sequence
-            return fasta.replace(/\s/g, '');
-        }
+    function readFileAsText(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.onerror = e => reject(e);
+            reader.readAsText(file);
+        });
     }
     
-    /**
-     * Show status container
-     */
-    function showStatusContainer(message) {
+    function resetForm() {
+        searchForm.reset();
+        sequenceInput.value = '';
+        if (pollingInterval) clearInterval(pollingInterval);
+        hideStatus();
+        resultsContainer.innerHTML = '';
+        submitBtn.disabled = false;
+    }
+    
+    function showStatus(message, progress) {
         statusContainer.style.display = 'block';
-        jobStatus.textContent = 'Running';
         statusMessage.textContent = message;
+        progressBar.style.width = `${progress}%`;
     }
     
-    /**
-     * Hide status container
-     */
-    function hideStatusContainer() {
+    function hideStatus() {
         statusContainer.style.display = 'none';
-        if (pollingTimer) {
-            clearTimeout(pollingTimer);
-            pollingTimer = null;
-        }
     }
     
-    /**
-     * Show results container
-     */
-    function showResultsContainer() {
-        resultsContainer.style.display = 'block';
-    }
-    
-    /**
-     * Hide results container
-     */
-    function hideResultsContainer() {
-        resultsContainer.style.display = 'none';
-    }
-    
-    /**
-     * Show alert message
-     */
-    function showAlert(message, type = 'info') {
-        const alertEl = document.createElement('div');
-        alertEl.className = `alert alert-${type} alert-dismissible fade show`;
-        alertEl.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    function showAlert(message, type) {
+        const alertContainer = document.getElementById('alertContainer');
+        if (!alertContainer) return;
+        
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        alert.innerHTML = `
+            <span>${message}</span>
+            <button class="close-alert">&times;</button>
         `;
         
-        // Insert at the top of the form
-        blastForm.parentNode.insertBefore(alertEl, blastForm);
+        alertContainer.appendChild(alert);
+        
+        // Set up close button
+        alert.querySelector('.close-alert').addEventListener('click', () => {
+            alert.remove();
+        });
         
         // Auto dismiss after 5 seconds
         setTimeout(() => {
-            alertEl.classList.remove('show');
-            setTimeout(() => {
-                alertEl.remove();
-            }, 150);
+            alert.remove();
         }, 5000);
+    }
+    
+    function downloadResults(data) {
+        const resultsText = JSON.stringify(data, null, 2);
+        const blob = new Blob([resultsText], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `blast-results-${data.rid}.json`;
+        a.click();
+        
+        URL.revokeObjectURL(url);
+    }
+    
+    function loadExampleSequence() {
+        // Example FASTA sequence (Green Fluorescent Protein)
+        const exampleSequence = ">GFP|Green_Fluorescent_Protein\nATGGTGAGCAAGGGCGAGGAGCTGTTCACCGGGGTGGTGCCCATCCTGGTCGAGCTGGACGGCGACGTAAACGGCCACAAGTTCAGCGTGTCCGGCGAGGGCGAGGGCGATGCCACCTACGGCAAGCTGACCCTGAAGTTCATCTGCACCACCGGCAAGCTGCCCGTGCCCTGGCCCACCCTCGTGACCACCCTGACCTACGGCGTGCAGTGCTTCAGCCGCTACCCCGACCACATGAAGCAGCACGACTTCTTCAAGTCCGCCATGCCCGAAGGCTACGTCCAGGAGCGCACCATCTTCTTCAAGGACGACGGCAACTACAAGACCCGCGCCGAGGTGAAGTTCGAGGGCGACACCCTGGTGAACCGCATCGAGCTGAAGGGCATCGACTTCAAGGAGGACGGCAACATCCTGGGGCACAAGCTGGAGTACAACTACAACAGCCACAACGTCTATATCATGGCCGACAAGCAGAAGAACGGCATCAAGGTGAACTTCAAGATCCGCCACAACATCGAGGACGGCAGCGTGCAGCTCGCCGACCACTACCAGCAGAACACCCCCATCGGCGACGGCCCCGTGCTGCTGCCCGACAACCACTACCTGAGCACCCAGTCCGCCCTGAGCAAAGACCCCAACGAGAAGCGCGATCACATGGTCCTGCTGGAGTTCGTGACCGCCGCCGGGATCACTCTCGGCATGGACGAGCTGTACAAGTAA";
+        
+        sequenceInput.value = exampleSequence;
+        
+        // Set default selection for protein example
+        if (programSelect.value === 'blastp') {
+            databaseSelect.value = 'nr';
+        } else {
+            programSelect.value = 'blastn';
+            databaseSelect.value = 'nt';
+        }
+    }
+    
+    function cancelSearch() {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+        
+        hideStatus();
+        submitBtn.disabled = false;
+        showAlert('Search cancelled', 'info');
     }
 });

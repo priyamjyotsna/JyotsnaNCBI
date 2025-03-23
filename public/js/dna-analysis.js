@@ -667,30 +667,64 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateCitations() {
-        const currentDate = new Date();
-        const year = currentDate.getFullYear();
-        const url = window.location.href;
-        const month = currentDate.toLocaleString('en-US', { month: 'long' });
-        const day = currentDate.getDate();
-
-        // APA Format (7th Edition)
-        const apaCitation = `Priyam, J., & Saxena, U. (${year}). Jyotsna's NCBI Tools (Nucleotide Sequence Download) [Computer software]. National Institute of Technology Warangal. Retrieved ${month} ${day}, ${year}, from ${url}`;
-        document.getElementById('apaCitation').textContent = apaCitation;
-
-        // MLA Format
-        const mlaCitation = `"Jyotsna's NCBI Tools (Nucleotide Sequence Download)." National Institute of Technology Warangal, ${month} ${year}, ${url}`;
-        document.getElementById('mlaCitation').textContent = mlaCitation;
-
-        // BibTeX Format
-        const bibtexCitation = `@software{jyotsna_ncbi_tools,
-        title={Jyotsna's NCBI Tools (Nucleotide Sequence Download)},
-        author={Priyam, Jyotsna and Saxena, Urmila},
-        year={${year}},
-        institution={National Institute of Technology Warangal},
-        url={${url}},
-        note={Retrieved ${month} ${day}, ${year}}
+        // Fetch citation config from API
+        fetch('/api/citation-config')
+            .then(response => response.json())
+            .then(config => {
+                // Get current date for "accessed on" information
+                const currentDate = new Date();
+                const formattedDate = currentDate.toLocaleDateString('en-US', {
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric'
+                });
+                
+                // Format citations with DOI
+                const apaCitation = `${config.author} (${config.year}). ${config.title} - DNA Analysis Tool. DOI: ${config.doi}`;
+                
+                const mlaCitation = `${config.author} "${config.title} - DNA Analysis Tool." ${config.year}, ${config.url}. DOI: ${config.doi}. Accessed ${formattedDate}.`;
+                
+                const bibtexCitation = `@software{${config.doi.replace(/\./g, '_').replace(/\//g, '_')},
+        author = {${config.author}},
+        title = {{${config.title} - DNA Analysis Tool}},
+        year = {${config.year}},
+        version = {${config.version}},
+        doi = {${config.doi}},
+        url = {${config.url}},
+        note = {Accessed: ${formattedDate}}
 }`;
-        document.getElementById('bibtexCitation').textContent = bibtexCitation;
+
+                // Set citation text
+                document.getElementById('apaCitation').textContent = apaCitation;
+                document.getElementById('mlaCitation').textContent = mlaCitation;
+                document.getElementById('bibtexCitation').textContent = bibtexCitation;
+            })
+            .catch(error => {
+                console.error('Error fetching citation config:', error);
+                // Fall back to basic citation if API fails
+                const currentDate = new Date();
+                const year = currentDate.getFullYear();
+                const month = currentDate.toLocaleString('default', { month: 'long' });
+                const day = currentDate.getDate();
+                const url = window.location.href;
+                
+                const apaCitation = `Priyam, J. (2025). Jyotsna's NCBI Tools - DNA Analysis Tool. DOI: 10.5281/zenodo.15069907`;
+                document.getElementById('apaCitation').textContent = apaCitation;
+                
+                const mlaCitation = `Priyam, J. "Jyotsna's NCBI Tools - DNA Analysis Tool." 2025, ${url}. DOI: 10.5281/zenodo.15069907. Accessed ${month} ${day}, ${year}.`;
+                document.getElementById('mlaCitation').textContent = mlaCitation;
+                
+                const bibtexCitation = `@software{10_5281_zenodo_15069907,
+        author = {Priyam, J.},
+        title = {{Jyotsna's NCBI Tools - DNA Analysis Tool}},
+        year = {2025},
+        version = {1.0.0},
+        doi = {10.5281/zenodo.15069907},
+        url = {${url}},
+        note = {Accessed: ${month} ${day}, ${year}}
+}`;
+                document.getElementById('bibtexCitation').textContent = bibtexCitation;
+            });
     }
 
     // Make sure this runs when page loads

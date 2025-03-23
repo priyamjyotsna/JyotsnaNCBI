@@ -102,26 +102,48 @@
 <script>
 // Citation functionality
 document.addEventListener('DOMContentLoaded', function() {
-    updateGlobalCitations();
+    // Fetch citation config from API
+    fetch('/api/citation-config')
+        .then(response => response.json())
+        .then(config => {
+            updateGlobalCitations(config);
+        })
+        .catch(error => {
+            console.error('Error fetching citation config:', error);
+            // Fall back to default values if API call fails
+            updateGlobalCitations({
+                doi: '10.5281/zenodo.15069907',
+                title: 'Jyotsna\'s NCBI Tools',
+                author: 'Priyam, J.',
+                year: '2025',
+                version: '1.0.0',
+                url: 'https://NCBI.JyotsnaPriyam.com'
+            });
+        });
 });
 
-function updateGlobalCitations() {
-    // Update citations with site information
+function updateGlobalCitations(config) {
+    // Get current date for "accessed on" information
     const currentDate = new Date();
-    const year = currentDate.getFullYear();
-    const siteUrl = 'https://ncbi.jyotsnapriyam.com';
-    const siteName = 'Jyotsna NCBI Tools';
-    const authors = 'Priyam, J.';
+    const formattedDate = currentDate.toLocaleDateString('en-US', {
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric'
+    });
     
-    // Format citations
-    const apaCitation = `${authors} (${year}). ${siteName}. Retrieved from ${siteUrl}`;
-    const mlaCitation = `${authors} "${siteName}." ${year}, ${siteUrl}. Accessed ${currentDate.toLocaleDateString('en-US', {day: 'numeric', month: 'long', year: 'numeric'})}.`;
-    const bibtexCitation = `@misc{jyotsna_ncbi_tools,
-    author = {${authors}},
-    title = {${siteName}},
-    year = {${year}},
-    url = {${siteUrl}},
-    note = {Accessed: ${currentDate.toLocaleDateString('en-US', {day: 'numeric', month: 'long', year: 'numeric'})}}
+    // Format citations with DOI
+    const apaCitation = `${config.author} (${config.year}). ${config.title}. DOI: ${config.doi}`;
+    
+    const mlaCitation = `${config.author} "${config.title}." ${config.year}, ${config.url}. DOI: ${config.doi}. Accessed ${formattedDate}.`;
+    
+    const bibtexCitation = `@software{${config.doi.replace(/\./g, '_').replace(/\//g, '_')},
+    author = {${config.author}},
+    title = {${config.title}},
+    year = {${config.year}},
+    version = {${config.version}},
+    doi = {${config.doi}},
+    url = {${config.url}},
+    note = {Accessed: ${formattedDate}}
 }`;
 
     // Set citation text

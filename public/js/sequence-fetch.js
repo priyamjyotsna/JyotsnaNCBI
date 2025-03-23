@@ -261,8 +261,10 @@ function updatePreviewTable(data) {
 
 function cleanSequenceData(sequence) {
     // Remove citation text and any non-sequence data
-    sequence = sequence.replace(/Priyam,\s*J\..*?from\s*http:\/\/[^\s]+/g, '');  // Remove APA citation
-    sequence = sequence.replace(/Priyam,\s*Jyotsna\..*?jyotsnapriyam\.com/g, ''); // Remove MLA citation
+    sequence = sequence.replace(/Priyam,\s*J\..*?DOI:\s*10\.5281\/zenodo\.15069907/g, '');  // Remove APA citation with DOI
+    sequence = sequence.replace(/Priyam,\s*J\..*?from\s*http:\/\/[^\s]+/g, '');  // Remove old APA citation
+    sequence = sequence.replace(/Priyam,\s*J\..*?jyotsnapriyam\.com.*?DOI:/g, ''); // Remove MLA citation with DOI
+    sequence = sequence.replace(/Priyam,\s*Jyotsna\..*?jyotsnapriyam\.com/g, ''); // Remove old MLA citation
     sequence = sequence.replace(/@software{.*?}/gs, '');  // Remove BibTeX citation
     sequence = sequence.replace(/[^ATCG\-\n]/gi, '');  // Keep only valid sequence characters
     return sequence.trim();

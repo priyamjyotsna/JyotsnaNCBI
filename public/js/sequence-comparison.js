@@ -1482,18 +1482,38 @@ async function generatePDF() {
         doc.setTextColor(0);
         doc.text('How to Cite This Tool', 20, yPos);
 
-        // Citation content
-        const currentYear = new Date().getFullYear();
-        const url = window.location.href;
+        // Get citation info from API if possible
+        let citationInfo;
+        try {
+            const response = await fetch('/api/citation-config');
+            citationInfo = await response.json();
+        } catch (error) {
+            console.error('Error fetching citation config:', error);
+            // Use default values if API fails
+            citationInfo = {
+                author: 'Priyam, J.',
+                title: 'Jyotsna\'s NCBI Tools',
+                year: '2025',
+                doi: '10.5281/zenodo.15069907',
+                url: window.location.href
+            };
+        }
+        
+        const currentDate = new Date();
+        const formattedDate = currentDate.toLocaleDateString('en-US', {
+            day: 'numeric', 
+            month: 'long', 
+            year: 'numeric'
+        });
 
         yPos += 10;
         doc.autoTable({
             startY: yPos,
             head: [['Format', 'Citation']],
             body: [
-                ['APA', `DNA Analysis Tool. (${currentYear}). Sequence Comparison Tool. Retrieved from ${url}`],
-                ['MLA', `"Sequence Comparison Tool." DNA Analysis Tool, ${currentYear}, ${url}`],
-                ['BibTeX', `@software{sequence_comparison_tool,\ntitle={Sequence Comparison Tool},\nauthor={DNA Analysis Tool},\nyear={${currentYear}},\nurl={${url}}\n}`]
+                ['APA', `${citationInfo.author} (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool. DOI: ${citationInfo.doi}`],
+                ['MLA', `${citationInfo.author} "${citationInfo.title} - Sequence Comparison Tool." ${citationInfo.year}, ${citationInfo.url}. DOI: ${citationInfo.doi}. Accessed ${formattedDate}.`],
+                ['BibTeX', `@software{${citationInfo.doi.replace(/\./g, '_').replace(/\//g, '_')},\ntitle={{${citationInfo.title} - Sequence Comparison Tool}},\nauthor={${citationInfo.author}},\nyear={${citationInfo.year}},\ndoi={${citationInfo.doi}},\nurl={${citationInfo.url}},\nnote={Accessed: ${formattedDate}}\n}`]
             ],
             styles: {
                 fontSize: 8,
@@ -1515,7 +1535,7 @@ async function generatePDF() {
         doc.setFontSize(10);
         doc.text('How to Cite:', 20, 30);
         doc.setFontSize(9);
-        doc.text(`DNA Analysis Tool. (${new Date().getFullYear()}). Sequence Comparison Tool. Retrieved from ${window.location.href}`, 20, 45, {
+        doc.text(`${citationInfo.author} (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool. DOI: ${citationInfo.doi}`, 20, 45, {
             maxWidth: 170
         });
 

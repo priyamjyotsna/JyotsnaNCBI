@@ -31,6 +31,18 @@ router.get('/config', (req, res) => {
     });
 });
 
+// Get citation configuration from environment variables
+router.get('/citation-config', (req, res) => {
+    res.json({
+        doi: process.env.CITATION_DOI || '10.5281/zenodo.15069907',
+        title: process.env.CITATION_TITLE || 'Jyotsna\'s NCBI Tools',
+        author: process.env.CITATION_AUTHOR || 'Priyam, J.',
+        year: process.env.CITATION_YEAR || '2025',
+        version: process.env.CITATION_VERSION || '1.0.0',
+        url: process.env.CITATION_URL || 'https://NCBI.JyotsnaPriyam.com'
+    });
+});
+
 // Verify if a Genbank accession ID exists in NCBI
 router.get('/nucleotide/verify', async (req, res) => {
   const accessionId = req.query.id;

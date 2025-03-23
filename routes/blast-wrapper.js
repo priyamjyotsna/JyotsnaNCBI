@@ -1,105 +1,130 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const multer = require('multer');
-
-// Configure multer with better error handling for file uploads
-const storage = multer.memoryStorage();
-const uploadMiddleware = multer({
-  storage: storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-    files: 1,
-    parts: 10 // Limit the number of parts in multipart data
-  }
-});
 
 // NCBI API settings
 const NCBI_BASE_URL = 'https://blast.ncbi.nlm.nih.gov/Blast.cgi';
 const NCBI_EMAIL = process.env.NCBI_EMAIL || 'priyam.jyotsna@gmail.com';
 const NCBI_TOOL = 'jyotsna-blast-wrapper';
 
+// Configure axios with retry logic for NCBI calls
+const axiosRetry = async (url, options, maxRetries = 3, timeout = 30000) => {
+  let lastError;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`API attempt ${attempt}/${maxRetries}: ${options.method || 'GET'} ${url}`);
+      
+      // Add timeout to the options
+      const requestOptions = {
+        ...options,
+        timeout: timeout, // 30 seconds timeout
+      };
+      
+      return await axios(url, requestOptions);
+    } catch (error) {
+      console.log(`Attempt ${attempt} failed: ${error.message}`);
+      lastError = error;
+      
+      // Don't wait on the last attempt
+      if (attempt < maxRetries) {
+        // Exponential backoff: 1s, 2s, 4s, etc.
+        const delay = 1000 * Math.pow(2, attempt - 1);
+        console.log(`Waiting ${delay}ms before next attempt...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  // If we get here, all attempts failed
+  throw lastError;
+};
+
 // Render BLAST tool page
 router.get('/', (req, res) => {
   res.render('blast-wrapper');
 });
 
-// Submit BLAST search - use a separate route for file uploads
-router.post('/submit', function(req, res) {
-  // Use multer as middleware only when needed
-  uploadMiddleware.single('fastaFile')(req, res, async function(err) {
-    if (err) {
-      console.error('File upload error:', err);
-      return res.status(400).json({ 
-        error: 'File upload failed', 
-        message: err.message 
-      });
+// Submit BLAST search - use express-fileupload which is configured globally
+router.post('/submit', async (req, res) => {
+  try {
+    console.log('Processing BLAST submission');
+    
+    // Get sequence either from text input or uploaded file
+    let sequence = req.body && req.body.sequence ? req.body.sequence.trim() : '';
+    
+    // Handle file upload with express-fileupload
+    if (req.files && req.files.fastaFile) {
+      console.log(`Processing uploaded file: ${req.files.fastaFile.name}, size: ${req.files.fastaFile.size} bytes`);
+      sequence = req.files.fastaFile.data.toString('utf8').trim();
     }
     
-    try {
-      console.log('Processing BLAST submission. File?', !!req.file, 'Body?', !!req.body);
-      
-      // Get sequence either from text input or uploaded file
-      let sequence = req.body && req.body.sequence ? req.body.sequence.trim() : '';
-      if (req.file && req.file.buffer) {
-        sequence = req.file.buffer.toString('utf8').trim();
-        console.log(`Processed uploaded file, size: ${req.file.size} bytes`);
-      }
-      
-      if (!sequence) {
-        return res.status(400).json({ error: 'No sequence provided' });
-      }
-      
-      // Build NCBI BLAST API request
-      const params = new URLSearchParams();
-      params.append('CMD', 'Put');
-      params.append('PROGRAM', req.body.program || 'blastn');
-      params.append('DATABASE', req.body.database || 'nt');
-      params.append('QUERY', sequence);
-      params.append('EXPECT', req.body.evalue || '0.01');
-      params.append('WORD_SIZE', req.body.wordSize || '11');
-      params.append('HITLIST_SIZE', req.body.maxResults || '50');
-      params.append('FILTER', 'L');
-      params.append('FORMAT_TYPE', 'JSON2_S');
-      params.append('EMAIL', NCBI_EMAIL);
-      params.append('TOOL', NCBI_TOOL);
-      
-      console.log(`Submitting BLAST search: ${req.body.program || 'blastn'} against ${req.body.database || 'nt'}`);
-      
-      // Submit to NCBI
-      const response = await axios.post(NCBI_BASE_URL, params, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
-      });
-      
-      // Extract RID (Request ID) and RTOE (estimated time)
-      const ridMatch = response.data.match(/RID = (.*)\n/);
-      const rtoeMatch = response.data.match(/RTOE = (.*)\n/);
-      
-      if (!ridMatch) {
-        console.error('Failed to get RID from NCBI response:', response.data);
-        return res.status(500).json({ error: 'Failed to get request ID from NCBI' });
-      }
-      
-      const rid = ridMatch[1].trim();
-      const rtoe = rtoeMatch ? parseInt(rtoeMatch[1].trim()) : 60;
-      
-      console.log(`BLAST search submitted with RID: ${rid}, estimated time: ${rtoe}s`);
-      
-      res.json({
-        success: true,
-        rid: rid,
-        estimatedTime: rtoe
-      });
-    } catch (error) {
-      console.error('BLAST submission error:', error);
-      res.status(500).json({ 
-        error: 'Failed to submit BLAST search',
-        message: error.message
-      });
+    if (!sequence) {
+      return res.status(400).json({ error: 'No sequence provided' });
     }
-  });
+    
+    // Build NCBI BLAST API request
+    const params = new URLSearchParams();
+    params.append('CMD', 'Put');
+    params.append('PROGRAM', req.body.program || 'blastn');
+    params.append('DATABASE', req.body.database || 'nt');
+    params.append('QUERY', sequence);
+    params.append('EXPECT', req.body.evalue || '0.01');
+    params.append('WORD_SIZE', req.body.wordSize || '11');
+    params.append('HITLIST_SIZE', req.body.maxResults || '50');
+    params.append('FILTER', 'L');
+    params.append('FORMAT_TYPE', 'JSON2_S');
+    params.append('EMAIL', NCBI_EMAIL);
+    params.append('TOOL', NCBI_TOOL);
+    
+    console.log(`Submitting BLAST search: ${req.body.program || 'blastn'} against ${req.body.database || 'nt'}`);
+    
+    // Submit to NCBI with retry logic
+    const response = await axiosRetry(NCBI_BASE_URL, {
+      method: 'POST',
+      data: params.toString(),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+    
+    // Extract RID (Request ID) and RTOE (estimated time)
+    const ridMatch = response.data.match(/RID = (.*)\n/);
+    const rtoeMatch = response.data.match(/RTOE = (.*)\n/);
+    
+    if (!ridMatch) {
+      console.error('Failed to get RID from NCBI response:', response.data);
+      return res.status(500).json({ error: 'Failed to get request ID from NCBI' });
+    }
+    
+    const rid = ridMatch[1].trim();
+    const rtoe = rtoeMatch ? parseInt(rtoeMatch[1].trim()) : 60;
+    
+    console.log(`BLAST search submitted with RID: ${rid}, estimated time: ${rtoe}s`);
+    
+    res.json({
+      success: true,
+      rid: rid,
+      estimatedTime: rtoe
+    });
+  } catch (error) {
+    console.error('BLAST submission error:', error.message);
+    console.error('Error code:', error.code);
+    
+    // Provide a more user-friendly error message based on the error type
+    let errorMessage = 'Failed to submit BLAST search';
+    
+    if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
+      errorMessage = 'Connection to NCBI BLAST servers timed out. Please try again later or check your internet connection.';
+    } else if (error.code === 'ECONNREFUSED') {
+      errorMessage = 'Unable to connect to NCBI BLAST servers. The service might be down or unavailable.';
+    }
+    
+    res.status(503).json({ 
+      error: errorMessage,
+      message: error.message,
+      code: error.code
+    });
+  }
 });
 
 // Check BLAST results
@@ -114,7 +139,10 @@ router.get('/results/:rid', async (req, res) => {
     
     console.log(`Checking status for BLAST search: ${rid}`);
     
-    const response = await axios.get(`${NCBI_BASE_URL}?${params.toString()}`);
+    // Use retry mechanism for checking results
+    const response = await axiosRetry(`${NCBI_BASE_URL}?${params.toString()}`, {
+      method: 'GET'
+    });
     
     // Get the raw response text
     const responseText = response.data;
@@ -139,7 +167,10 @@ router.get('/results/:rid', async (req, res) => {
         resultParams.append('FORMAT_TYPE', 'JSON2_S');
         resultParams.append('RID', rid);
         
-        const resultsResponse = await axios.get(`${NCBI_BASE_URL}?${resultParams.toString()}`);
+        // Use retry mechanism for getting results
+        const resultsResponse = await axiosRetry(`${NCBI_BASE_URL}?${resultParams.toString()}`, {
+          method: 'GET'
+        });
         
         // Check if the response is JSON
         let resultsData;
@@ -176,9 +207,10 @@ router.get('/results/:rid', async (req, res) => {
     });
   } catch (error) {
     console.error('BLAST results error:', error);
-    res.status(500).json({ 
+    res.status(503).json({ 
       error: 'Failed to retrieve BLAST results',
-      message: error.message
+      message: error.message,
+      code: error.code || 'UNKNOWN_ERROR'
     });
   }
 });
@@ -203,6 +235,194 @@ router.get('/formatted-results/:rid', async (req, res) => {
     res.status(500).json({ 
       error: 'Failed to retrieve BLAST formatted results',
       message: error.message
+    });
+  }
+});
+
+// Check BLAST status
+router.get('/status', async (req, res) => {
+  try {
+    const rid = req.query.rid;
+    
+    if (!rid) {
+      return res.status(400).json({ error: 'Missing RID parameter' });
+    }
+    
+    const params = new URLSearchParams();
+    params.append('CMD', 'Get');
+    params.append('FORMAT_OBJECT', 'SearchInfo');
+    params.append('RID', rid);
+    
+    console.log(`Checking status for BLAST search: ${rid}`);
+    
+    // Use retry mechanism for checking results
+    const response = await axiosRetry(`${NCBI_BASE_URL}?${params.toString()}`, {
+      method: 'GET'
+    });
+    
+    // Get the raw response text
+    const responseText = response.data;
+    
+    // Check if search is complete
+    if (responseText.includes('Status=WAITING')) {
+      console.log(`BLAST search still running: ${rid}`);
+      return res.json({ status: 'WAITING' });
+    } else if (responseText.includes('Status=FAILED')) {
+      console.log(`BLAST search failed: ${rid}`);
+      return res.json({ status: 'FAILED', message: 'BLAST search failed' });
+    } else if (responseText.includes('Status=UNKNOWN')) {
+      console.log(`BLAST search not found: ${rid}`);
+      return res.json({ status: 'FAILED', message: 'BLAST search not found' });
+    } else if (responseText.includes('Status=READY')) {
+      console.log(`BLAST search completed: ${rid}`);
+      return res.json({ status: 'READY' });
+    }
+    
+    console.log(`BLAST search unknown status: ${rid}`, responseText);
+    return res.json({ 
+      status: 'UNKNOWN',
+      debug: responseText.substring(0, 500) // Include first 500 chars for debugging
+    });
+  } catch (error) {
+    console.error('BLAST status check error:', error);
+    res.status(503).json({ 
+      error: 'Failed to check BLAST status',
+      message: error.message,
+      code: error.code || 'UNKNOWN_ERROR'
+    });
+  }
+});
+
+// Add a results endpoint that matches the client expectations
+router.get('/results', async (req, res) => {
+  try {
+    const rid = req.query.rid;
+    
+    if (!rid) {
+      return res.status(400).json({ error: 'Missing RID parameter' });
+    }
+    
+    console.log(`Getting results for BLAST search: ${rid}`);
+    
+    // Get actual results
+    const resultParams = new URLSearchParams();
+    resultParams.append('CMD', 'Get');
+    resultParams.append('FORMAT_TYPE', 'JSON2_S');
+    resultParams.append('RID', rid);
+    
+    // Use retry mechanism for getting results
+    const resultsResponse = await axiosRetry(`${NCBI_BASE_URL}?${resultParams.toString()}`, {
+      method: 'GET',
+      timeout: 60000 // 60 second timeout for results
+    });
+    
+    // Process the BLAST response
+    let resultsData;
+    if (typeof resultsResponse.data === 'string') {
+      try {
+        // Try to parse it as JSON
+        resultsData = JSON.parse(resultsResponse.data);
+      } catch (parseError) {
+        console.log('Response is not JSON, returning structured data');
+        
+        // Create a basic structured response
+        const hitCount = (resultsResponse.data.match(/Number of matches: (\d+)/) || [0, 0])[1];
+        
+        return res.json({
+          rid: rid,
+          program: req.query.program || 'blastn',
+          database: req.query.database || 'nt',
+          queryLength: 0,
+          hitCount: parseInt(hitCount) || 0,
+          message: 'Results available but not in JSON format',
+          rawData: resultsResponse.data.substring(0, 1000) // First 1000 chars
+        });
+      }
+    } else {
+      resultsData = resultsResponse.data;
+    }
+    
+    // Extract the important parts from the NCBI BLAST JSON response
+    const blastOutput = resultsData.BlastOutput2 && resultsData.BlastOutput2[0];
+    const report = blastOutput && blastOutput.report;
+    const results = report && report.results;
+    const search = results && results.search;
+    
+    if (!search) {
+      return res.json({
+        rid: rid,
+        program: req.query.program || 'blastn',
+        database: req.query.database || 'nt',
+        queryLength: 0,
+        hitCount: 0,
+        message: 'No search results found in BLAST response'
+      });
+    }
+    
+    // Build a simplified response structure
+    const response = {
+      rid: rid,
+      program: search.program || req.query.program || 'blastn',
+      database: search.database || req.query.database || 'nt',
+      queryLength: search.query_len || 0,
+      hitCount: search.hits ? search.hits.length : 0,
+      hits: [],
+      alignments: [],
+      params: search.params || {}
+    };
+    
+    // Process hits
+    if (search.hits && search.hits.length > 0) {
+      response.hits = search.hits.map(hit => {
+        const description = hit.description && hit.description[0];
+        const hsps = hit.hsps && hit.hsps[0];
+        
+        return {
+          accession: description ? description.accession : 'Unknown',
+          title: description ? description.title : 'Unknown',
+          score: hsps ? hsps.bit_score : 0,
+          evalue: hsps ? hsps.evalue : 0,
+          identity: hsps ? `${hsps.identity}/${hsps.align_len} (${Math.round(hsps.identity/hsps.align_len*100)}%)` : 'N/A',
+          queryCoverage: hsps ? `${Math.round((hsps.query_to - hsps.query_from + 1) / search.query_len * 100)}%` : 'N/A',
+        };
+      });
+      
+      // Process alignments (first 10 for simplicity)
+      const maxAlignments = Math.min(10, search.hits.length);
+      for (let i = 0; i < maxAlignments; i++) {
+        const hit = search.hits[i];
+        const description = hit.description && hit.description[0];
+        
+        if (hit.hsps && hit.hsps.length > 0) {
+          hit.hsps.forEach(hsp => {
+            response.alignments.push({
+              title: description ? description.title : `Alignment ${i+1}`,
+              qseq: hsp.qseq,
+              hseq: hsp.hseq,
+              midline: hsp.midline,
+              qstart: hsp.query_from,
+              qend: hsp.query_to,
+              hstart: hsp.hit_from,
+              hend: hsp.hit_to,
+              evalue: hsp.evalue,
+              bitScore: hsp.bit_score,
+              alignLen: hsp.align_len,
+              identity: hsp.identity,
+              positive: hsp.positive,
+              gaps: hsp.gaps
+            });
+          });
+        }
+      }
+    }
+    
+    return res.json(response);
+  } catch (error) {
+    console.error('BLAST results retrieval error:', error);
+    res.status(503).json({ 
+      error: 'Failed to retrieve BLAST results',
+      message: error.message,
+      code: error.code || 'UNKNOWN_ERROR'
     });
   }
 });
