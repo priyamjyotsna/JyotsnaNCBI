@@ -31,6 +31,7 @@ app.use('/sequence-comparison', require('./routes/sequence-comparison'));
 app.use('/dna-analysis', require('./routes/dna-analysis'));
 app.use('/sequence-indexer', sequenceIndexerRouter);
 app.use('/sequence-fetch', sequenceFetchRouter);
+app.use('/blast-wrapper', require('./routes/blast-wrapper'));
 
 // Root route
 app.get('/', (req, res) => {
