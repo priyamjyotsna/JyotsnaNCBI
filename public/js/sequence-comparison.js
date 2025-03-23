@@ -1,4 +1,15 @@
+/**
+ * Sequence Comparison Tool - Client-side JavaScript
+ * Handles file uploads, NCBI sequence fetching, visualization, and export
+ */
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Set global Chart.js defaults for fonts
+    if (typeof Chart !== 'undefined') {
+        Chart.defaults.font.family = "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif";
+        Chart.defaults.color = '#333333';
+    }
+    
     // DOM Elements
     const LARGE_SEQUENCE_THRESHOLD = 50000;
     const allMutations = document.getElementById('allMutations');
@@ -1093,13 +1104,46 @@ function processSequenceData(data, type) {
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: 'Number of Mutations'
+                                text: 'Number of Mutations',
+                                font: {
+                                    family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+                                }
+                            },
+                            ticks: {
+                                font: {
+                                    family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+                                }
                             }
                         },
                         x: {
                             title: {
                                 display: true,
-                                text: 'Sequence Position'
+                                text: 'Sequence Position',
+                                font: {
+                                    family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+                                }
+                            },
+                            ticks: {
+                                font: {
+                                    family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                font: {
+                                    family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+                                }
+                            }
+                        },
+                        tooltip: {
+                            titleFont: {
+                                family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+                            },
+                            bodyFont: {
+                                family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
                             }
                         }
                     }
