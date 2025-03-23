@@ -128,13 +128,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Prepare form data
         const formData = new FormData();
-        if (sequence) {
-            formData.append('sequence', sequence);
-        }
+        
+        // Handle file or text input, but not both to avoid confusion
         if (file) {
             formData.append('fastaFile', file);
+            console.log('Uploading file:', file.name, file.size, 'bytes');
+        } else if (sequence) {
+            formData.append('sequence', sequence);
+            console.log('Using text sequence input, length:', sequence.length);
         }
         
+        // Add other parameters
         formData.append('program', programSelect.value);
         formData.append('database', databaseSelect.value);
         formData.append('evalue', evalueInput.value);
@@ -145,10 +149,11 @@ document.addEventListener('DOMContentLoaded', function() {
         showStatusContainer('Submitting job to NCBI BLAST...');
         
         try {
-            // Submit the search
+            // Submit the search with proper Content-Type (browser will set it automatically for FormData)
             const response = await fetch('/blast-wrapper/submit', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                // Do NOT set Content-Type header manually here - let the browser handle it for multipart/form-data
             });
             
             // Check if response is OK before parsing JSON
@@ -181,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     database: databaseSelect.value,
                     sequence: sequence ? 
                         (sequence.length > 100 ? sequence.substring(0, 100) + '...' : sequence) : 
-                        'Uploaded file',
+                        `Uploaded file: ${file.name}`,
                     timestamp: new Date().toISOString()
                 });
                 

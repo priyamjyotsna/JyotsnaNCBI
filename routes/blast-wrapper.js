@@ -3,13 +3,16 @@ const router = express.Router();
 const axios = require('axios');
 const multer = require('multer');
 
-// Configure multer with limits and proper error handling
-const upload = multer({ 
-  storage: multer.memoryStorage(),
+// Configure multer with better error handling for file uploads
+const storage = multer.memoryStorage();
+const uploadMiddleware = multer({
+  storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+    files: 1,
+    parts: 10 // Limit the number of parts in multipart data
   }
-}).single('fastaFile');
+});
 
 // NCBI API settings
 const NCBI_BASE_URL = 'https://blast.ncbi.nlm.nih.gov/Blast.cgi';
@@ -21,10 +24,10 @@ router.get('/', (req, res) => {
   res.render('blast-wrapper');
 });
 
-// Submit BLAST search
-router.post('/submit', (req, res) => {
-  // Handle file upload with proper error handling
-  upload(req, res, async function(err) {
+// Submit BLAST search - use a separate route for file uploads
+router.post('/submit', function(req, res) {
+  // Use multer as middleware only when needed
+  uploadMiddleware.single('fastaFile')(req, res, async function(err) {
     if (err) {
       console.error('File upload error:', err);
       return res.status(400).json({ 
@@ -34,10 +37,13 @@ router.post('/submit', (req, res) => {
     }
     
     try {
+      console.log('Processing BLAST submission. File?', !!req.file, 'Body?', !!req.body);
+      
       // Get sequence either from text input or uploaded file
-      let sequence = req.body.sequence;
-      if (req.file) {
-        sequence = req.file.buffer.toString();
+      let sequence = req.body && req.body.sequence ? req.body.sequence.trim() : '';
+      if (req.file && req.file.buffer) {
+        sequence = req.file.buffer.toString('utf8').trim();
+        console.log(`Processed uploaded file, size: ${req.file.size} bytes`);
       }
       
       if (!sequence) {
@@ -58,7 +64,7 @@ router.post('/submit', (req, res) => {
       params.append('EMAIL', NCBI_EMAIL);
       params.append('TOOL', NCBI_TOOL);
       
-      console.log(`Submitting BLAST search: ${req.body.program} against ${req.body.database}`);
+      console.log(`Submitting BLAST search: ${req.body.program || 'blastn'} against ${req.body.database || 'nt'}`);
       
       // Submit to NCBI
       const response = await axios.post(NCBI_BASE_URL, params, {
