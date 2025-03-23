@@ -112,21 +112,29 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Get sequence from input or file
         let sequence = sequenceInput.value.trim();
+        const file = fileUpload.files[0];
         
-        if (!sequence) {
+        // Check if either sequence or file is provided
+        if (!sequence && !file) {
             showAlert('Please enter a sequence or upload a FASTA file', 'danger');
             return;
         }
         
-        // Validate sequence format
-        if (!isValidSequence(sequence)) {
+        // Validate sequence if provided directly
+        if (sequence && !isValidSequence(sequence)) {
             showAlert('Invalid sequence format. Please enter a valid FASTA format or raw sequence.', 'danger');
             return;
         }
         
         // Prepare form data
         const formData = new FormData();
-        formData.append('sequence', sequence);
+        if (sequence) {
+            formData.append('sequence', sequence);
+        }
+        if (file) {
+            formData.append('fastaFile', file);
+        }
+        
         formData.append('program', programSelect.value);
         formData.append('database', databaseSelect.value);
         formData.append('evalue', evalueInput.value);
@@ -143,11 +151,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: formData
             });
             
-            const data = await response.json();
-            
+            // Check if response is OK before parsing JSON
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to submit BLAST search');
+                const errorText = await response.text();
+                console.error('Server response error:', errorText);
+                
+                try {
+                    // Try to parse as JSON if possible
+                    const errorJson = JSON.parse(errorText);
+                    throw new Error(errorJson.error || errorJson.message || 'Server error');
+                } catch (jsonError) {
+                    // If not JSON or parsing fails, use status text
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
             }
+            
+            // Parse JSON response
+            const data = await response.json();
             
             if (data.success && data.rid) {
                 // Store the RID and start polling for results
@@ -159,19 +179,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     rid: data.rid,
                     program: programSelect.value,
                     database: databaseSelect.value,
-                    sequence: sequence.length > 100 ? 
-                        (sequence.substring(0, 100) + '...') : sequence,
+                    sequence: sequence ? 
+                        (sequence.length > 100 ? sequence.substring(0, 100) + '...' : sequence) : 
+                        'Uploaded file',
                     timestamp: new Date().toISOString()
                 });
                 
                 // Update NCBI link
                 updateNCBILink(currentRid);
             } else {
-                throw new Error('Invalid response from server');
+                throw new Error(data.error || 'Invalid response from server');
             }
         } catch (error) {
             console.error('Error submitting BLAST search:', error);
-            showAlert(error.message, 'danger');
+            showAlert(`Failed to submit BLAST search: ${error.message}`, 'danger');
             hideStatusContainer();
         }
     }
@@ -199,11 +220,23 @@ document.addEventListener('DOMContentLoaded', function() {
     async function checkResults(rid, totalTime) {
         try {
             const response = await fetch(`/blast-wrapper/results/${rid}`);
-            const data = await response.json();
             
+            // Check if response is OK before parsing JSON
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to retrieve BLAST results');
+                const errorText = await response.text();
+                console.error('Server response error:', errorText);
+                
+                try {
+                    // Try to parse as JSON if possible
+                    const errorJson = JSON.parse(errorText);
+                    throw new Error(errorJson.error || errorJson.message || 'Server error');
+                } catch (jsonError) {
+                    // If not JSON or parsing fails, use status text
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
             }
+            
+            const data = await response.json();
             
             const elapsedTime = Date.now() - startTime;
             const progressPercent = Math.min(100, Math.round((elapsedTime / totalTime) * 100));
@@ -234,9 +267,14 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (data.status === 'not_found') {
                 // RID not found
                 throw new Error('BLAST search not found. It may have expired or been cancelled.');
+            } else if (data.status === 'error') {
+                // API error
+                throw new Error(data.error || data.message || 'Error retrieving BLAST results');
             } else {
                 // Unknown status
-                throw new Error('Unknown status from BLAST server. Please try again.');
+                console.warn('Unknown status from BLAST server:', data);
+                statusMessage.textContent = 'Waiting for BLAST server response...';
+                pollingTimer = setTimeout(() => checkResults(rid, totalTime), POLLING_INTERVAL);
             }
         } catch (error) {
             console.error('Error checking BLAST results:', error);
@@ -268,174 +306,220 @@ document.addEventListener('DOMContentLoaded', function() {
      * Display BLAST results
      */
     function displayResults(results) {
-        if (!results) {
-            showAlert('No results to display', 'warning');
+        console.log('Displaying BLAST results:', results);
+        
+        // Clear previous results
+        hitsContainer.innerHTML = '';
+        graphicalOverview.innerHTML = '';
+        sequences = [];
+        
+        // Check if we have raw data (string) or parsed JSON
+        if (results.rawData) {
+            // Handle raw text data from NCBI
+            console.log('Received raw data format from NCBI');
+            
+            const rawData = results.rawData;
+            
+            // Try to extract basic information
+            hitsContainer.innerHTML = `
+                <div class="alert alert-info">
+                    <h5>BLAST Results Available</h5>
+                    <p>The results are available in text format. You can view them on NCBI using the link below.</p>
+                    <p><a href="https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Get&RID=${currentRid}" 
+                        target="_blank" class="btn btn-primary">
+                        <i class="fas fa-external-link-alt"></i> View Results on NCBI
+                    </a></p>
+                </div>
+                <div class="card">
+                    <div class="card-header">Raw Response</div>
+                    <div class="card-body">
+                        <pre class="raw-response">${escapeHtml(rawData.substring(0, 5000))}${rawData.length > 5000 ? '...' : ''}</pre>
+                    </div>
+                </div>
+            `;
             return;
         }
         
-        try {
-            // Parse the JSON results if they're in string format
-            if (typeof results === 'string') {
-                if (results.startsWith('{')) {
-                    results = JSON.parse(results);
-                } else {
-                    // Handle text format results
-                    displayTextResults(results);
+        // Check for BlastOutput2 format
+        if (results.BlastOutput2) {
+            try {
+                const report = results.BlastOutput2[0].report;
+                const program = report.program || 'blastn';
+                const queryDef = report.results.search.query_title || 'Query';
+                const queryLen = report.results.search.query_len || 0;
+                const hits = report.results.search.hits || [];
+                
+                // Display summary
+                const summaryHTML = `
+                    <div class="alert alert-success mb-4">
+                        <h5>BLAST Search Completed</h5>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">Query:</dt>
+                            <dd class="col-sm-9">${escapeHtml(queryDef)}</dd>
+                            <dt class="col-sm-3">Length:</dt>
+                            <dd class="col-sm-9">${queryLen} bp</dd>
+                            <dt class="col-sm-3">Hits:</dt>
+                            <dd class="col-sm-9">${hits.length}</dd>
+                        </dl>
+                    </div>
+                `;
+                
+                hitsContainer.innerHTML = summaryHTML;
+                
+                // No hits?
+                if (hits.length === 0) {
+                    hitsContainer.innerHTML += `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> No significant matches found.
+                        </div>
+                    `;
                     return;
                 }
-            }
-            
-            // Clear previous results
-            hitsContainer.innerHTML = '';
-            graphicalOverview.innerHTML = '';
-            msaViewerContainer.innerHTML = '';
-            
-            // Initialize an array to store sequences for MSA
-            sequences = [];
-            
-            // Add query sequence to the array
-            if (sequenceInput.value) {
-                const querySeq = extractSequenceFromFasta(sequenceInput.value);
-                if (querySeq) {
-                    sequences.push({
-                        id: 'Query',
-                        seq: querySeq
-                    });
-                }
-            }
-            
-            // If results are in HTML format, handle differently
-            if (results.includes && results.includes('<html>')) {
-                displayHtmlResults(results);
-                return;
-            }
-            
-            // Display summary information
-            const summaryEl = document.createElement('div');
-            summaryEl.className = 'alert alert-success';
-            summaryEl.innerHTML = `<strong>BLAST search complete!</strong> Program: ${programSelect.value}, Database: ${databaseSelect.value}`;
-            hitsContainer.appendChild(summaryEl);
-            
-            // Process and display hits
-            if (results.BlastOutput2 && results.BlastOutput2[0] && 
-                results.BlastOutput2[0].report && 
-                results.BlastOutput2[0].report.results && 
-                results.BlastOutput2[0].report.results.search && 
-                results.BlastOutput2[0].report.results.search.hits) {
                 
-                const hits = results.BlastOutput2[0].report.results.search.hits;
+                // Add query sequence for MSA
+                sequences.push({
+                    id: 'query',
+                    name: 'Query',
+                    seq: report.results.search.query_seq || ''
+                });
                 
-                if (hits.length === 0) {
-                    const noHitsEl = document.createElement('div');
-                    noHitsEl.className = 'alert alert-warning';
-                    noHitsEl.textContent = 'No significant matches found. Try adjusting your search parameters.';
-                    hitsContainer.appendChild(noHitsEl);
-                } else {
-                    hits.forEach((hit, index) => {
-                        displayHit(hit, index);
-                    });
+                // Process each hit
+                hits.forEach((hit, index) => {
+                    const hitHTML = displayHit(hit, index);
+                    hitsContainer.innerHTML += hitHTML;
                     
-                    // Initialize MSA viewer
-                    if (sequences.length > 1) {
-                        initMSAViewer(sequences);
-                    } else {
-                        const noMsaEl = document.createElement('div');
-                        noMsaEl.className = 'alert alert-info';
-                        noMsaEl.textContent = 'Multiple sequence alignment requires at least 2 sequences.';
-                        msaViewerContainer.appendChild(noMsaEl);
+                    // Add hit sequence for MSA if available
+                    const hsps = hit.hsps || [];
+                    if (hsps.length > 0) {
+                        sequences.push({
+                            id: `hit_${index}`,
+                            name: hit.description[0].accession || `Hit ${index + 1}`,
+                            seq: hsps[0].hit_seq || ''
+                        });
                     }
+                });
+                
+                // Initialize MSA viewer if we have sequences
+                if (sequences.length > 1) {
+                    initMSAViewer(sequences);
+                } else {
+                    document.getElementById('msa-tab').classList.add('disabled');
                 }
-            } else {
-                const errorEl = document.createElement('div');
-                errorEl.className = 'alert alert-danger';
-                errorEl.textContent = 'Invalid or unexpected result format from BLAST server.';
-                hitsContainer.appendChild(errorEl);
-                console.error('Invalid results format:', results);
+                
+                return;
+            } catch (error) {
+                console.error('Error parsing BlastOutput2 format:', error);
+                // Fall through to generic display
             }
-        } catch (error) {
-            console.error('Error displaying results:', error);
-            showAlert('Error displaying results: ' + error.message, 'danger');
         }
+        
+        // Generic display for unknown format
+        hitsContainer.innerHTML = `
+            <div class="alert alert-warning">
+                <h5>Results Available</h5>
+                <p>The results format is not fully supported for detailed visualization. 
+                   You can view them on NCBI using the link below.</p>
+                <p><a href="https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Get&RID=${currentRid}" 
+                    target="_blank" class="btn btn-primary">
+                    <i class="fas fa-external-link-alt"></i> View Results on NCBI
+                </a></p>
+            </div>
+            <div class="card">
+                <div class="card-header">Response Data</div>
+                <div class="card-body">
+                    <pre>${escapeHtml(JSON.stringify(results, null, 2))}</pre>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Escape HTML special characters
+     */
+    function escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
     
     /**
      * Display a single BLAST hit
      */
     function displayHit(hit, index) {
-        const hitDiv = document.createElement('div');
-        hitDiv.className = 'blast-hit';
+        // Extract hit information
+        const description = hit.description && hit.description.length > 0 ? hit.description[0] : {};
+        const title = description.title || 'Unknown';
+        const accession = description.accession || '';
+        const hsps = hit.hsps || [];
         
-        // Get the description and score from the hit
-        const description = hit.description[0].title || 'Unknown sequence';
-        const accession = hit.description[0].accession || '';
-        const hsps = hit.hsps[0];
-        const score = hsps.bit_score || 0;
-        const evalue = hsps.evalue || 0;
-        const identity = hsps.identity || 0;
-        const querySeq = hsps.qseq || '';
-        const hitSeq = hsps.hseq || '';
-        const alignLength = hsps.align_len || 0;
-        
-        // Calculate percent identity
-        const percentIdentity = alignLength > 0 ? Math.round((identity / alignLength) * 100) : 0;
-        
-        // Create hit header
-        const hitHeader = document.createElement('div');
-        hitHeader.className = 'hit-header';
-        hitHeader.innerHTML = `
-            <div>
-                <strong>${index + 1}. ${description}</strong>
-                <small class="d-block text-muted">Accession: ${accession}</small>
-            </div>
-            <div>
-                <span class="badge bg-primary">${score.toFixed(1)} bits</span>
-                <span class="badge bg-secondary">E: ${evalue.toExponential(2)}</span>
-            </div>
-        `;
-        
-        // Create hit details
-        const hitDetails = document.createElement('div');
-        hitDetails.className = 'hit-details';
-        hitDetails.innerHTML = `
-            <div><strong>Identity:</strong> ${percentIdentity}% (${identity}/${alignLength})</div>
-            <div><strong>Score:</strong> ${score.toFixed(1)} bits</div>
-            <div><strong>E-value:</strong> ${evalue.toExponential(2)}</div>
-            <div><strong>Length:</strong> ${alignLength}</div>
-        `;
-        
-        // Create alignment view
-        const alignmentView = document.createElement('div');
-        alignmentView.className = 'alignment-view';
-        
-        // Format the alignment display
-        let midline = '';
-        for (let i = 0; i < querySeq.length; i++) {
-            if (querySeq[i] === hitSeq[i]) {
-                midline += '|';
-            } else if (querySeq[i] === ' ' || hitSeq[i] === ' ') {
-                midline += ' ';
-            } else {
-                midline += '.';
-            }
+        if (hsps.length === 0) {
+            return ''; // No HSPs to display
         }
         
-        alignmentView.textContent = `Query: ${querySeq}\n       ${midline}\nSbjct: ${hitSeq}`;
+        // Get the best HSP (first one)
+        const hsp = hsps[0];
+        const evalue = hsp.evalue || 0;
+        const identity = hsp.identity || 0;
+        const alignLen = hsp.align_len || 0;
+        const queryFrom = hsp.query_from || 0;
+        const queryTo = hsp.query_to || 0;
+        const hitFrom = hsp.hit_from || 0;
+        const hitTo = hsp.hit_to || 0;
+        const positives = hsp.positives || 0;
+        const gaps = hsp.gaps || 0;
+        const score = hsp.bit_score || 0;
         
-        // Add elements to hit div
-        hitDiv.appendChild(hitHeader);
-        hitDiv.appendChild(hitDetails);
-        hitDiv.appendChild(alignmentView);
+        // Calculate identity percentage
+        const identityPercent = alignLen > 0 ? ((identity / alignLen) * 100).toFixed(1) : 0;
         
-        // Add to hits container
-        hitsContainer.appendChild(hitDiv);
-        
-        // Add sequence to array for MSA
-        if (hitSeq) {
-            sequences.push({
-                id: `Hit ${index + 1} (${accession})`,
-                seq: hitSeq.replace(/-/g, '')
-            });
+        // Determine class based on identity percentage
+        let hitClass = 'secondary';
+        if (identityPercent >= 90) {
+            hitClass = 'success';
+        } else if (identityPercent >= 70) {
+            hitClass = 'primary';
+        } else if (identityPercent >= 50) {
+            hitClass = 'info';
+        } else if (identityPercent >= 30) {
+            hitClass = 'warning';
         }
+        
+        // Format the alignment
+        let alignmentHTML = '';
+        if (hsp.qseq && hsp.hseq && hsp.midline) {
+            alignmentHTML = `
+                <div class="alignment-view">
+                    <div>Query ${queryFrom} ${hsp.qseq} ${queryTo}</div>
+                    <div>${hsp.midline}</div>
+                    <div>Sbjct ${hitFrom} ${hsp.hseq} ${hitTo}</div>
+                </div>
+            `;
+        }
+        
+        // Build the hit HTML
+        return `
+            <div class="blast-hit" id="hit-${index}">
+                <div class="hit-header bg-${hitClass} text-white">
+                    <div>
+                        <strong>${index + 1}.</strong> ${title}
+                    </div>
+                    <div>
+                        Score: ${score} bits
+                    </div>
+                </div>
+                <div class="hit-details">
+                    <div>Accession: <a href="https://www.ncbi.nlm.nih.gov/protein/${accession}" target="_blank">${accession}</a></div>
+                    <div>E-value: ${evalue}</div>
+                    <div>Identity: ${identity}/${alignLen} (${identityPercent}%)</div>
+                    <div>Positives: ${positives}/${alignLen} (${alignLen > 0 ? ((positives / alignLen) * 100).toFixed(1) : 0}%)</div>
+                    <div>Gaps: ${gaps}/${alignLen} (${alignLen > 0 ? ((gaps / alignLen) * 100).toFixed(1) : 0}%)</div>
+                </div>
+                ${alignmentHTML}
+            </div>
+        `;
     }
     
     /**
@@ -493,46 +577,6 @@ document.addEventListener('DOMContentLoaded', function() {
             errorEl.textContent = 'Error initializing MSA Viewer: ' + error.message;
             msaViewerContainer.appendChild(errorEl);
         }
-    }
-    
-    /**
-     * Display HTML results
-     */
-    function displayHtmlResults(html) {
-        // Create an iframe to display the HTML
-        const iframe = document.createElement('iframe');
-        iframe.style.width = '100%';
-        iframe.style.height = '600px';
-        iframe.style.border = 'none';
-        
-        // Append the iframe
-        hitsContainer.innerHTML = '';
-        hitsContainer.appendChild(iframe);
-        
-        // Set the HTML content
-        const doc = iframe.contentWindow.document;
-        doc.open();
-        doc.write(html);
-        doc.close();
-    }
-    
-    /**
-     * Display text results
-     */
-    function displayTextResults(text) {
-        // Create a pre element for the text
-        const pre = document.createElement('pre');
-        pre.className = 'text-results';
-        pre.style.maxHeight = '600px';
-        pre.style.overflow = 'auto';
-        pre.style.whiteSpace = 'pre-wrap';
-        pre.style.fontFamily = 'monospace';
-        pre.style.fontSize = '0.8rem';
-        pre.textContent = text;
-        
-        // Append the pre
-        hitsContainer.innerHTML = '';
-        hitsContainer.appendChild(pre);
     }
     
     /**
