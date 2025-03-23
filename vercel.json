@@ -2,30 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "app.js",
+      "src": "vercel.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/styles/(.*)",
-      "dest": "/public/styles/$1"
-    },
-    {
-      "src": "/js/(.*)",
-      "dest": "/public/js/$1"
-    },
-    {
-      "src": "/images/(.*)",
-      "dest": "/public/images/$1"
-    },
-    {
-      "src": "/fonts/(.*)",
-      "dest": "/public/fonts/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/app.js"
+      "dest": "/vercel.js"
     }
   ]
 } 
