@@ -235,7 +235,7 @@ class NucleotideDownloader {
                         
                         // Update preview with selected length
                         const previewLen = parseInt(this.previewLength.value);
-                        row.insertCell(1).textContent = sequence.substring(0, previewLen) + '...';
+                        row.insertCell(1).textContent = sequence.sequence.substring(0, previewLen) + '...';
                     } catch (error) {
                         console.error(`Error with ${accessionId}:`, error);
                         sequences.push({ accessionId, sequence: 'ERROR: ' + error.message });
@@ -322,41 +322,60 @@ class NucleotideDownloader {
     // Fetch a sequence from NCBI
     async fetchSequence(accessionId) {
         try {
-            this.updateStatus(`Fetching ${accessionId}...`, 'loading');
-            
-            // Add timeout and retry logic
+            // Use a helper function with retry capability
             const fetchWithRetry = async (url, retries = 3, delay = 1000) => {
-                for (let i = 0; i < retries; i++) {
+                let lastError;
+                
+                for (let attempt = 1; attempt <= retries; attempt++) {
                     try {
-                        const response = await fetch(url, { 
-                            signal: AbortSignal.timeout(30000) // 10 second timeout
-                        });
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+                        
+                        const response = await fetch(url, { signal: controller.signal });
+                        clearTimeout(timeoutId);
                         
                         if (!response.ok) {
-                            const errorData = await response.json().catch(() => ({ error: `HTTP error! status: ${response.status}` }));
-                            throw new Error(errorData.error || `Failed to fetch ${accessionId}`);
+                            throw new Error(`Server responded with status: ${response.status}`);
                         }
                         
-                        return response;
+                        return await response.json();
                     } catch (error) {
-                        if (i === retries - 1) throw error;
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        delay *= 1.5; // Exponential backoff
+                        lastError = error;
+                        
+                        // Don't log timeout errors with full stack traces
+                        const isTimeout = error.name === 'AbortError' || error.message.includes('timeout');
+                        if (isTimeout) {
+                            console.log(`Timeout fetching ${accessionId} (attempt ${attempt}/${retries})`);
+                        } else {
+                            console.log(`Error fetching ${accessionId} (attempt ${attempt}/${retries}): ${error.message}`);
+                        }
+                        
+                        if (attempt < retries) {
+                            await new Promise(resolve => setTimeout(resolve, delay * attempt));
+                        } else {
+                            throw error;
+                        }
                     }
                 }
             };
             
-            const response = await fetchWithRetry(`/api/nucleotide/sequence?id=${accessionId}`);
-            const data = await response.json();
+            // Use the server-side endpoint to fetch sequences
+            const data = await fetchWithRetry(`/api/nucleotide/sequence?id=${accessionId}`);
             
-            if (!data.success || !data.data || !data.data.sequence) {
-                throw new Error(`No sequence data returned for ${accessionId}`);
+            if (!data.success || !data.data?.sequence) {
+                throw new Error(data.error || 'No sequence data returned');
             }
             
-            return data.data.sequence;
+            return {
+                accessionId,
+                sequence: data.data.sequence,
+                header: data.data.header || `>${accessionId}`
+            };
         } catch (error) {
-            console.error(`Error fetching ${accessionId}:`, error);
-            throw error;
+            // Use a simplified error message for display
+            const errorMessage = error.name === 'AbortError' ? 'Request timed out' : 'Failed to fetch sequence';
+            console.log(`Error fetching ${accessionId}: ${errorMessage}`);
+            throw new Error(errorMessage);
         }
     }
 

@@ -42,6 +42,11 @@ app.get('/nucleotide-download', (req, res) => {
     res.render('nucleotide-download');
 });
 
+// Variant analysis route
+app.get('/variant-analysis', (req, res) => {
+    res.render('variant-analysis');
+});
+
 // API route for nucleotide sequence download
 app.get('/api/nucleotide/sequence', async (req, res) => {
     try {
@@ -88,6 +93,11 @@ app.get('/api/nucleotide/sequence', async (req, res) => {
         console.error(`Failed to fetch ${req.query.id}:`, error.message);
         res.status(500).json({ error: 'Failed to fetch sequence. Please try again.' });
     }
+});
+
+// Design primers route
+app.get('/design-primers', (req, res) => {
+    res.render('design-primers');
 });
 
 // Error handling middleware

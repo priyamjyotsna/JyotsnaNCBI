@@ -149,7 +149,10 @@ router.get('/nucleotide/sequence', async (req, res) => {
     try {
         const { id } = req.query;
         if (!id) {
-            return res.status(400).json({ error: 'Accession ID is required' });
+            return res.status(400).json({ 
+                success: false,
+                error: 'Accession ID is required' 
+            });
         }
 
         const response = await retryRequest(async () => {
@@ -178,10 +181,12 @@ router.get('/nucleotide/sequence', async (req, res) => {
         
         throw new Error('Empty response from NCBI');
     } catch (error) {
-        console.error('Error fetching sequence:', error);
+        // Log minimal error details without exposing sensitive information
+        console.error(`Error fetching sequence ${req.query.id}: ${error.message}`);
+        
         res.status(500).json({ 
-            error: 'Failed to fetch sequence',
-            details: error.message 
+            success: false,
+            error: 'Failed to fetch sequence data from NCBI'
         });
     }
 });
