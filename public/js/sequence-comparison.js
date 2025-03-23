@@ -6,8 +6,20 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Set global Chart.js defaults for fonts
     if (typeof Chart !== 'undefined') {
-        Chart.defaults.font.family = "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif";
-        Chart.defaults.color = '#333333';
+        // Use only web-safe fonts that are guaranteed to be available
+        Chart.defaults.font.family = 'Arial, Helvetica, sans-serif';
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#333';
+        
+        // Add a global plugin to enhance text rendering
+        Chart.register({
+            id: 'improvedFonts',
+            beforeDraw: function(chart) {
+                const ctx = chart.ctx;
+                ctx.textBaseline = 'middle';
+                ctx.textAlign = 'center';
+            }
+        });
     }
     
     // DOM Elements
@@ -1057,116 +1069,180 @@ function processSequenceData(data, type) {
     
     function createMutationChart() {
         try {
-        const canvas = document.getElementById('mutationChart');
-        if (!canvas) {
-                throw new Error('Mutation chart canvas element not found');
+            // Get the chart container
+            const chartContainer = document.querySelector('.chart-container');
+            if (!chartContainer) {
+                throw new Error('Chart container not found');
             }
-
-            // Get the data ready
-                const stats = comparisonResults.distributionStats;
+            
+            // Clear previous chart
+            chartContainer.innerHTML = '<h4>Mutation Distribution</h4>';
+            
+            // Create new canvas
+            const canvas = document.createElement('canvas');
+            canvas.id = 'mutationChart';
+            canvas.style.width = '100%';
+            canvas.style.height = '300px';
+            chartContainer.appendChild(canvas);
+            
+            // Set canvas dimensions properly for high-DPI displays
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            
+            // Get context and scale for high-DPI
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            
+            // Prepare data
+            const stats = comparisonResults.distributionStats;
             const labels = [];
             const data = [];
             
+            // Set up dimensions and spacing
+            const chartWidth = rect.width;
+            const chartHeight = rect.height;
+            const margin = { top: 40, right: 20, bottom: 60, left: 60 };
+            const graphWidth = chartWidth - margin.left - margin.right;
+            const graphHeight = chartHeight - margin.top - margin.bottom;
+            
+            // Extract data from stats or compute from mutations
             if (stats && stats.distribution && Array.isArray(stats.distribution)) {
-                const binSize = stats.binSize || Math.floor(comparisonResults.metadata.referenceLength / 20);
+                const binSize = stats.binSize || Math.floor(comparisonResults.metadata.referenceLength / 10);
                 
                 stats.distribution.forEach((value, i) => {
                     const start = i * binSize + 1;
                     const end = Math.min((i + 1) * binSize, comparisonResults.metadata.referenceLength);
-                    labels.push(`${start}-${end}`);
+                    // Simplify labels to avoid rendering issues
+                    labels.push(i + 1);
                     data.push(value);
                 });
             } else {
-                // Fallback to using mutations directly
-                const binSize = Math.floor(comparisonResults.metadata.referenceLength / 20);
+                // Fallback to computing from mutations directly
+                const binSize = Math.floor(comparisonResults.metadata.referenceLength / 10);
                 const bins = new Array(Math.ceil(comparisonResults.metadata.referenceLength / binSize)).fill(0);
                 
-                    comparisonResults.mutations.forEach(mutation => {
-                            const binIndex = Math.floor((mutation.position - 1) / binSize);
+                comparisonResults.mutations.forEach(mutation => {
+                    const binIndex = Math.floor((mutation.position - 1) / binSize);
                     if (binIndex >= 0 && binIndex < bins.length) {
                         bins[binIndex]++;
-                        }
-                    });
+                    }
+                });
                 
                 bins.forEach((value, i) => {
-                    const start = i * binSize + 1;
-                    const end = Math.min((i + 1) * binSize, comparisonResults.metadata.referenceLength);
-                    labels.push(`${start}-${end}`);
+                    labels.push(i + 1);
                     data.push(value);
                 });
             }
-
-            // Destroy existing chart if it exists
-            if (window.mutationChart instanceof Chart) {
-                window.mutationChart.destroy();
+            
+            // Find maximum data value for scaling
+            const maxValue = Math.max(...data, 1); // Avoid division by zero
+            
+            // Draw chart background
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, chartWidth, chartHeight);
+            
+            // Draw axes
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(margin.left, margin.top);
+            ctx.lineTo(margin.left, chartHeight - margin.bottom);
+            ctx.lineTo(chartWidth - margin.right, chartHeight - margin.bottom);
+            ctx.stroke();
+            
+            // Draw y-axis title
+            ctx.save();
+            ctx.font = '14px Arial, sans-serif';
+            ctx.fillStyle = '#333';
+            ctx.translate(12, margin.top + graphHeight / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.textAlign = 'center';
+            ctx.fillText('Number of Mutations', 0, 0);
+            ctx.restore();
+            
+            // Draw x-axis title
+            ctx.font = '14px Arial, sans-serif';
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'center';
+            ctx.fillText('Sequence Position (regions)', margin.left + graphWidth / 2, chartHeight - 10);
+            
+            // Draw y-axis ticks and labels
+            const yTickCount = 5;
+            ctx.textAlign = 'right';
+            ctx.font = '12px Arial, sans-serif';
+            
+            for (let i = 0; i <= yTickCount; i++) {
+                const value = (maxValue / yTickCount) * i;
+                const y = chartHeight - margin.bottom - (i / yTickCount) * graphHeight;
+                
+                // Draw tick line
+                ctx.beginPath();
+                ctx.moveTo(margin.left - 5, y);
+                ctx.lineTo(margin.left, y);
+                ctx.stroke();
+                
+                // Draw label
+                ctx.fillText(Math.round(value), margin.left - 8, y);
+                
+                // Draw grid line
+                ctx.strokeStyle = '#eee';
+                ctx.beginPath();
+                ctx.moveTo(margin.left, y);
+                ctx.lineTo(chartWidth - margin.right, y);
+                ctx.stroke();
+                ctx.strokeStyle = '#333';
             }
             
-            // Create new chart
-            window.mutationChart = new Chart(canvas.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Mutations',
-                        data: data,
-                        backgroundColor: 'rgba(66, 133, 244, 0.7)',
-                        borderColor: 'rgba(66, 133, 244, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Number of Mutations',
-                                font: {
-                                    family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
-                                }
-                            },
-                            ticks: {
-                                font: {
-                                    family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
-                                }
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Sequence Position',
-                                font: {
-                                    family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
-                                }
-                            },
-                            ticks: {
-                                font: {
-                                    family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                font: {
-                                    family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
-                                }
-                            }
-                        },
-                        tooltip: {
-                            titleFont: {
-                                family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
-                            },
-                            bodyFont: {
-                                family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
-                            }
-                        }
-                    }
-                }
-            });
+            // Draw bars and x-axis labels
+            const barWidth = graphWidth / data.length * 0.8;
+            const barSpacing = graphWidth / data.length * 0.2;
+            
+            ctx.font = '10px Arial, sans-serif';
+            ctx.textAlign = 'center';
+            
+            for (let i = 0; i < data.length; i++) {
+                // Calculate positions
+                const value = data[i];
+                const barHeight = (value / maxValue) * graphHeight;
+                const x = margin.left + (i * (barWidth + barSpacing)) + barSpacing / 2;
+                const y = chartHeight - margin.bottom - barHeight;
+                
+                // Draw bar
+                ctx.fillStyle = 'rgba(66, 133, 244, 0.7)';
+                ctx.fillRect(x, y, barWidth, barHeight);
+                
+                // Draw bar border
+                ctx.strokeStyle = 'rgba(66, 133, 244, 1)';
+                ctx.strokeRect(x, y, barWidth, barHeight);
+                
+                // Draw x-axis label
+                ctx.fillStyle = '#333';
+                ctx.save();
+                ctx.translate(x + barWidth / 2, chartHeight - margin.bottom + 15);
+                ctx.rotate(Math.PI / 4);
+                ctx.fillText(labels[i].toString(), 0, 0);
+                ctx.restore();
+                
+                // Draw tick
+                ctx.beginPath();
+                ctx.moveTo(x + barWidth / 2, chartHeight - margin.bottom);
+                ctx.lineTo(x + barWidth / 2, chartHeight - margin.bottom + 5);
+                ctx.stroke();
+            }
+            
+            // Add chart title
+            ctx.font = 'bold 16px Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Mutation Distribution', chartWidth / 2, 20);
+            
+            // Store chart data for PDF export
+            window.chartData = {
+                labels: labels.map(label => label.toString()),
+                data: data
+            };
+            
         } catch (error) {
             console.error('Error creating chart:', error);
             createSimpleMutationChart([], []);
@@ -1175,82 +1251,110 @@ function processSequenceData(data, type) {
     
     // Function to create a simple HTML-based chart as fallback
     function createSimpleMutationChart(labels, data) {
-        const chartContainer = document.getElementById('mutationChart').parentNode;
-        chartContainer.innerHTML = '';
-        
-        const maxValue = Math.max(...data, 1); // Avoid division by zero
-        
-        const chartDiv = document.createElement('div');
-        chartDiv.className = 'simple-chart';
-        chartDiv.style.display = 'flex';
-        chartDiv.style.height = '300px';
-        chartDiv.style.alignItems = 'flex-end';
-        chartDiv.style.borderBottom = '1px solid #ccc';
-        chartDiv.style.paddingBottom = '30px';
-        chartDiv.style.position = 'relative';
-        
-        // Create bars
-        data.forEach((value, index) => {
-            const barContainer = document.createElement('div');
-            barContainer.style.flex = '1';
-            barContainer.style.display = 'flex';
-            barContainer.style.flexDirection = 'column';
-            barContainer.style.alignItems = 'center';
-            barContainer.style.margin = '0 2px';
+        try {
+            const chartContainer = document.querySelector('.chart-container');
+            if (!chartContainer) {
+                return;
+            }
             
-            const bar = document.createElement('div');
-            bar.style.width = '80%';
-            bar.style.backgroundColor = 'rgba(66, 133, 244, 0.7)';
-            bar.style.borderColor = 'rgba(66, 133, 244, 1)';
-            bar.style.borderWidth = '1px';
-            bar.style.height = `${(value / maxValue) * 100}%`;
-            bar.style.minHeight = '1px';
-            bar.style.position = 'relative';
+            // Clear previous content
+            chartContainer.innerHTML = '<h4>Mutation Distribution</h4>';
             
-            const tooltip = document.createElement('div');
-            tooltip.style.position = 'absolute';
-            tooltip.style.top = '-20px';
-            tooltip.style.left = '50%';
-            tooltip.style.transform = 'translateX(-50%)';
-            tooltip.style.backgroundColor = '#333';
-            tooltip.style.color = 'white';
-            tooltip.style.padding = '2px 5px';
-            tooltip.style.borderRadius = '3px';
-            tooltip.style.fontSize = '12px';
-            tooltip.textContent = value;
+            // Create a simple message for the user
+            const message = document.createElement('div');
+            message.className = 'chart-error-message';
+            message.style.textAlign = 'center';
+            message.style.padding = '20px';
+            message.style.color = '#666';
+            message.innerHTML = '<p>Could not render the mutation distribution chart.</p><p>A simplified version is shown below.</p>';
+            chartContainer.appendChild(message);
             
-            bar.appendChild(tooltip);
-            barContainer.appendChild(bar);
+            // If no data provided, try to use the comparisonResults
+            if ((!labels || labels.length === 0) && comparisonResults) {
+                const stats = comparisonResults.distributionStats;
+                labels = [];
+                data = [];
+                
+                if (stats && stats.distribution && Array.isArray(stats.distribution)) {
+                    const binSize = stats.binSize || Math.floor(comparisonResults.metadata.referenceLength / 10);
+                    
+                    stats.distribution.forEach((value, i) => {
+                        const start = i * binSize + 1;
+                        const end = Math.min((i + 1) * binSize, comparisonResults.metadata.referenceLength);
+                        labels.push(`Region ${i+1}`);
+                        data.push(value);
+                    });
+                }
+            }
             
-            const label = document.createElement('div');
-            label.style.fontSize = '10px';
-            label.style.marginTop = '5px';
-            label.style.textAlign = 'center';
-            label.style.transform = 'rotate(-45deg)';
-            label.style.transformOrigin = 'center';
-            label.style.whiteSpace = 'nowrap';
-            label.textContent = labels[index];
-            barContainer.appendChild(label);
+            if (!labels || labels.length === 0) {
+                // If still no data, show a placeholder
+                const placeholder = document.createElement('div');
+                placeholder.style.height = '150px';
+                placeholder.style.display = 'flex';
+                placeholder.style.alignItems = 'center';
+                placeholder.style.justifyContent = 'center';
+                placeholder.style.border = '1px dashed #ccc';
+                placeholder.style.borderRadius = '4px';
+                placeholder.style.margin = '10px 0';
+                placeholder.innerHTML = '<p>No mutation data available for distribution chart</p>';
+                chartContainer.appendChild(placeholder);
+                return;
+            }
             
-            chartDiv.appendChild(barContainer);
-        });
-        
-        // Add title
-        const title = document.createElement('h4');
-        title.textContent = 'Mutation Distribution';
-        title.style.textAlign = 'center';
-        title.style.marginBottom = '10px';
-        
-        chartContainer.appendChild(title);
-        chartContainer.appendChild(chartDiv);
-        
-        // Add legend
-        const legend = document.createElement('div');
-        legend.style.textAlign = 'center';
-        legend.style.marginTop = '10px';
-        legend.innerHTML = '<span style="display: inline-block; width: 12px; height: 12px; background-color: rgba(66, 133, 244, 0.7); margin-right: 5px;"></span> Mutations';
-        
-        chartContainer.appendChild(legend);
+            // Create a simple bar chart with HTML/CSS
+            const chartDiv = document.createElement('div');
+            chartDiv.className = 'simple-chart';
+            chartDiv.style.display = 'flex';
+            chartDiv.style.height = '200px';
+            chartDiv.style.alignItems = 'flex-end';
+            chartDiv.style.borderBottom = '1px solid #ccc';
+            chartDiv.style.paddingBottom = '30px';
+            chartDiv.style.marginTop = '20px';
+            
+            const maxValue = Math.max(...data, 1); // Avoid division by zero
+            
+            // Create bars
+            data.forEach((value, index) => {
+                const barContainer = document.createElement('div');
+                barContainer.style.flex = '1';
+                barContainer.style.display = 'flex';
+                barContainer.style.flexDirection = 'column';
+                barContainer.style.alignItems = 'center';
+                barContainer.style.margin = '0 2px';
+                
+                const bar = document.createElement('div');
+                bar.style.width = '80%';
+                bar.style.backgroundColor = 'rgba(66, 133, 244, 0.7)';
+                bar.style.border = '1px solid rgba(66, 133, 244, 1)';
+                bar.style.height = `${(value / maxValue) * 100}%`;
+                bar.style.minHeight = '1px';
+                bar.style.position = 'relative';
+                bar.title = `Mutations: ${value}`;
+                
+                barContainer.appendChild(bar);
+                
+                const label = document.createElement('div');
+                label.style.fontSize = '10px';
+                label.style.marginTop = '5px';
+                label.style.textAlign = 'center';
+                label.style.whiteSpace = 'nowrap';
+                label.textContent = labels[index] || index + 1;
+                barContainer.appendChild(label);
+                
+                chartDiv.appendChild(barContainer);
+            });
+            
+            chartContainer.appendChild(chartDiv);
+            
+            // Store chart data for PDF export
+            window.chartData = {
+                labels: labels,
+                data: data
+            };
+        } catch (error) {
+            console.error('Error creating simple chart:', error);
+        }
     }
     
     function displaySequenceAlignment() {
@@ -1510,10 +1614,82 @@ async function generatePDF() {
             yPos += 7;
         });
         yPos += 5;
+        
+        // Add chart if available
+        if (window.chartData && window.chartData.data && window.chartData.data.length > 0) {
+            doc.setFontSize(12);
+            doc.text('Mutation Distribution:', 20, yPos);
+            yPos += 10;
+            
+            // Set up chart dimensions
+            const chartWidth = 170; // mm
+            const chartHeight = 80; // mm
+            const margin = { left: 20, right: 10, top: 5, bottom: 15 };
+            const graphWidth = chartWidth - margin.left - margin.right;
+            const graphHeight = chartHeight - margin.top - margin.bottom;
+            
+            // Get chart data
+            const { labels, data } = window.chartData;
+            const maxValue = Math.max(...data, 1);
+            
+            // Draw chart background
+            doc.setFillColor(245, 245, 245);
+            doc.rect(20, yPos, chartWidth, chartHeight, 'F');
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(0.1);
+            
+            // Draw grid lines
+            for (let i = 0; i <= 4; i++) {
+                const yLevel = yPos + margin.top + graphHeight - (i / 4) * graphHeight;
+                doc.line(20 + margin.left, yLevel, 20 + margin.left + graphWidth, yLevel);
+            }
+            
+            // Draw bars
+            const barWidth = graphWidth / data.length * 0.8;
+            const barSpacing = graphWidth / data.length * 0.2;
+            
+            doc.setFillColor(66, 133, 244);
+            doc.setDrawColor(50, 100, 200);
+            
+            for (let i = 0; i < data.length; i++) {
+                const value = data[i];
+                const barHeight = (value / maxValue) * graphHeight;
+                const x = 20 + margin.left + (i * (barWidth + barSpacing)) + barSpacing / 2;
+                const y = yPos + margin.top + graphHeight - barHeight;
+                
+                doc.rect(x, y, barWidth, barHeight, 'FD');
+            }
+            
+            // Draw axes
+            doc.setDrawColor(100, 100, 100);
+            doc.setLineWidth(0.3);
+            doc.line(20 + margin.left, yPos + margin.top, 20 + margin.left, yPos + margin.top + graphHeight); // Y-axis
+            doc.line(20 + margin.left, yPos + margin.top + graphHeight, 20 + margin.left + graphWidth, yPos + margin.top + graphHeight); // X-axis
+            
+            // Add labels
+            doc.setFontSize(8);
+            for (let i = 0; i < labels.length; i += Math.ceil(labels.length / 10)) {
+                const x = 20 + margin.left + (i * (barWidth + barSpacing)) + barSpacing / 2 + barWidth / 2;
+                doc.text(labels[i].toString(), x, yPos + margin.top + graphHeight + 10, { align: 'center' });
+            }
+            
+            // Add axis titles
+            doc.setFontSize(9);
+            doc.text('Mutations', 10, yPos + chartHeight / 2, { angle: 90 });
+            doc.text('Sequence Position', 20 + chartWidth / 2, yPos + chartHeight - 2, { align: 'center' });
+            
+            yPos += chartHeight + 15;
+        }
 
         // Mutation Table
         const mutationTable = document.getElementById('mutationTable');
         if (mutationTable) {
+            // Check if we need a new page for the table
+            if (yPos > doc.internal.pageSize.height - 100) {
+                doc.addPage();
+                yPos = 20;
+            }
+            
             doc.autoTable({
                 html: '#mutationTable',
                 startY: yPos,
