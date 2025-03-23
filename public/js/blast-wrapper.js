@@ -97,8 +97,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || errorData.error || 'Failed to submit BLAST search');
+                const errorData = await response.json().catch(() => ({ 
+                    error: `Server error: ${response.status}` 
+                }));
+                throw new Error(errorData.message || errorData.error || `Failed to submit BLAST search: Server error: ${response.status}`);
             }
             
             const data = await response.json();
@@ -114,14 +116,37 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('BLAST search submission error:', err);
             
             let errorMsg = err.message;
+            let errorDetails = '';
             
-            // Check for timeout messages
+            // Check for specific error types and provide user-friendly messages
             if (errorMsg.includes('timeout') || errorMsg.includes('ETIMEDOUT') || errorMsg.includes('ECONNABORTED')) {
                 errorMsg = 'Connection to NCBI BLAST servers timed out. Please try again later or check your internet connection.';
+            } else if (errorMsg.includes('Network Error') || errorMsg.includes('ECONNREFUSED')) {
+                errorMsg = 'Network error connecting to BLAST servers. Please check your internet connection and try again.';
+            } else if (errorMsg.includes('Invalid nucleotide sequence') || errorMsg.includes('Invalid protein sequence')) {
+                errorMsg = err.message; // Use the validation error message directly
+            } else if (errorMsg.includes('Sequence too')) {
+                errorMsg = err.message; // Use the sequence length error message directly
+            } else if (errorMsg.includes('Server error: 400')) {
+                errorMsg = 'Invalid request to BLAST servers. Please check your sequence and parameters.';
+                errorDetails = 'Make sure your sequence is valid and in the correct format for the chosen BLAST program.';
+            } else if (errorMsg.includes('Server error: 5')) {
+                errorMsg = 'NCBI BLAST servers are experiencing issues. Please try again later.';
             }
             
-            showAlert(`Error: ${errorMsg}`, 'danger');
             hideStatus();
+            showAlert(errorMsg, 'danger');
+            if (errorDetails) {
+                // Add error details if available
+                const alertElement = document.querySelector('.alert');
+                if (alertElement) {
+                    const detailsElement = document.createElement('p');
+                    detailsElement.className = 'error-details';
+                    detailsElement.innerText = errorDetails;
+                    alertElement.appendChild(detailsElement);
+                }
+            }
+            
             submitBtn.disabled = false;
         }
     }
@@ -506,11 +531,29 @@ ${aln.hseq ? `Sbjct  ${aln.hstart} ${aln.hseq} ${aln.hend}` : ''}
         const alertContainer = document.getElementById('alertContainer');
         if (!alertContainer) return;
         
+        // Clear any existing alerts
+        alertContainer.innerHTML = '';
+        
         const alert = document.createElement('div');
         alert.className = `alert alert-${type}`;
+        
+        // Add appropriate icon
+        let icon = '';
+        if (type === 'danger') {
+            icon = '<i class="fas fa-exclamation-circle"></i> ';
+        } else if (type === 'warning') {
+            icon = '<i class="fas fa-exclamation-triangle"></i> ';
+        } else if (type === 'success') {
+            icon = '<i class="fas fa-check-circle"></i> ';
+        } else if (type === 'info') {
+            icon = '<i class="fas fa-info-circle"></i> ';
+        }
+        
         alert.innerHTML = `
-            <span>${message}</span>
-            <button class="close-alert">&times;</button>
+            <div class="alert-content">
+                <span>${icon}${message}</span>
+                <button class="close-alert">&times;</button>
+            </div>
         `;
         
         alertContainer.appendChild(alert);
@@ -520,10 +563,14 @@ ${aln.hseq ? `Sbjct  ${aln.hstart} ${aln.hseq} ${aln.hend}` : ''}
             alert.remove();
         });
         
-        // Auto dismiss after 5 seconds
-        setTimeout(() => {
-            alert.remove();
-        }, 5000);
+        // Auto dismiss after 10 seconds for non-error alerts
+        if (type !== 'danger') {
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 10000);
+        }
     }
     
     function downloadResults(data) {

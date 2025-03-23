@@ -18,12 +18,39 @@ const axiosRetry = async (url, options, maxRetries = 3, timeout = 30000) => {
       const requestOptions = {
         ...options,
         timeout: timeout, // 30 seconds timeout
+        validateStatus: status => {
+          // Consider only 5xx errors as retryable, handle 4xx separately
+          return status < 500;
+        }
       };
       
-      return await axios(url, requestOptions);
+      const response = await axios(url, requestOptions);
+      
+      // Handle 4xx errors explicitly without retrying
+      if (response.status >= 400 && response.status < 500) {
+        const error = new Error(`HTTP error ${response.status}`);
+        error.response = response;
+        error.status = response.status;
+        error.statusText = response.statusText;
+        error.data = response.data;
+        throw error;
+      }
+      
+      return response;
     } catch (error) {
+      const status = error.response?.status;
+      const responseData = error.response?.data;
+      
       console.log(`Attempt ${attempt} failed: ${error.message}`);
+      if (status) console.log(`Status code: ${status}`);
+      if (responseData) console.log(`Response data:`, typeof responseData === 'string' ? responseData.substring(0, 200) : responseData);
+      
       lastError = error;
+      
+      // Don't retry on 4xx errors (client errors)
+      if (status >= 400 && status < 500) {
+        break;
+      }
       
       // Don't wait on the last attempt
       if (attempt < maxRetries) {
@@ -49,6 +76,10 @@ router.post('/submit', async (req, res) => {
   try {
     console.log('Processing BLAST submission');
     
+    // Log request information for debugging
+    console.log('Request body:', req.body);
+    console.log('Files:', req.files ? Object.keys(req.files) : 'No files');
+    
     // Get sequence either from text input or uploaded file
     let sequence = req.body && req.body.sequence ? req.body.sequence.trim() : '';
     
@@ -60,6 +91,46 @@ router.post('/submit', async (req, res) => {
     
     if (!sequence) {
       return res.status(400).json({ error: 'No sequence provided' });
+    }
+    
+    console.log(`Sequence length: ${sequence.length} characters`);
+    
+    // Validate sequence
+    // For nucleotide sequences (BLASTN)
+    if (req.body.program === 'blastn') {
+      const validNucleotideSequence = /^[ATGCNatgcn\s>0-9_-]+$/;
+      if (!validNucleotideSequence.test(sequence)) {
+        return res.status(400).json({ 
+          error: 'Invalid nucleotide sequence',
+          message: 'Nucleotide sequences should only contain A, T, G, C, N characters'
+        });
+      }
+    }
+    // For protein sequences (BLASTP)
+    else if (req.body.program === 'blastp') {
+      const validProteinSequence = /^[ACDEFGHIKLMNPQRSTVWY\s>0-9_-]+$/i;
+      if (!validProteinSequence.test(sequence)) {
+        return res.status(400).json({ 
+          error: 'Invalid protein sequence',
+          message: 'Protein sequences should only contain standard amino acid letters'
+        });
+      }
+    }
+    
+    // Check sequence length
+    const effectiveSequence = sequence.replace(/^>.*\n/m, '').replace(/\s/g, '');
+    if (effectiveSequence.length < 10) {
+      return res.status(400).json({ 
+        error: 'Sequence too short',
+        message: 'Sequence must be at least 10 characters long (excluding headers and whitespace)'
+      });
+    }
+    
+    if (effectiveSequence.length > 50000) {
+      return res.status(400).json({ 
+        error: 'Sequence too long',
+        message: 'Sequence must be less than 50,000 characters for web BLAST'
+      });
     }
     
     // Build NCBI BLAST API request
@@ -78,14 +149,17 @@ router.post('/submit', async (req, res) => {
     
     console.log(`Submitting BLAST search: ${req.body.program || 'blastn'} against ${req.body.database || 'nt'}`);
     
-    // Submit to NCBI with retry logic
+    // Submit to NCBI with retry logic and extended timeout
     const response = await axiosRetry(NCBI_BASE_URL, {
       method: 'POST',
       data: params.toString(),
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'JyotsnaNCBI/1.0'
       }
-    });
+    }, 3, 60000); // 3 retries, 60 second timeout
+    
+    console.log('NCBI response status:', response.status);
     
     // Extract RID (Request ID) and RTOE (estimated time)
     const ridMatch = response.data.match(/RID = (.*)\n/);
