@@ -77,6 +77,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let querySequence = null;
     let comparisonResults = null;
     
+    // Make comparisonResults accessible globally
+    window.comparisonResults = null;
+    
     // Initialize dropzone functionality
     initializeDropzone(referenceDropzone, referenceFileInput, processReferenceFile);
     initializeDropzone(queryDropzone, queryFileInput, processQueryFile);
@@ -646,6 +649,9 @@ function processSequenceData(data, type) {
                     queryHeader: querySequence.header || ''
                 }
             };
+
+            // Also store in window object for global access
+            window.comparisonResults = comparisonResults;
 
             console.log('Comparison results:', comparisonResults);
 
@@ -1426,6 +1432,23 @@ function processSequenceData(data, type) {
                    (deletionMutations.checked && mutation.type.toLowerCase() === 'deletion');
         });
     }
+    
+    // Make getFilteredMutations globally accessible
+    window.getFilteredMutations = function() {
+        // Use the window.comparisonResults as fallback
+        const results = comparisonResults || window.comparisonResults;
+        if (!results || !results.mutations) return [];
+        
+        if (document.getElementById('allMutations').checked) {
+            return results.mutations;
+        }
+
+        return results.mutations.filter(mutation => {
+            return (document.getElementById('substitutionMutations').checked && mutation.type.toLowerCase() === 'substitution') ||
+                   (document.getElementById('insertionMutations').checked && mutation.type.toLowerCase() === 'insertion') ||
+                   (document.getElementById('deletionMutations').checked && mutation.type.toLowerCase() === 'deletion');
+        });
+    };
 
     function updateResults() {
         if (comparisonResults) {
@@ -1459,6 +1482,10 @@ function processSequenceData(data, type) {
             
             // Get context and scale for high-DPI
             const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                throw new Error('Could not get canvas context');
+            }
+            
             ctx.scale(dpr, dpr);
             
             // Enable high-quality rendering
@@ -1511,100 +1538,113 @@ function processSequenceData(data, type) {
             
             // Use Chart.js for better rendering
             if (window.Chart) {
-                // Destroy previous chart instance if it exists
-                if (window.mutationChart) {
-                    window.mutationChart.destroy();
-                }
-                
-                // Create new chart with high-quality settings
-                window.mutationChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Mutations',
-                            data: data,
-                            backgroundColor: 'rgba(66, 133, 244, 0.8)',
-                            borderColor: 'rgba(66, 133, 244, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        devicePixelRatio: dpr,
-                        animation: {
-                            duration: 500
+                try {
+                    // Destroy previous chart instance if it exists
+                    if (window.mutationChart) {
+                        window.mutationChart.destroy();
+                    }
+                    
+                    // Create new chart with high-quality settings
+                    window.mutationChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Mutations',
+                                data: data,
+                                backgroundColor: 'rgba(66, 133, 244, 0.8)',
+                                borderColor: 'rgba(66, 133, 244, 1)',
+                                borderWidth: 1
+                            }]
                         },
-                        plugins: {
-                            legend: {
-                                display: false
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            devicePixelRatio: dpr,
+                            animation: {
+                                duration: 500
                             },
-                            tooltip: {
-                                titleFont: {
-                                    family: 'Helvetica, Arial, sans-serif',
-                                    size: 12
+                            plugins: {
+                                legend: {
+                                    display: false
                                 },
-                                bodyFont: {
-                                    family: 'Helvetica, Arial, sans-serif',
-                                    size: 12
-                                },
-                                padding: 10,
-                                displayColors: false
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Mutations',
-                                    font: {
+                                tooltip: {
+                                    titleFont: {
                                         family: 'Helvetica, Arial, sans-serif',
-                                        size: 12,
-                                        weight: 'bold'
-                                    }
-                                },
-                                ticks: {
-                                    font: {
+                                        size: 12
+                                    },
+                                    bodyFont: {
                                         family: 'Helvetica, Arial, sans-serif',
-                                        size: 10
-                                    }
-                                },
-                                grid: {
-                                    color: 'rgba(200, 200, 200, 0.3)',
-                                    lineWidth: 0.5
+                                        size: 12
+                                    },
+                                    padding: 10,
+                                    displayColors: false
                                 }
                             },
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Regions',
-                                    font: {
-                                        family: 'Helvetica, Arial, sans-serif',
-                                        size: 12,
-                                        weight: 'bold'
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Mutations',
+                                        font: {
+                                            family: 'Helvetica, Arial, sans-serif',
+                                            size: 12,
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    ticks: {
+                                        font: {
+                                            family: 'Helvetica, Arial, sans-serif',
+                                            size: 10
+                                        }
+                                    },
+                                    grid: {
+                                        color: 'rgba(200, 200, 200, 0.3)',
+                                        lineWidth: 0.5
                                     }
                                 },
-                                ticks: {
-                                    font: {
-                                        family: 'Helvetica, Arial, sans-serif',
-                                        size: 10
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Regions',
+                                        font: {
+                                            family: 'Helvetica, Arial, sans-serif',
+                                            size: 12,
+                                            weight: 'bold'
+                                        }
                                     },
-                                    maxRotation: 0,
-                                    autoSkip: true,
-                                    maxTicksLimit: 10
-                                },
-                                grid: {
-                                    display: false
+                                    ticks: {
+                                        font: {
+                                            family: 'Helvetica, Arial, sans-serif',
+                                            size: 10
+                                        },
+                                        maxRotation: 0,
+                                        autoSkip: true,
+                                        maxTicksLimit: 10
+                                    },
+                                    grid: {
+                                        display: false
+                                    }
                                 }
                             }
                         }
-                    }
-                });
-                
+                    });
+                    
+                    return;
+                } catch (chartError) {
+                    console.error('Error creating Chart.js chart:', chartError);
+                    // If Chart.js fails, fall through to the manual chart drawing
+                    createSimpleMutationChart(labels, data);
+                }
+            } else {
+                // Fallback to simple chart if Chart.js is not available
+                createSimpleMutationChart(labels, data);
                 return;
             }
+            
+            // This code will only execute if Chart.js is not available and the createSimpleMutationChart
+            // function didn't return for some reason
             
             // Find maximum data value for scaling
             const maxValue = Math.max(...data, 1); // Avoid division by zero
@@ -2088,15 +2128,32 @@ async function generateSimplePDF() {
         loadingDiv.innerHTML = '<div style="background: white; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">Generating PDF... Please wait</div>';
         document.body.appendChild(loadingDiv);
 
+        // Check if comparisonResults exists
+        if (!window.comparisonResults) {
+            throw new Error('No comparison data available. Please compare sequences first.');
+        }
+
         // Get data for the report
-        const totalMutations = document.getElementById('totalMutations').textContent;
-        const sequenceLength = document.getElementById('sequenceLength').textContent;
-        const mutationRate = document.getElementById('mutationRate').textContent;
-        const refHeader = comparisonResults.metadata.referenceHeader;
-        const queryHeader = comparisonResults.metadata.queryHeader;
+        const totalMutationsElement = document.getElementById('totalMutations');
+        const sequenceLengthElement = document.getElementById('sequenceLength');
+        const mutationRateElement = document.getElementById('mutationRate');
+        
+        if (!totalMutationsElement || !sequenceLengthElement || !mutationRateElement) {
+            throw new Error('Required elements not found. Please try again.');
+        }
+        
+        const totalMutations = totalMutationsElement.textContent;
+        const sequenceLength = sequenceLengthElement.textContent;
+        const mutationRate = mutationRateElement.textContent;
+        const refHeader = window.comparisonResults.metadata.referenceHeader;
+        const queryHeader = window.comparisonResults.metadata.queryHeader;
 
         // Create the PDF document
         const { jsPDF } = window.jspdf;
+        if (!jsPDF) {
+            throw new Error('PDF library not loaded. Please refresh the page and try again.');
+        }
+        
         const doc = new jsPDF();
         
         // Set document properties
@@ -2183,9 +2240,61 @@ async function generateSimplePDF() {
                 const imgHeight = chartCanvas.height * imgWidth / chartCanvas.width;
                 
                 doc.addImage(chartImage, 'PNG', 25, 170, imgWidth, imgHeight);
+            } else {
+                // If chart element not found, create a text placeholder
+                doc.setFontSize(14);
+                doc.text('Mutation Distribution', 105, 160, { align: 'center' });
+                
+                doc.setFontSize(10);
+                doc.setTextColor(100, 100, 100);
+                doc.text('Chart visualization not available in PDF export', 105, 180, { align: 'center' });
+                doc.setTextColor(0, 0, 0);
+                
+                // Add a simple visualization based on the data
+                const mutations = getFilteredMutations();
+                if (mutations && mutations.length > 0) {
+                    // Create a simple text-based representation
+                    doc.setFontSize(8);
+                    doc.text('Region 1    Region 2    Region 3    Region 4    Region 5    Region 6    Region 7    Region 8    Region 9    Region 10', 105, 190, { align: 'center' });
+                    
+                    // Draw simple bars using rectangles
+                    const regions = 10;
+                    const regionCounts = new Array(regions).fill(0);
+                    
+                    // Count mutations by region
+                    mutations.forEach(mutation => {
+                        const seqLength = parseInt(sequenceLength);
+                        if (!isNaN(seqLength) && seqLength > 0) {
+                            const regionSize = seqLength / regions;
+                            const regionIndex = Math.min(Math.floor(mutation.position / regionSize), regions - 1);
+                            regionCounts[regionIndex]++;
+                        }
+                    });
+                    
+                    // Find the max count for scaling
+                    const maxCount = Math.max(...regionCounts, 1);
+                    
+                    // Draw the bars
+                    const barStartX = 40;
+                    const barWidth = 12;
+                    const barMaxHeight = 30;
+                    const barY = 200;
+                    
+                    doc.setFillColor(66, 133, 244); // Blue color
+                    
+                    regionCounts.forEach((count, i) => {
+                        const barHeight = (count / maxCount) * barMaxHeight;
+                        const barX = barStartX + (i * (barWidth + 3));
+                        
+                        if (barHeight > 0) {
+                            doc.rect(barX, barY - barHeight, barWidth, barHeight, 'F');
+                        }
+                    });
+                }
             }
         } catch (chartError) {
             console.error('Error capturing chart:', chartError);
+            doc.setFontSize(10);
             doc.text('Chart could not be included in the PDF', 105, 180, { align: 'center' });
         }
 
@@ -2196,8 +2305,20 @@ async function generateSimplePDF() {
         doc.setFontSize(16);
         doc.text('Mutation Details', 105, 20, { align: 'center' });
         
-        // Get mutations
-        const mutations = getFilteredMutations();
+        // Get mutations - using the function in the document scope
+        let mutations = [];
+        try {
+            mutations = window.getFilteredMutations ? window.getFilteredMutations() : 
+                (typeof getFilteredMutations === 'function' ? getFilteredMutations() : []);
+                
+            if (!mutations || !Array.isArray(mutations)) {
+                console.warn('Could not get mutations array, using empty array instead');
+                mutations = [];
+            }
+        } catch (mutationsError) {
+            console.error('Error getting mutations:', mutationsError);
+            mutations = [];
+        }
         
         // Create a simplified table manually
         const startY = 40;
@@ -2221,38 +2342,44 @@ async function generateSimplePDF() {
         const maxRows = Math.min(mutations.length, 20);
         doc.setTextColor(0);
         
-        for (let i = 0; i < maxRows; i++) {
-            const y = startY + (i + 1) * rowHeight;
-            
-            // Alternating row backgrounds
-            if (i % 2 === 0) {
-                doc.setFillColor(240, 240, 240);
-                doc.rect(startX, y, tableWidth, rowHeight, 'F');
+        if (mutations.length === 0) {
+            // Show message if no mutations
+            doc.setFontSize(10);
+            doc.text('No mutation data available', 105, startY + rowHeight * 2, { align: 'center' });
+        } else {
+            for (let i = 0; i < maxRows; i++) {
+                const y = startY + (i + 1) * rowHeight;
+                
+                // Alternating row backgrounds
+                if (i % 2 === 0) {
+                    doc.setFillColor(240, 240, 240);
+                    doc.rect(startX, y, tableWidth, rowHeight, 'F');
+                }
+                
+                const mutation = mutations[i];
+                
+                // Position
+                doc.text(mutation.position.toString(), startX + colWidths[0]/2, y + rowHeight/2, { align: 'center' });
+                
+                // Reference base
+                doc.text(mutation.referenceBase === '-' ? 'Gap' : mutation.referenceBase, 
+                    startX + colWidths[0] + colWidths[1]/2, y + rowHeight/2, { align: 'center' });
+                
+                // Query base
+                doc.text(mutation.queryBase === '-' ? 'Gap' : mutation.queryBase, 
+                    startX + colWidths[0] + colWidths[1] + colWidths[2]/2, y + rowHeight/2, { align: 'center' });
+                
+                // Type
+                doc.text(mutation.type, 
+                    startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3]/2, y + rowHeight/2, { align: 'center' });
             }
             
-            const mutation = mutations[i];
-            
-            // Position
-            doc.text(mutation.position.toString(), startX + colWidths[0]/2, y + rowHeight/2, { align: 'center' });
-            
-            // Reference base
-            doc.text(mutation.referenceBase === '-' ? 'Gap' : mutation.referenceBase, 
-                startX + colWidths[0] + colWidths[1]/2, y + rowHeight/2, { align: 'center' });
-            
-            // Query base
-            doc.text(mutation.queryBase === '-' ? 'Gap' : mutation.queryBase, 
-                startX + colWidths[0] + colWidths[1] + colWidths[2]/2, y + rowHeight/2, { align: 'center' });
-            
-            // Type
-            doc.text(mutation.type, 
-                startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3]/2, y + rowHeight/2, { align: 'center' });
-        }
-        
-        // Add note if there are more mutations
-        if (mutations.length > maxRows) {
-            const noteY = startY + (maxRows + 1) * rowHeight + 10;
-            doc.setFontSize(10);
-            doc.text(`Note: Showing ${maxRows} of ${mutations.length} total mutations.`, 105, noteY, { align: 'center' });
+            // Add note if there are more mutations
+            if (mutations.length > maxRows) {
+                const noteY = startY + (maxRows + 1) * rowHeight + 10;
+                doc.setFontSize(10);
+                doc.text(`Note: Showing ${maxRows} of ${mutations.length} total mutations.`, 105, noteY, { align: 'center' });
+            }
         }
 
         // ========== CITATION PAGE ==========
