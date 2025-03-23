@@ -754,6 +754,9 @@ function processSequenceData(data, type) {
                     <button class="export-btn pdf-export">
                         <i class="fas fa-file-pdf"></i> Export as PDF
                     </button>
+                    <button class="export-btn simple-pdf-export">
+                        <i class="fas fa-file-pdf"></i> Simple PDF Export
+                    </button>
                     <button class="export-btn image-export">
                         <i class="fas fa-file-image"></i> Export as Image
                     </button>
@@ -769,15 +772,27 @@ function processSequenceData(data, type) {
 
             // Add event listeners to export buttons
             const pdfButton = resultsSection.querySelector('.pdf-export');
+            const simplePdfButton = resultsSection.querySelector('.simple-pdf-export');
             const imageButton = resultsSection.querySelector('.image-export');
             
             if (pdfButton) {
                 pdfButton.addEventListener('click', async () => {
                     try {
                         await generatePDF();
-        } catch (error) {
+    } catch (error) {
                         console.error('PDF export error:', error);
                         alert('Failed to generate PDF. Please try again.');
+                    }
+                });
+            }
+
+            if (simplePdfButton) {
+                simplePdfButton.addEventListener('click', async () => {
+                    try {
+                        await generateSimplePDF();
+                    } catch (error) {
+                        console.error('Simple PDF export error:', error);
+                        alert('Failed to generate simple PDF. Please try again.');
                     }
                 });
             }
@@ -2052,5 +2067,263 @@ function compareSequences() {
     } catch (error) {
         console.error('Comparison error:', error);
         alert('Error comparing sequences: ' + error.message);
+    }
+}
+
+// Add this new function for a simpler PDF generation approach
+async function generateSimplePDF() {
+    try {
+        // Show loading indicator
+        const loadingDiv = document.createElement('div');
+        loadingDiv.style.position = 'fixed';
+        loadingDiv.style.top = '0';
+        loadingDiv.style.left = '0';
+        loadingDiv.style.width = '100%';
+        loadingDiv.style.height = '100%';
+        loadingDiv.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+        loadingDiv.style.display = 'flex';
+        loadingDiv.style.alignItems = 'center';
+        loadingDiv.style.justifyContent = 'center';
+        loadingDiv.style.zIndex = '9999';
+        loadingDiv.innerHTML = '<div style="background: white; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">Generating PDF... Please wait</div>';
+        document.body.appendChild(loadingDiv);
+
+        // Get data for the report
+        const totalMutations = document.getElementById('totalMutations').textContent;
+        const sequenceLength = document.getElementById('sequenceLength').textContent;
+        const mutationRate = document.getElementById('mutationRate').textContent;
+        const refHeader = comparisonResults.metadata.referenceHeader;
+        const queryHeader = comparisonResults.metadata.queryHeader;
+
+        // Create the PDF document
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Set document properties
+        doc.setProperties({
+            title: 'Sequence Comparison Report',
+            subject: 'Sequence Analysis',
+            author: 'Jyotsna\'s NCBI Tools',
+            creator: 'Simple PDF Generator'
+        });
+
+        // Citation info
+        let citationInfo;
+        try {
+            const response = await fetch('/api/citation-config');
+            citationInfo = await response.json();
+        } catch (error) {
+            console.error('Error fetching citation:', error);
+            citationInfo = {
+                author: 'Priyam, J.',
+                title: 'Jyotsna\'s NCBI Tools',
+                year: new Date().getFullYear().toString(),
+                doi: '10.5281/zenodo.15069907'
+            };
+        }
+
+        // ========== PAGE 1: TITLE AND SUMMARY ==========
+        // Title
+        doc.setFontSize(22);
+        doc.text('Sequence Comparison Report', 105, 20, { align: 'center' });
+        
+        // Date
+        doc.setFontSize(12);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 105, 30, { align: 'center' });
+        
+        // Summary box
+        doc.setDrawColor(0);
+        doc.setFillColor(240, 240, 240);
+        doc.roundedRect(20, 40, 170, 40, 3, 3, 'F');
+        
+        doc.setFontSize(14);
+        doc.text('Summary', 30, 50);
+        
+        doc.setFontSize(12);
+        doc.text(`Total Mutations: ${totalMutations}`, 30, 60);
+        doc.text(`Sequence Length: ${sequenceLength} bp`, 30, 70);
+        doc.text(`Mutation Rate: ${mutationRate}`, 120, 60);
+        
+        // Sequence info
+        doc.setDrawColor(0);
+        doc.setFillColor(240, 240, 240);
+        doc.roundedRect(20, 90, 170, 50, 3, 3, 'F');
+        
+        doc.setFontSize(14);
+        doc.text('Sequence Information', 30, 100);
+        
+        doc.setFontSize(12);
+        doc.text('Reference Sequence:', 30, 110);
+        doc.setFontSize(10);
+        const refHeaderWrapped = doc.splitTextToSize(`${refHeader || 'N/A'}`, 150);
+        doc.text(refHeaderWrapped, 40, 120);
+        
+        doc.setFontSize(12);
+        doc.text('Query Sequence:', 30, 130);
+        doc.setFontSize(10);
+        const queryHeaderWrapped = doc.splitTextToSize(`${queryHeader || 'N/A'}`, 150);
+        doc.text(queryHeaderWrapped, 40, 140);
+
+        // Chart - capture as image
+        try {
+            const chartElement = document.getElementById('mutationChart');
+            if (chartElement) {
+                const chartCanvas = await html2canvas(chartElement, {
+                    scale: 2,
+                    backgroundColor: 'white',
+                    logging: false
+                });
+                
+                const chartImage = chartCanvas.toDataURL('image/png');
+                
+                doc.setFontSize(14);
+                doc.text('Mutation Distribution', 105, 160, { align: 'center' });
+                
+                const imgWidth = 160;
+                const imgHeight = chartCanvas.height * imgWidth / chartCanvas.width;
+                
+                doc.addImage(chartImage, 'PNG', 25, 170, imgWidth, imgHeight);
+            }
+        } catch (chartError) {
+            console.error('Error capturing chart:', chartError);
+            doc.text('Chart could not be included in the PDF', 105, 180, { align: 'center' });
+        }
+
+        // ========== PAGE 2: MUTATION DETAILS ==========
+        doc.addPage();
+        
+        // Title
+        doc.setFontSize(16);
+        doc.text('Mutation Details', 105, 20, { align: 'center' });
+        
+        // Get mutations
+        const mutations = getFilteredMutations();
+        
+        // Create a simplified table manually
+        const startY = 40;
+        const rowHeight = 10;
+        const colWidths = [30, 45, 45, 50];
+        const tableWidth = colWidths.reduce((sum, width) => sum + width, 0);
+        const startX = (210 - tableWidth) / 2;
+        
+        // Table headers
+        doc.setFillColor(60, 100, 200);
+        doc.setTextColor(255);
+        doc.rect(startX, startY, tableWidth, rowHeight, 'F');
+        
+        doc.setFontSize(10);
+        doc.text('Position', startX + colWidths[0]/2, startY + rowHeight/2, { align: 'center' });
+        doc.text('Reference', startX + colWidths[0] + colWidths[1]/2, startY + rowHeight/2, { align: 'center' });
+        doc.text('Query', startX + colWidths[0] + colWidths[1] + colWidths[2]/2, startY + rowHeight/2, { align: 'center' });
+        doc.text('Type', startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3]/2, startY + rowHeight/2, { align: 'center' });
+        
+        // Table rows - limit to first 20 mutations for PDF
+        const maxRows = Math.min(mutations.length, 20);
+        doc.setTextColor(0);
+        
+        for (let i = 0; i < maxRows; i++) {
+            const y = startY + (i + 1) * rowHeight;
+            
+            // Alternating row backgrounds
+            if (i % 2 === 0) {
+                doc.setFillColor(240, 240, 240);
+                doc.rect(startX, y, tableWidth, rowHeight, 'F');
+            }
+            
+            const mutation = mutations[i];
+            
+            // Position
+            doc.text(mutation.position.toString(), startX + colWidths[0]/2, y + rowHeight/2, { align: 'center' });
+            
+            // Reference base
+            doc.text(mutation.referenceBase === '-' ? 'Gap' : mutation.referenceBase, 
+                startX + colWidths[0] + colWidths[1]/2, y + rowHeight/2, { align: 'center' });
+            
+            // Query base
+            doc.text(mutation.queryBase === '-' ? 'Gap' : mutation.queryBase, 
+                startX + colWidths[0] + colWidths[1] + colWidths[2]/2, y + rowHeight/2, { align: 'center' });
+            
+            // Type
+            doc.text(mutation.type, 
+                startX + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3]/2, y + rowHeight/2, { align: 'center' });
+        }
+        
+        // Add note if there are more mutations
+        if (mutations.length > maxRows) {
+            const noteY = startY + (maxRows + 1) * rowHeight + 10;
+            doc.setFontSize(10);
+            doc.text(`Note: Showing ${maxRows} of ${mutations.length} total mutations.`, 105, noteY, { align: 'center' });
+        }
+
+        // ========== CITATION PAGE ==========
+        doc.addPage();
+        
+        // Title
+        doc.setFontSize(16);
+        doc.text('How to Cite This Tool', 105, 20, { align: 'center' });
+        
+        // Current date
+        const currentDate = new Date().toLocaleDateString('en-US', {
+            day: 'numeric', 
+            month: 'long', 
+            year: 'numeric'
+        });
+        
+        // Citation formats
+        doc.setFontSize(12);
+        doc.text('APA Format:', 20, 40);
+        
+        doc.setFontSize(10);
+        const apaText = `${citationInfo.author} (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool. DOI: ${citationInfo.doi}`;
+        const apaWrapped = doc.splitTextToSize(apaText, 170);
+        doc.text(apaWrapped, 20, 50);
+        
+        doc.setFontSize(12);
+        doc.text('MLA Format:', 20, 70);
+        
+        doc.setFontSize(10);
+        const mlaText = `${citationInfo.author} "${citationInfo.title} - Sequence Comparison Tool." ${citationInfo.year}, DOI: ${citationInfo.doi}. Accessed ${currentDate}.`;
+        const mlaWrapped = doc.splitTextToSize(mlaText, 170);
+        doc.text(mlaWrapped, 20, 80);
+
+        // ========== ADD FOOTER TO ALL PAGES ==========
+        // Get total page count
+        const pageCount = doc.internal.getNumberOfPages();
+        
+        // Add footer to each page
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            
+            // Footer line
+            doc.setDrawColor(100);
+            doc.setLineWidth(0.5);
+            doc.line(20, 280, 190, 280);
+            
+            // Citation text
+            doc.setFontSize(8);
+            doc.setTextColor(80);
+            const footerText = `${citationInfo.author} (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool. DOI: ${citationInfo.doi}`;
+            doc.text(footerText, 105, 287, { align: 'center' });
+            
+            // Page number
+            doc.setFontSize(10);
+            doc.text(`Page ${i} of ${pageCount}`, 185, 287, { align: 'right' });
+        }
+
+        // Save the PDF
+        doc.save('simple-sequence-comparison-report.pdf');
+        
+        // Remove loading indicator
+        document.body.removeChild(loadingDiv);
+        
+    } catch (error) {
+        console.error('Error generating simple PDF:', error);
+        alert('Error generating PDF: ' + error.message);
+        
+        // Remove loading indicator if exists
+        const loadingDiv = document.querySelector('div[style*="position: fixed"][style*="zIndex: 9999"]');
+        if (loadingDiv) {
+            document.body.removeChild(loadingDiv);
+        }
     }
 }
