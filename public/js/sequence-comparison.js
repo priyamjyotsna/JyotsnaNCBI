@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set global Chart.js defaults for fonts
     if (typeof Chart !== 'undefined') {
         // Use only web-safe fonts that are guaranteed to be available
-        Chart.defaults.font.family = 'Arial, Helvetica, sans-serif';
+        Chart.defaults.font.family = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
         Chart.defaults.font.size = 12;
         Chart.defaults.color = '#333';
         
@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const ctx = chart.ctx;
                 ctx.textBaseline = 'middle';
                 ctx.textAlign = 'center';
+                // Force font to system default
+                ctx.font = '12px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
             }
         });
     }
@@ -1112,10 +1114,8 @@ function processSequenceData(data, type) {
                 const binSize = stats.binSize || Math.floor(comparisonResults.metadata.referenceLength / 10);
                 
                 stats.distribution.forEach((value, i) => {
-                    const start = i * binSize + 1;
-                    const end = Math.min((i + 1) * binSize, comparisonResults.metadata.referenceLength);
-                    // Simplify labels to avoid rendering issues
-                    labels.push(i + 1);
+                    // Use simple numeric labels only
+                    labels.push(`${i+1}`);
                     data.push(value);
                 });
             } else {
@@ -1131,7 +1131,8 @@ function processSequenceData(data, type) {
                 });
                 
                 bins.forEach((value, i) => {
-                    labels.push(i + 1);
+                    // Use simple numeric labels only
+                    labels.push(`${i+1}`);
                     data.push(value);
                 });
             }
@@ -1152,26 +1153,29 @@ function processSequenceData(data, type) {
             ctx.lineTo(chartWidth - margin.right, chartHeight - margin.bottom);
             ctx.stroke();
             
+            // Use system default fonts for all text
+            const systemFont = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            
             // Draw y-axis title
             ctx.save();
-            ctx.font = '14px Arial, sans-serif';
+            ctx.font = `14px ${systemFont}`;
             ctx.fillStyle = '#333';
             ctx.translate(12, margin.top + graphHeight / 2);
             ctx.rotate(-Math.PI / 2);
             ctx.textAlign = 'center';
-            ctx.fillText('Number of Mutations', 0, 0);
+            ctx.fillText('Mutations', 0, 0);
             ctx.restore();
             
             // Draw x-axis title
-            ctx.font = '14px Arial, sans-serif';
+            ctx.font = `14px ${systemFont}`;
             ctx.fillStyle = '#333';
             ctx.textAlign = 'center';
-            ctx.fillText('Sequence Position (regions)', margin.left + graphWidth / 2, chartHeight - 10);
+            ctx.fillText('Regions', margin.left + graphWidth / 2, chartHeight - 10);
             
             // Draw y-axis ticks and labels
             const yTickCount = 5;
             ctx.textAlign = 'right';
-            ctx.font = '12px Arial, sans-serif';
+            ctx.font = `12px ${systemFont}`;
             
             for (let i = 0; i <= yTickCount; i++) {
                 const value = (maxValue / yTickCount) * i;
@@ -1199,7 +1203,7 @@ function processSequenceData(data, type) {
             const barWidth = graphWidth / data.length * 0.8;
             const barSpacing = graphWidth / data.length * 0.2;
             
-            ctx.font = '10px Arial, sans-serif';
+            ctx.font = `10px ${systemFont}`;
             ctx.textAlign = 'center';
             
             for (let i = 0; i < data.length; i++) {
@@ -1217,13 +1221,9 @@ function processSequenceData(data, type) {
                 ctx.strokeStyle = 'rgba(66, 133, 244, 1)';
                 ctx.strokeRect(x, y, barWidth, barHeight);
                 
-                // Draw x-axis label
+                // Draw x-axis label - use simple approach without rotation
                 ctx.fillStyle = '#333';
-                ctx.save();
-                ctx.translate(x + barWidth / 2, chartHeight - margin.bottom + 15);
-                ctx.rotate(Math.PI / 4);
-                ctx.fillText(labels[i].toString(), 0, 0);
-                ctx.restore();
+                ctx.fillText(labels[i], x + barWidth / 2, chartHeight - margin.bottom + 15);
                 
                 // Draw tick
                 ctx.beginPath();
@@ -1233,14 +1233,25 @@ function processSequenceData(data, type) {
             }
             
             // Add chart title
-            ctx.font = 'bold 16px Arial, sans-serif';
+            ctx.font = `bold 16px ${systemFont}`;
             ctx.textAlign = 'center';
             ctx.fillText('Mutation Distribution', chartWidth / 2, 20);
             
             // Store chart data for PDF export
             window.chartData = {
-                labels: labels.map(label => label.toString()),
+                labels: labels,
                 data: data
+            };
+            
+            // Initialize dummy Chart.js object for compatibility
+            window.mutationChart = {
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data
+                    }]
+                },
+                destroy: function() {}
             };
             
         } catch (error) {
@@ -1657,7 +1668,14 @@ async function generatePDF() {
                 const x = 20 + margin.left + (i * (barWidth + barSpacing)) + barSpacing / 2;
                 const y = yPos + margin.top + graphHeight - barHeight;
                 
+                // Draw simple bars without text
                 doc.rect(x, y, barWidth, barHeight, 'FD');
+                
+                // Draw simple labels below x-axis
+                if (i % Math.ceil(data.length / 10) === 0) { // Show only 10 labels max
+                    doc.setFontSize(8);
+                    doc.text(labels[i].toString(), x + barWidth / 2, yPos + margin.top + graphHeight + 10, { align: 'center' });
+                }
             }
             
             // Draw axes
@@ -1666,17 +1684,10 @@ async function generatePDF() {
             doc.line(20 + margin.left, yPos + margin.top, 20 + margin.left, yPos + margin.top + graphHeight); // Y-axis
             doc.line(20 + margin.left, yPos + margin.top + graphHeight, 20 + margin.left + graphWidth, yPos + margin.top + graphHeight); // X-axis
             
-            // Add labels
-            doc.setFontSize(8);
-            for (let i = 0; i < labels.length; i += Math.ceil(labels.length / 10)) {
-                const x = 20 + margin.left + (i * (barWidth + barSpacing)) + barSpacing / 2 + barWidth / 2;
-                doc.text(labels[i].toString(), x, yPos + margin.top + graphHeight + 10, { align: 'center' });
-            }
-            
             // Add axis titles
             doc.setFontSize(9);
             doc.text('Mutations', 10, yPos + chartHeight / 2, { angle: 90 });
-            doc.text('Sequence Position', 20 + chartWidth / 2, yPos + chartHeight - 2, { align: 'center' });
+            doc.text('Regions', 20 + chartWidth / 2, yPos + chartHeight - 2, { align: 'center' });
             
             yPos += chartHeight + 15;
         }
