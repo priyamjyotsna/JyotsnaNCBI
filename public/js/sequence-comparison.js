@@ -542,9 +542,21 @@ function processSequenceData(data, type) {
             return;
         }
 
-        compareBtn.disabled = true;
+        // Clear any previous comparison results and chart
+        if (window.mutationChart instanceof Chart) {
+            window.mutationChart.destroy();
+            window.mutationChart = null;
+        }
+        
+        // Reset the comparisonResults to null
+        comparisonResults = null;
+        
+        // Clear the results section completely before showing loading spinner
+        resultsSection.innerHTML = '';
         resultsSection.style.display = 'block';
         resultsSection.innerHTML = '<div class="loading">Comparing sequences... <div class="spinner"></div></div>';
+
+        compareBtn.disabled = true;
 
         try {
             console.log('Starting sequence comparison...');
@@ -621,6 +633,12 @@ function processSequenceData(data, type) {
         if (!comparisonResults) return;
         
         const filteredMutations = getFilteredMutations();
+        
+        // Remove any existing report elements including chart canvases
+        const existingReport = document.querySelector('.mutation-report');
+        if (existingReport) {
+            existingReport.remove();
+        }
         
         // Show results section
         resultsSection.style.display = 'block';
