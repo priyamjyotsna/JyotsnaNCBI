@@ -863,30 +863,86 @@ function processSequenceData(data, type) {
                 orientation: 'portrait',
                 unit: 'mm',
                 format: 'a4',
-                putOnlyUsedFonts: true,
                 compress: true,
-                precision: 16, // Higher precision for better text rendering
-                hotfixes: ['px_scaling'] // Apply hotfix for better scaling
+                precision: 16,
+                hotfixes: ['px_scaling'] 
             });
 
-            // Add system default font to ensure consistent rendering
+            // Set up document metadata
+            doc.setProperties({
+                title: 'Sequence Comparison Report',
+                subject: 'DNA Sequence Analysis',
+                author: 'Jyotsna\'s NCBI Tools',
+                creator: 'Sequence Comparison Tool'
+            });
+
+            // Enable better text rendering
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(16);
-            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(12);
+            
+            // Get citation info
+            let citationInfo;
+            try {
+                const response = await fetch('/api/citation-config');
+                citationInfo = await response.json();
+            } catch (error) {
+                console.error('Error fetching citation config:', error);
+                citationInfo = {
+                    author: 'Priyam, J.',
+                    title: 'Jyotsna\'s NCBI Tools',
+                    year: '2025',
+                    doi: '10.5281/zenodo.15069907',
+                    url: window.location.href
+                };
+            }
+            
+            // Set up footer with citation text for all pages
+            const currentDate = new Date().toLocaleDateString('en-US', {
+                day: 'numeric', month: 'long', year: 'numeric'
+            });
+            
+            const footerText = `${citationInfo.author} (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool. DOI: ${citationInfo.doi}`;
+            
+            // Add footer to all pages
+            const addFooter = function() {
+                const pageCount = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    
+                    // Draw footer line
+                    doc.setDrawColor(200, 200, 200);
+                    doc.setLineWidth(0.5);
+                    doc.line(20, doc.internal.pageSize.height - 25, doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 25);
+                    
+                    // Add citation text
+                    doc.setFontSize(7);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(footerText, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 15, {
+                        align: 'center', 
+                        maxWidth: doc.internal.pageSize.width - 40
+                    });
+                    
+                    // Add page numbers
+                    doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 10, {
+                        align: 'right'
+                    });
+                }
+            };
 
             // Set initial y position
             let yPos = 20;
 
             // Title
-            doc.setFontSize(16);
+            doc.setFontSize(18);
             doc.setFont("helvetica", "bold");
+            doc.setTextColor(0, 0, 0);
             doc.text('Sequence Comparison Report', doc.internal.pageSize.width / 2, yPos, { align: 'center' });
             yPos += 15;
 
             // Date
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
-            doc.text(`Generated: ${new Date().toLocaleString()}`, 20, yPos);
+            doc.text(`Generated: ${currentDate}`, 20, yPos);
             yPos += 15;
 
             // Summary Statistics
@@ -894,7 +950,7 @@ function processSequenceData(data, type) {
             const sequenceLength = document.getElementById('sequenceLength').textContent;
             const mutationRate = document.getElementById('mutationRate').textContent;
 
-            doc.setFontSize(12);
+            doc.setFontSize(14);
             doc.setFont("helvetica", "bold");
             doc.text('Summary:', 20, yPos);
             yPos += 10;
@@ -912,42 +968,65 @@ function processSequenceData(data, type) {
             });
             yPos += 5;
             
-            // Handle chart - use canvas capture for better quality
+            // Improved chart rendering - use base64 image approach
             const chartCanvas = document.getElementById('mutationChart');
-            if (chartCanvas) {
-                doc.setFontSize(12);
+            if (chartCanvas && window.Chart) {
+                doc.setFontSize(14);
                 doc.setFont("helvetica", "bold");
                 doc.text('Mutation Distribution:', 20, yPos);
                 yPos += 10;
                 
-                // Create a high-quality image from the chart
-                try {
-                    // First render the chart at higher quality if possible
-                    if (window.mutationChart) {
-                        // Update chart render options for better quality
+                // Make sure chart is fully rendered before capturing
+                if (window.mutationChart) {
+                    try {
+                        // First temporarily modify chart for better export quality
+                        const originalAnimation = window.mutationChart.options.animation;
+                        const originalResponsive = window.mutationChart.options.responsive;
+                        
+                        // Configure for high quality export
                         window.mutationChart.options.animation = false;
                         window.mutationChart.options.responsive = false;
-                        window.mutationChart.options.devicePixelRatio = 2;
+                        window.mutationChart.options.devicePixelRatio = 3;
+                        
+                        // Ensure fonts are readable
+                        if (window.mutationChart.options.scales && window.mutationChart.options.scales.x) {
+                            window.mutationChart.options.scales.x.ticks.font.size = 14;
+                        }
+                        if (window.mutationChart.options.scales && window.mutationChart.options.scales.y) {
+                            window.mutationChart.options.scales.y.ticks.font.size = 14;
+                        }
+                        
+                        // Update the chart with new settings
                         window.mutationChart.update();
+                        
+                        // Ensure chart has fully rendered
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // Get chart as image with maximum quality
+                        const chartImg = chartCanvas.toDataURL('image/png', 1.0);
+                        
+                        // Calculate dimensions for PDF
+                        const chartWidth = 160; // mm - slightly narrower for better appearance
+                        const chartAspect = chartCanvas.height / chartCanvas.width;
+                        const chartHeight = chartWidth * chartAspect;
+                        
+                        // Center image in page
+                        const leftMargin = (doc.internal.pageSize.width - chartWidth) / 2;
+                        
+                        // Add chart to PDF
+                        doc.addImage(chartImg, 'PNG', leftMargin, yPos, chartWidth, chartHeight, null, 'FAST');
+                        yPos += chartHeight + 15;
+                        
+                        // Restore original chart settings
+                        window.mutationChart.options.animation = originalAnimation;
+                        window.mutationChart.options.responsive = originalResponsive;
+                        window.mutationChart.options.devicePixelRatio = 1;
+                        window.mutationChart.update();
+                    } catch (error) {
+                        console.error('Error adding chart to PDF:', error);
+                        doc.text('Chart could not be rendered - see application for visualization', 20, yPos);
+                        yPos += 10;
                     }
-                    
-                    // Capture the chart as an image with maximum quality
-                    const chartImg = chartCanvas.toDataURL('image/png', 1.0);
-                    
-                    // Chart dimensions - maintain aspect ratio
-                    const chartWidth = 170; // mm
-                    const chartAspect = chartCanvas.height / chartCanvas.width;
-                    const chartHeight = chartWidth * chartAspect;
-                    
-                    // Add image to PDF
-                    doc.addImage(chartImg, 'PNG', 20, yPos, chartWidth, chartHeight, null, 'FAST');
-                    
-                    yPos += chartHeight + 15;
-                } catch (error) {
-                    console.error('Error adding chart to PDF:', error);
-                    // Fallback to text if chart rendering fails
-                    doc.text('Chart could not be rendered - see application for visualization', 20, yPos);
-                    yPos += 10;
                 }
             }
 
@@ -960,21 +1039,32 @@ function processSequenceData(data, type) {
                     yPos = 20;
                 }
                 
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "bold");
+                doc.text('Mutation Details:', 20, yPos);
+                yPos += 10;
+                
                 doc.autoTable({
                     html: '#mutationTable',
                     startY: yPos,
                     styles: { 
-                        fontSize: 8,
+                        fontSize: 9,
                         font: 'helvetica',
                         lineWidth: 0.1,
-                        lineColor: [0, 0, 0]
+                        lineColor: [0, 0, 0],
+                        cellPadding: 3,
                     },
                     headStyles: {
                         fillColor: [220, 220, 220],
                         textColor: [0, 0, 0],
-                        fontStyle: 'bold'
+                        fontStyle: 'bold',
+                        halign: 'center'
                     },
-                    margin: { top: 20, bottom: 40 }, // Ensure space for citations
+                    columnStyles: {
+                        0: { halign: 'center' },  // Position
+                        3: { halign: 'center' }   // Type
+                    },
+                    margin: { top: 20, bottom: 40 },
                     didDrawPage: function(data) {
                         // Save the final Y position after the table
                         yPos = data.cursor.y;
@@ -982,89 +1072,66 @@ function processSequenceData(data, type) {
                 });
             }
 
-            // Ensure we have space for citations, if not, add new page
-            if (yPos > doc.internal.pageSize.height - 60) {
-                doc.addPage();
-                yPos = 20;
-            }
-
-            // Add separator line
-            yPos += 10;
-            doc.setDrawColor(200, 200, 200);
-            doc.setLineWidth(0.5);
-            doc.line(20, yPos, doc.internal.pageSize.width - 20, yPos);
-
-            // Citations
-            yPos += 10;
-            doc.setFontSize(12);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(0);
-            doc.text('How to Cite This Tool', 20, yPos);
-
-            // Get citation info from API if possible
-            let citationInfo;
-            try {
-                const response = await fetch('/api/citation-config');
-                citationInfo = await response.json();
-            } catch (error) {
-                console.error('Error fetching citation config:', error);
-                // Use default values if API fails
-                citationInfo = {
-                    author: 'Priyam, J.',
-                    title: 'Jyotsna\'s NCBI Tools',
-                    year: '2025',
-                    doi: '10.5281/zenodo.15069907',
-                    url: window.location.href
-                };
-            }
-            
-            const currentDate = new Date();
-            const formattedDate = currentDate.toLocaleDateString('en-US', {
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric'
-            });
-
-            yPos += 10;
-            doc.autoTable({
-                startY: yPos,
-                head: [['Format', 'Citation']],
-                body: [
-                    ['APA', `${citationInfo.author} (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool. DOI: ${citationInfo.doi}`],
-                    ['MLA', `${citationInfo.author} "${citationInfo.title} - Sequence Comparison Tool." ${citationInfo.year}, ${citationInfo.url}. DOI: ${citationInfo.doi}. Accessed ${formattedDate}.`],
-                    ['BibTeX', `@software{${citationInfo.doi.replace(/\./g, '_').replace(/\//g, '_')},\ntitle={{${citationInfo.title} - Sequence Comparison Tool}},\nauthor={${citationInfo.author}},\nyear={${citationInfo.year}},\ndoi={${citationInfo.doi}},\nurl={${citationInfo.url}},\nnote={Accessed: ${formattedDate}}\n}`]
-                ],
-                styles: {
-                    fontSize: 8,
-                    font: 'helvetica',
-                    cellPadding: 3,
-                    overflow: 'linebreak',
-                    valign: 'middle',
-                    lineWidth: 0.1,
-                    lineColor: [80, 80, 80]
-                },
-                columnStyles: {
-                    0: { fontStyle: 'bold', cellWidth: 30 },
-                    1: { cellWidth: 'auto' }
-                },
-                margin: { left: 20, right: 20 },
-                theme: 'grid',
-                pageBreak: 'avoid' // Prevent citation table from breaking across pages
-            });
-
             // Add citation page
             doc.addPage();
-            doc.setFontSize(10);
+            yPos = 30;
+            
+            doc.setFontSize(16);
             doc.setFont("helvetica", "bold");
-            doc.text('How to Cite:', 20, 30);
-            doc.setFontSize(9);
+            doc.setTextColor(0, 0, 0);
+            doc.text('How to Cite This Tool', doc.internal.pageSize.width / 2, yPos, { align: 'center' });
+            yPos += 20;
+            
+            // Citation formats
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text('APA Format:', 20, yPos);
+            yPos += 10;
+            
+            doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
-            doc.text(`${citationInfo.author} (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool. DOI: ${citationInfo.doi}`, 20, 45, {
-                maxWidth: 170,
-                renderingMode: 'fill'
+            doc.text(`${citationInfo.author} (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool. DOI: ${citationInfo.doi}`, 30, yPos, {
+                maxWidth: doc.internal.pageSize.width - 60
+            });
+            yPos += 20;
+            
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text('MLA Format:', 20, yPos);
+            yPos += 10;
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`${citationInfo.author} "${citationInfo.title} - Sequence Comparison Tool." ${citationInfo.year}, ${citationInfo.url}. DOI: ${citationInfo.doi}. Accessed ${currentDate}.`, 30, yPos, {
+                maxWidth: doc.internal.pageSize.width - 60
+            });
+            yPos += 20;
+            
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text('BibTeX Format:', 20, yPos);
+            yPos += 10;
+            
+            const bibtexText = 
+`@software{${citationInfo.doi.replace(/\./g, '_').replace(/\//g, '_')},
+  title={{${citationInfo.title} - Sequence Comparison Tool}},
+  author={${citationInfo.author}},
+  year={${citationInfo.year}},
+  doi={${citationInfo.doi}},
+  url={${citationInfo.url}},
+  note={Accessed: ${currentDate}}
+}`;
+            
+            doc.setFontSize(9);
+            doc.setFont("courier", "normal"); // Use monospace font for code
+            doc.text(bibtexText, 30, yPos, {
+                maxWidth: doc.internal.pageSize.width - 60
             });
 
-            // Save the PDF with high quality settings
+            // Add footer with citation to all pages
+            addFooter();
+
+            // Save the PDF
             doc.save('sequence-comparison-report.pdf');
 
         } catch (error) {
