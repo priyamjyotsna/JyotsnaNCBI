@@ -857,298 +857,223 @@ function processSequenceData(data, type) {
     // Add export functions
     async function generatePDF() {
         try {
-            // Create new jsPDF instance with improved font rendering
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4',
-                compress: true,
-                precision: 16,
-                hotfixes: ['px_scaling'] 
-            });
+            // Step 1: First, capture the chart as a high-quality image
+            const chartElement = document.getElementById('mutationChart');
+            if (!chartElement) {
+                throw new Error('Chart element not found');
+            }
 
-            // Set up document metadata
+            // Set up a loading indicator
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.style.position = 'fixed';
+            loadingIndicator.style.top = '50%';
+            loadingIndicator.style.left = '50%';
+            loadingIndicator.style.transform = 'translate(-50%, -50%)';
+            loadingIndicator.style.padding = '20px';
+            loadingIndicator.style.background = 'rgba(255, 255, 255, 0.9)';
+            loadingIndicator.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.3)';
+            loadingIndicator.style.borderRadius = '5px';
+            loadingIndicator.style.zIndex = '9999';
+            loadingIndicator.innerHTML = 'Generating PDF... Please wait';
+            document.body.appendChild(loadingIndicator);
+
+            // Use html2canvas to capture the chart with high quality
+            console.log('Capturing chart...');
+            const chartCanvas = await html2canvas(chartElement, {
+                scale: 3, // Higher scale for better quality
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff'
+            });
+            
+            // Convert canvas to image data
+            const chartImage = chartCanvas.toDataURL('image/png', 1.0);
+            console.log('Chart captured as image');
+
+            // Step 2: Now create the PDF with the captured chart image
+            console.log('Creating PDF...');
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('portrait', 'mm', 'a4');
+
+            // Set document properties
             doc.setProperties({
                 title: 'Sequence Comparison Report',
-                subject: 'DNA Sequence Analysis',
+                subject: 'Mutation Analysis',
                 author: 'Jyotsna\'s NCBI Tools',
                 creator: 'Sequence Comparison Tool'
             });
 
-            // Get citation info
+            // Get citation information
             let citationInfo;
             try {
                 const response = await fetch('/api/citation-config');
                 citationInfo = await response.json();
             } catch (error) {
-                console.error('Error fetching citation config:', error);
+                console.error('Error fetching citation info:', error);
                 citationInfo = {
                     author: 'Priyam, J.',
                     title: 'Jyotsna\'s NCBI Tools',
-                    year: '2025',
+                    year: new Date().getFullYear(),
                     doi: '10.5281/zenodo.15069907',
                     url: window.location.href
                 };
             }
-            
+
+            // Get data for the report
+            const totalMutations = document.getElementById('totalMutations').textContent;
+            const sequenceLength = document.getElementById('sequenceLength').textContent;
+            const mutationRate = document.getElementById('mutationRate').textContent;
             const currentDate = new Date().toLocaleDateString('en-US', {
                 day: 'numeric', month: 'long', year: 'numeric'
             });
-            
-            // Define footer function with darker text and thicker line
-            const addFooter = function() {
+
+            // Function to add footer to each page
+            const addFooter = function(doc) {
+                // Get the current number of pages
                 const pageCount = doc.internal.getNumberOfPages();
+                
+                // Loop through each page
                 for (let i = 1; i <= pageCount; i++) {
+                    // Set current page
                     doc.setPage(i);
                     
                     // Draw footer line
-                    doc.setDrawColor(150, 150, 150);
-                    doc.setLineWidth(0.8);
-                    doc.line(15, doc.internal.pageSize.height - 25, doc.internal.pageSize.width - 15, doc.internal.pageSize.height - 25);
+                    doc.setDrawColor(0, 0, 0);
+                    doc.setLineWidth(0.5);
+                    doc.line(10, 282, 200, 282);
                     
-                    // Add citation text with darker color for better visibility
+                    // Add citation text
+                    const citationText = `${citationInfo.author} (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool. DOI: ${citationInfo.doi}`;
                     doc.setFont("helvetica", "normal");
                     doc.setFontSize(8);
-                    doc.setTextColor(0, 0, 0); // Black text for better visibility
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(citationText, 105, 287, { align: 'center', maxWidth: 180 });
                     
-                    const footerText = `${citationInfo.author} (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool. DOI: ${citationInfo.doi}`;
-                    doc.text(footerText, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 15, {
-                        align: 'center', 
-                        maxWidth: doc.internal.pageSize.width - 40
-                    });
-                    
-                    // Page numbers
+                    // Add page numbers
                     doc.setFont("helvetica", "bold");
-                    doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 15, doc.internal.pageSize.height - 8, {
-                        align: 'right'
-                    });
+                    doc.text(`Page ${i} of ${pageCount}`, 195, 292, { align: 'right' });
                 }
             };
 
-            // Set initial y position
+            // START PAGE 1 - TITLE AND SUMMARY
             let yPos = 20;
-
+            
             // Title
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(18);
+            doc.setFontSize(20);
             doc.setTextColor(0, 0, 0);
-            doc.text('Sequence Comparison Report', doc.internal.pageSize.width / 2, yPos, { align: 'center' });
+            doc.text('Sequence Comparison Report', 105, yPos, { align: 'center' });
             yPos += 15;
 
             // Date
             doc.setFont("helvetica", "normal");
             doc.setFontSize(10);
             doc.text(`Generated: ${currentDate}`, 20, yPos);
-            yPos += 15;
+            yPos += 20;
 
-            // Summary Statistics
-            const totalMutations = document.getElementById('totalMutations').textContent;
-            const sequenceLength = document.getElementById('sequenceLength').textContent;
-            const mutationRate = document.getElementById('mutationRate').textContent;
-
+            // Summary heading
             doc.setFont("helvetica", "bold");
             doc.setFontSize(14);
-            doc.text('Summary:', 20, yPos);
+            doc.text('Summary Statistics', 20, yPos);
             yPos += 10;
 
+            // Summary data
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(10);
-            const summaryText = [
-                `Total Mutations: ${totalMutations}`,
-                `Sequence Length: ${sequenceLength}`,
-                `Mutation Rate: ${mutationRate}`
-            ];
-            summaryText.forEach(text => {
-                doc.text(text, 20, yPos);
-                yPos += 7;
-            });
-            yPos += 5;
-            
-            // IMPROVED CHART RENDERING
-            const chartCanvas = document.getElementById('mutationChart');
-            if (chartCanvas && window.Chart) {
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(14);
-                doc.text('Mutation Distribution:', 20, yPos);
-                yPos += 10;
+            doc.setFontSize(11);
+            doc.text(`Total Mutations: ${totalMutations}`, 25, yPos);
+            yPos += 8;
+            doc.text(`Sequence Length: ${sequenceLength}`, 25, yPos);
+            yPos += 8;
+            doc.text(`Mutation Rate: ${mutationRate}`, 25, yPos);
+            yPos += 20;
+
+            // Chart heading
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(14);
+            doc.text('Mutation Distribution', 105, yPos, { align: 'center' });
+            yPos += 10;
+
+            // Add the chart image to the PDF
+            try {
+                // Calculate dimensions to fit the page while maintaining aspect ratio
+                const chartAspectRatio = chartCanvas.height / chartCanvas.width;
+                const chartWidth = 160; // mm - width on the PDF page
+                const chartHeight = chartWidth * chartAspectRatio;
                 
-                // Make sure chart is fully rendered before capturing
-                if (window.mutationChart) {
-                    try {
-                        // Create a temporary high-quality chart for export
-                        const tempCanvas = document.createElement('canvas');
-                        tempCanvas.id = 'tempExportChart';
-                        tempCanvas.width = chartCanvas.width * 2;  // Double resolution
-                        tempCanvas.height = chartCanvas.height * 2;
-                        tempCanvas.style.display = 'none';
-                        document.body.appendChild(tempCanvas);
-                        
-                        // Get original chart data and options
-                        const chartData = window.mutationChart.data;
-                        
-                        // Create a high-quality chart instance
-                        const ctx = tempCanvas.getContext('2d');
-                        ctx.fillStyle = '#FFFFFF';
-                        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                        
-                        // Apply high quality settings
-                        ctx.imageSmoothingEnabled = true;
-                        ctx.imageSmoothingQuality = 'high';
-                        
-                        const exportChart = new Chart(ctx, {
-                            type: 'bar',
-                            data: chartData,
-                            options: {
-                                responsive: false,
-                                animation: false,
-                                devicePixelRatio: 2,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        display: false
-                                    },
-                                    tooltip: {
-                                        enabled: false
-                                    }
-                                },
-                                scales: {
-                                    y: {
-                                        beginAtZero: true,
-                                        grid: {
-                                            color: 'rgba(0, 0, 0, 0.1)',
-                                            lineWidth: 1
-                                        },
-                                        title: {
-                                            display: true,
-                                            text: 'Mutations',
-                                            font: {
-                                                size: 16,
-                                                weight: 'bold',
-                                                family: 'Helvetica, Arial, sans-serif'
-                                            },
-                                            color: 'black'
-                                        },
-                                        ticks: {
-                                            font: {
-                                                size: 14,
-                                                weight: 'bold',
-                                                family: 'Helvetica, Arial, sans-serif'
-                                            },
-                                            color: 'black',
-                                            padding: 8
-                                        }
-                                    },
-                                    x: {
-                                        grid: {
-                                            display: false
-                                        },
-                                        title: {
-                                            display: true,
-                                            text: 'Regions',
-                                            font: {
-                                                size: 16,
-                                                weight: 'bold',
-                                                family: 'Helvetica, Arial, sans-serif'
-                                            },
-                                            color: 'black'
-                                        },
-                                        ticks: {
-                                            font: {
-                                                size: 14,
-                                                weight: 'bold',
-                                                family: 'Helvetica, Arial, sans-serif'
-                                            },
-                                            color: 'black',
-                                            padding: 8
-                                        }
-                                    }
-                                }
-                            }
-                        });
-                        
-                        // Wait for chart to render completely
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        
-                        // Get chart as image with maximum quality
-                        const chartImg = tempCanvas.toDataURL('image/png', 1.0);
-                        
-                        // Calculate dimensions for PDF
-                        const chartWidth = 160; // mm - slightly narrower for better appearance
-                        const chartAspect = tempCanvas.height / tempCanvas.width;
-                        const chartHeight = chartWidth * chartAspect;
-                        
-                        // Center image in page
-                        const leftMargin = (doc.internal.pageSize.width - chartWidth) / 2;
-                        
-                        // Add image to PDF
-                        doc.addImage(chartImg, 'PNG', leftMargin, yPos, chartWidth, chartHeight, null, 'FAST');
-                        yPos += chartHeight + 15;
-                        
-                        // Clean up temp canvas
-                        document.body.removeChild(tempCanvas);
-                        
-                    } catch (error) {
-                        console.error('Error adding chart to PDF:', error);
-                        doc.text('Chart could not be rendered - see application for visualization', 20, yPos);
-                        yPos += 10;
-                    }
-                }
+                // Calculate position to center the chart
+                const leftMargin = (210 - chartWidth) / 2; // A4 width is 210mm
+                
+                // Add image to PDF
+                doc.addImage(
+                    chartImage, 
+                    'PNG', 
+                    leftMargin, 
+                    yPos, 
+                    chartWidth, 
+                    chartHeight, 
+                    undefined, 
+                    'FAST'
+                );
+                
+                yPos += chartHeight + 20;
+            } catch (chartError) {
+                console.error('Error adding chart to PDF:', chartError);
+                doc.setFont("helvetica", "italic");
+                doc.setFontSize(10);
+                doc.text('Chart could not be included in the PDF. Please check the application interface.', 105, yPos, { align: 'center' });
+                yPos += 20;
             }
 
-            // Mutation Table
-            const mutationTable = document.getElementById('mutationTable');
-            if (mutationTable) {
-                // Check if we need a new page for the table
-                if (yPos > doc.internal.pageSize.height - 100) {
-                    doc.addPage();
-                    yPos = 20;
-                }
-                
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(14);
-                doc.text('Mutation Details:', 20, yPos);
-                yPos += 10;
-                
+            // START PAGE 2 - MUTATION TABLE
+            doc.addPage();
+            yPos = 20;
+
+            // Mutation table heading
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(14);
+            doc.text('Mutation Details', 20, yPos);
+            yPos += 10;
+
+            // Add mutation table
+            const table = document.getElementById('mutationTable');
+            if (table) {
                 doc.autoTable({
                     html: '#mutationTable',
                     startY: yPos,
-                    styles: { 
+                    styles: {
                         fontSize: 9,
                         font: 'helvetica',
-                        lineWidth: 0.1,
-                        lineColor: [0, 0, 0],
-                        cellPadding: 3,
+                        cellPadding: 3
                     },
                     headStyles: {
-                        fillColor: [220, 220, 220],
-                        textColor: [0, 0, 0],
+                        fillColor: [40, 40, 40],
+                        textColor: [255, 255, 255],
                         fontStyle: 'bold',
                         halign: 'center'
                     },
                     columnStyles: {
-                        0: { halign: 'center' },  // Position
-                        3: { halign: 'center' }   // Type
+                        0: { halign: 'center' }, // Position
+                        3: { halign: 'center' }  // Type
                     },
-                    margin: { top: 20, bottom: 40 },
+                    margin: { top: 20, bottom: 30 },
                     didDrawPage: function(data) {
-                        // Save the final Y position after the table
+                        // Update yPos after table
                         yPos = data.cursor.y;
                     }
                 });
             }
 
-            // Add citation page
+            // START PAGE 3 - CITATION INFORMATION
             doc.addPage();
-            yPos = 30;
-            
+            yPos = 20;
+
+            // Citation heading
             doc.setFont("helvetica", "bold");
             doc.setFontSize(16);
-            doc.setTextColor(0, 0, 0);
-            doc.text('How to Cite This Tool', doc.internal.pageSize.width / 2, yPos, { align: 'center' });
+            doc.text('How to Cite This Tool', 105, yPos, { align: 'center' });
             yPos += 20;
-            
-            // Citation formats
+
+            // APA format
             doc.setFont("helvetica", "bold");
             doc.setFontSize(12);
             doc.text('APA Format:', 20, yPos);
@@ -1157,10 +1082,11 @@ function processSequenceData(data, type) {
             doc.setFont("helvetica", "normal");
             doc.setFontSize(10);
             doc.text(`${citationInfo.author} (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool. DOI: ${citationInfo.doi}`, 30, yPos, {
-                maxWidth: doc.internal.pageSize.width - 60
+                maxWidth: 160
             });
             yPos += 20;
-            
+
+            // MLA format
             doc.setFont("helvetica", "bold");
             doc.setFontSize(12);
             doc.text('MLA Format:', 20, yPos);
@@ -1169,10 +1095,11 @@ function processSequenceData(data, type) {
             doc.setFont("helvetica", "normal");
             doc.setFontSize(10);
             doc.text(`${citationInfo.author} "${citationInfo.title} - Sequence Comparison Tool." ${citationInfo.year}, ${citationInfo.url}. DOI: ${citationInfo.doi}. Accessed ${currentDate}.`, 30, yPos, {
-                maxWidth: doc.internal.pageSize.width - 60
+                maxWidth: 160
             });
             yPos += 20;
-            
+
+            // BibTeX format
             doc.setFont("helvetica", "bold");
             doc.setFontSize(12);
             doc.text('BibTeX Format:', 20, yPos);
@@ -1188,21 +1115,32 @@ function processSequenceData(data, type) {
   note={Accessed: ${currentDate}}
 }`;
             
+            doc.setFont("courier", "normal");
             doc.setFontSize(9);
-            doc.setFont("courier", "normal"); // Use monospace font for code
             doc.text(bibtexText, 30, yPos, {
-                maxWidth: doc.internal.pageSize.width - 60
+                maxWidth: 160
             });
 
-            // IMPORTANT: Add footer with citation to all pages
-            addFooter();
+            // THIS IS CRITICAL - Add footer to all pages
+            console.log('Adding footer to all pages...');
+            addFooter(doc);
 
             // Save the PDF
             doc.save('sequence-comparison-report.pdf');
+            console.log('PDF saved successfully');
+
+            // Remove loading indicator
+            document.body.removeChild(loadingIndicator);
 
         } catch (error) {
             console.error('PDF Generation Error:', error);
             alert('Error generating PDF: ' + error.message);
+            
+            // Ensure loading indicator is removed even on error
+            const loadingIndicator = document.querySelector('[style*="position: fixed"][style*="top: 50%"]');
+            if (loadingIndicator) {
+                document.body.removeChild(loadingIndicator);
+            }
         }
     }
 
