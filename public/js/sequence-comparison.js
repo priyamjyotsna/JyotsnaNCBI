@@ -1153,8 +1153,8 @@ function processSequenceData(data, type) {
             ctx.lineTo(chartWidth - margin.right, chartHeight - margin.bottom);
             ctx.stroke();
             
-            // Use system default fonts for all text
-            const systemFont = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            // Use web-safe fonts
+            const systemFont = 'Arial, sans-serif';
             
             // Draw y-axis title
             ctx.save();
@@ -1243,16 +1243,117 @@ function processSequenceData(data, type) {
                 data: data
             };
             
-            // Initialize dummy Chart.js object for compatibility
-            window.mutationChart = {
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data
-                    }]
-                },
-                destroy: function() {}
-            };
+            // Create a high-quality static image for PDF export
+            // Create a hidden higher-quality canvas for PDF
+            const pdfCanvas = document.createElement('canvas');
+            pdfCanvas.width = 1200; // High resolution for PDF
+            pdfCanvas.height = 600;
+            pdfCanvas.style.display = 'none';
+            document.body.appendChild(pdfCanvas);
+            
+            const pdfCtx = pdfCanvas.getContext('2d');
+            pdfCtx.fillStyle = 'white';
+            pdfCtx.fillRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+            
+            // Define margins and dimensions
+            const pdfMargin = { top: 50, right: 50, bottom: 80, left: 80 };
+            const pdfGraphWidth = pdfCanvas.width - pdfMargin.left - pdfMargin.right;
+            const pdfGraphHeight = pdfCanvas.height - pdfMargin.top - pdfMargin.bottom;
+            
+            // Draw axes
+            pdfCtx.strokeStyle = '#333';
+            pdfCtx.lineWidth = 2;
+            pdfCtx.beginPath();
+            pdfCtx.moveTo(pdfMargin.left, pdfMargin.top);
+            pdfCtx.lineTo(pdfMargin.left, pdfCanvas.height - pdfMargin.bottom);
+            pdfCtx.lineTo(pdfCanvas.width - pdfMargin.right, pdfCanvas.height - pdfMargin.bottom);
+            pdfCtx.stroke();
+            
+            // Draw Y-axis title
+            pdfCtx.save();
+            pdfCtx.font = 'bold 24px Arial, Helvetica, sans-serif';
+            pdfCtx.fillStyle = '#333';
+            pdfCtx.translate(25, pdfCanvas.height/2);
+            pdfCtx.rotate(-Math.PI/2);
+            pdfCtx.textAlign = 'center';
+            pdfCtx.fillText('Mutations', 0, 0);
+            pdfCtx.restore();
+            
+            // Draw X-axis title
+            pdfCtx.font = 'bold 24px Arial, Helvetica, sans-serif';
+            pdfCtx.fillStyle = '#333';
+            pdfCtx.textAlign = 'center';
+            pdfCtx.fillText('Regions', pdfCanvas.width/2, pdfCanvas.height - 20);
+            
+            // Draw grid lines and Y-axis labels
+            pdfCtx.textAlign = 'right';
+            pdfCtx.font = '18px Arial, Helvetica, sans-serif';
+            
+            for (let i = 0; i <= 5; i++) {
+                const value = (maxValue / 5) * i;
+                const y = pdfCanvas.height - pdfMargin.bottom - (i / 5) * pdfGraphHeight;
+                
+                // Grid line
+                pdfCtx.strokeStyle = '#ddd';
+                pdfCtx.beginPath();
+                pdfCtx.moveTo(pdfMargin.left, y);
+                pdfCtx.lineTo(pdfCanvas.width - pdfMargin.right, y);
+                pdfCtx.stroke();
+                
+                // Y-axis label
+                pdfCtx.fillStyle = '#333';
+                pdfCtx.fillText(Math.round(value).toString(), pdfMargin.left - 10, y + 6);
+            }
+            
+            // Draw bars
+            const pdfBarWidth = pdfGraphWidth / data.length * 0.7;
+            const pdfBarSpacing = pdfGraphWidth / data.length * 0.3;
+            
+            for (let i = 0; i < data.length; i++) {
+                const value = data[i];
+                const barHeight = (value / maxValue) * pdfGraphHeight;
+                const x = pdfMargin.left + (i * (pdfBarWidth + pdfBarSpacing)) + pdfBarSpacing/2;
+                const y = pdfCanvas.height - pdfMargin.bottom - barHeight;
+                
+                // Draw bar
+                pdfCtx.fillStyle = 'rgba(66, 133, 244, 0.8)';
+                pdfCtx.fillRect(x, y, pdfBarWidth, barHeight);
+                
+                // Draw border
+                pdfCtx.strokeStyle = 'rgba(66, 133, 244, 1)';
+                pdfCtx.lineWidth = 1;
+                pdfCtx.strokeRect(x, y, pdfBarWidth, barHeight);
+                
+                // Draw value on top if not zero
+                if (value > 0) {
+                    pdfCtx.fillStyle = '#333';
+                    pdfCtx.textAlign = 'center';
+                    pdfCtx.font = '16px Arial, Helvetica, sans-serif';
+                    pdfCtx.fillText(value.toString(), x + pdfBarWidth/2, y - 10);
+                }
+                
+                // X-axis label
+                pdfCtx.fillStyle = '#333';
+                pdfCtx.textAlign = 'center';
+                pdfCtx.font = '18px Arial, Helvetica, sans-serif';
+                pdfCtx.fillText(labels[i], x + pdfBarWidth/2, pdfCanvas.height - pdfMargin.bottom + 25);
+                
+                // Tick mark
+                pdfCtx.strokeStyle = '#333';
+                pdfCtx.beginPath();
+                pdfCtx.moveTo(x + pdfBarWidth/2, pdfCanvas.height - pdfMargin.bottom);
+                pdfCtx.lineTo(x + pdfBarWidth/2, pdfCanvas.height - pdfMargin.bottom + 8);
+                pdfCtx.stroke();
+            }
+            
+            // Add title
+            pdfCtx.font = 'bold 28px Arial, Helvetica, sans-serif';
+            pdfCtx.fillStyle = '#333';
+            pdfCtx.textAlign = 'center';
+            pdfCtx.fillText('Mutation Distribution by Region', pdfCanvas.width/2, 30);
+            
+            // Store the PDF image URL for use in generatePDF
+            window.pdfChartImageUrl = pdfCanvas.toDataURL('image/png');
             
         } catch (error) {
             console.error('Error creating chart:', error);
@@ -1577,464 +1678,292 @@ function processSequenceData(data, type) {
         compareBtn.disabled = true;
     }
     
-
-}); // End of DOMContentLoaded
-
-// Add this function to handle PDF generation
-async function generatePDF() {
-    // Show loading indicator
-    const loadingModal = document.createElement('div');
-    loadingModal.className = 'loading-modal';
-    loadingModal.innerHTML = `
-        <div class="loading-content">
-            <div class="spinner"></div>
-            <p>Generating PDF... Please wait...</p>
-        </div>
-    `;
-    loadingModal.style.position = 'fixed';
-    loadingModal.style.top = '0';
-    loadingModal.style.left = '0';
-    loadingModal.style.width = '100%';
-    loadingModal.style.height = '100%';
-    loadingModal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    loadingModal.style.display = 'flex';
-    loadingModal.style.justifyContent = 'center';
-    loadingModal.style.alignItems = 'center';
-    loadingModal.style.zIndex = '9999';
-
-    const loadingContent = loadingModal.querySelector('.loading-content');
-    loadingContent.style.backgroundColor = 'white';
-    loadingContent.style.padding = '20px';
-    loadingContent.style.borderRadius = '5px';
-    loadingContent.style.textAlign = 'center';
-
-    const spinner = loadingModal.querySelector('.spinner');
-    spinner.style.border = '5px solid #f3f3f3';
-    spinner.style.borderTop = '5px solid #3498db';
-    spinner.style.borderRadius = '50%';
-    spinner.style.width = '50px';
-    spinner.style.height = '50px';
-    spinner.style.animation = 'spin 2s linear infinite';
-    spinner.style.margin = '0 auto 15px auto';
-
-    document.body.appendChild(loadingModal);
-
-    // Add the spin animation
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    `;
-    document.head.appendChild(style);
-
-    try {
-        // Create new jsPDF instance
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4',
-            putOnlyUsedFonts: true
-        });
-
-        // Set initial y position
-        let yPos = 20;
-
-        // Title
-        doc.setFontSize(16);
-        doc.text('Sequence Comparison Report', doc.internal.pageSize.width / 2, yPos, { align: 'center' });
-        yPos += 15;
-
-        // Date
-        doc.setFontSize(10);
-        doc.text(`Generated: ${new Date().toLocaleString()}`, 20, yPos);
-        yPos += 15;
-
-        // Summary Statistics
-        const totalMutations = document.getElementById('totalMutations').textContent;
-        const sequenceLength = document.getElementById('sequenceLength').textContent;
-        const mutationRate = document.getElementById('mutationRate').textContent;
-
-        doc.setFontSize(12);
-        doc.text('Summary:', 20, yPos);
-        yPos += 10;
-
-        doc.setFontSize(10);
-        const summaryText = [
-            `Total Mutations: ${totalMutations}`,
-            `Sequence Length: ${sequenceLength}`,
-            `Mutation Rate: ${mutationRate}`
-        ];
-        summaryText.forEach(text => {
-            doc.text(text, 20, yPos);
-            yPos += 7;
-        });
-        yPos += 5;
-        
-        // Capture chart image using html2canvas
-        const chartElement = document.getElementById('mutationChart');
-        if (chartElement) {
-            console.log("Capturing chart as image...");
+    // Function to generate PDF with our high-quality chart
+    async function generatePDF() {
+        try {
+            // Show loading indicator
+            document.body.classList.add('loading');
+            document.body.insertAdjacentHTML('beforeend', 
+                '<div id="pdfLoadingOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;justify-content:center;align-items:center;">' +
+                '<div style="background:white;padding:20px;border-radius:5px;text-align:center;">' +
+                '<div style="border:5px solid #f3f3f3;border-top:5px solid #3498db;border-radius:50%;width:50px;height:50px;margin:0 auto 15px;animation:spin 2s linear infinite;"></div>' +
+                '<p>Generating PDF... Please wait...</p></div></div>'
+            );
             
-            // First add a heading for the chart section
-            doc.setFontSize(12);
-            doc.text('Mutation Distribution:', 20, yPos);
-            yPos += 10;
+            // Add animation style
+            const styleEl = document.createElement('style');
+            styleEl.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+            document.head.appendChild(styleEl);
             
-            try {
-                // Capture the chart using html2canvas
-                const canvas = await html2canvas(chartElement, {
-                    scale: 2, // Higher scale for better quality
-                    logging: false,
-                    useCORS: true,
-                    allowTaint: true,
-                    backgroundColor: "#ffffff"
+            // Get data from the page
+            const titleText = 'Sequence Comparison Report';
+            const dateText = new Date().toLocaleString();
+            const totalMutations = document.getElementById('totalMutations')?.textContent || '0';
+            const sequenceLength = document.getElementById('sequenceLength')?.textContent || '0';
+            const mutationRate = document.getElementById('mutationRate')?.textContent || '0%';
+            
+            // Create a temporary container for PDF content
+            const pdfContainer = document.createElement('div');
+            pdfContainer.style.width = '210mm';
+            pdfContainer.style.padding = '10mm';
+            pdfContainer.style.visibility = 'hidden';
+            pdfContainer.style.position = 'absolute';
+            pdfContainer.style.top = '-9999px';
+            pdfContainer.style.background = 'white';
+            pdfContainer.style.fontSize = '10pt';
+            pdfContainer.style.fontFamily = 'Arial, Helvetica, sans-serif';
+            document.body.appendChild(pdfContainer);
+            
+            // Build PDF content with styled HTML
+            pdfContainer.innerHTML = `
+                <div style="text-align:center;margin-bottom:20px;">
+                    <h1 style="font-size:18pt;margin-bottom:5px;">${titleText}</h1>
+                    <p style="font-size:9pt;color:#666;">Generated: ${dateText}</p>
+                </div>
+                
+                <div style="background:#f5f8ff;padding:15px;border-radius:5px;margin-bottom:20px;">
+                    <h2 style="font-size:14pt;margin-top:0;margin-bottom:10px;">Summary</h2>
+                    <table style="width:100%;border-collapse:collapse;">
+                        <tr>
+                            <td style="padding:5px 10px;width:33%;"><b>Total Mutations:</b> ${totalMutations}</td>
+                            <td style="padding:5px 10px;width:33%;"><b>Sequence Length:</b> ${sequenceLength}</td>
+                            <td style="padding:5px 10px;width:33%;"><b>Mutation Rate:</b> ${mutationRate}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div style="margin-bottom:20px;">
+                    <h2 style="font-size:14pt;margin-bottom:10px;">Sequence Information</h2>
+                    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;">
+                        <div style="width:48%;background:#f9f9f9;padding:10px;border-radius:5px;">
+                            <h3 style="font-size:12pt;margin-top:0;margin-bottom:5px;">Reference Sequence</h3>
+                            <div id="pdfRefMetadata"></div>
+                        </div>
+                        <div style="width:48%;background:#f9f9f9;padding:10px;border-radius:5px;">
+                            <h3 style="font-size:12pt;margin-top:0;margin-bottom:5px;">Query Sequence</h3>
+                            <div id="pdfQueryMetadata"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom:20px;">
+                    <h2 style="font-size:14pt;margin-bottom:10px;">Mutation Distribution</h2>
+                    <div id="pdfChartContainer" style="width:100%;height:250px;background:#f9f9f9;padding:10px;border-radius:5px;">
+                        <div id="pdfChartImageContainer" style="width:100%;height:230px;display:flex;justify-content:center;align-items:center;"></div>
+                    </div>
+                </div>
+                
+                <div style="page-break-before:always;">
+                    <h2 style="font-size:14pt;margin-top:0;margin-bottom:10px;">Detailed Mutation List</h2>
+                    <div id="pdfMutationTable"></div>
+                </div>
+                
+                <div id="pdfCitation" style="page-break-before:always;">
+                    <h2 style="font-size:14pt;margin-bottom:10px;text-align:center;">Citation Information</h2>
+                    <hr style="border:none;border-top:2px solid #4285f4;width:70%;margin:0 auto 20px;">
+                    
+                    <h3 style="font-size:12pt;margin-bottom:5px;">How to Cite This Tool</h3>
+                    
+                    <div style="margin-bottom:15px;">
+                        <h4 style="font-size:11pt;margin-bottom:5px;">APA Format:</h4>
+                        <p style="background:#f9f9f9;padding:10px;border-radius:5px;font-size:9pt;">
+                            Priyam, J. (2025). Jyotsna's NCBI Tools - Sequence Comparison Tool. DOI: 10.5281/zenodo.15069907
+                        </p>
+                    </div>
+                    
+                    <div style="margin-bottom:15px;">
+                        <h4 style="font-size:11pt;margin-bottom:5px;">MLA Format:</h4>
+                        <p style="background:#f9f9f9;padding:10px;border-radius:5px;font-size:9pt;">
+                            Priyam, J. "Jyotsna's NCBI Tools - Sequence Comparison Tool." 2025, DOI: 10.5281/zenodo.15069907.
+                            Accessed ${new Date().toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'})}.
+                        </p>
+                    </div>
+                    
+                    <div style="margin-bottom:15px;">
+                        <h4 style="font-size:11pt;margin-bottom:5px;">Chicago Format:</h4>
+                        <p style="background:#f9f9f9;padding:10px;border-radius:5px;font-size:9pt;">
+                            Priyam, J. "Jyotsna's NCBI Tools - Sequence Comparison Tool." Last modified 2025. DOI: 10.5281/zenodo.15069907.
+                        </p>
+                    </div>
+                    
+                    <div style="margin-top:20px;">
+                        <h3 style="font-size:12pt;margin-bottom:10px;">Academic Citation Examples</h3>
+                        
+                        <div style="margin-bottom:15px;">
+                            <h4 style="font-size:11pt;margin-bottom:5px;">In a Journal Article:</h4>
+                            <p style="background:#f5f5f5;padding:10px;border-radius:5px;font-size:9pt;">
+                                In our analysis of genetic mutations across multiple Vibrio strains, we utilized Jyotsna's NCBI 
+                                Tools (Priyam, 2025) for sequence comparison, which revealed a 1.19% mutation rate concentrated 
+                                primarily in regions 3 and 4 of the genome.
+                            </p>
+                        </div>
+                        
+                        <div style="margin-bottom:15px;">
+                            <h4 style="font-size:11pt;margin-bottom:5px;">In a Research Report:</h4>
+                            <p style="background:#f5f5f5;padding:10px;border-radius:5px;font-size:9pt;">
+                                The mutation analysis was performed using the Sequence Comparison Tool<sup>1</sup>, which identified 
+                                8 substitution mutations primarily concentrated in regions 3-5.
+                                <br><br>
+                                <sup>1</sup>Jyotsna's NCBI Tools - Sequence Comparison Tool (v1.0), developed by Priyam, J., 2025. 
+                                Available at: 10.5281/zenodo.15069907
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add reference metadata
+            const refMeta = document.getElementById('referenceMetadata');
+            if (refMeta) {
+                document.getElementById('pdfRefMetadata').innerHTML = refMeta.innerHTML;
+            } else {
+                document.getElementById('pdfRefMetadata').textContent = 'N/A';
+            }
+            
+            // Add query metadata
+            const queryMeta = document.getElementById('queryMetadata');
+            if (queryMeta) {
+                document.getElementById('pdfQueryMetadata').innerHTML = queryMeta.innerHTML;
+            } else {
+                document.getElementById('pdfQueryMetadata').textContent = 'N/A';
+            }
+            
+            // Clone mutation table
+            const mutationTable = document.getElementById('mutationTable');
+            if (mutationTable) {
+                const tableClone = mutationTable.cloneNode(true);
+                tableClone.style.width = '100%';
+                tableClone.style.borderCollapse = 'collapse';
+                tableClone.style.fontSize = '9pt';
+                
+                // Style the table headers and cells
+                Array.from(tableClone.querySelectorAll('th')).forEach(th => {
+                    th.style.backgroundColor = '#4285f4';
+                    th.style.color = 'white';
+                    th.style.padding = '8px';
+                    th.style.textAlign = 'left';
+                    th.style.border = '1px solid #ddd';
                 });
                 
-                // Convert the canvas to an image
-                const imgData = canvas.toDataURL('image/png');
+                Array.from(tableClone.querySelectorAll('td')).forEach(td => {
+                    td.style.padding = '6px';
+                    td.style.border = '1px solid #ddd';
+                    
+                    // Style mutation types
+                    if (td.textContent.trim() === 'Substitution') {
+                        td.style.color = '#007bff';
+                    } else if (td.textContent.trim() === 'Insertion') {
+                        td.style.color = '#28a745';
+                    } else if (td.textContent.trim() === 'Deletion') {
+                        td.style.color = '#dc3545';
+                    }
+                });
                 
-                // Calculate image dimensions to fit in PDF
-                const imgWidth = 170; // mm
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                // Add alternating row colors
+                Array.from(tableClone.querySelectorAll('tr:nth-child(even)')).forEach(tr => {
+                    tr.style.backgroundColor = '#f9f9f9';
+                });
                 
-                // Add the image to the PDF
-                doc.addImage(imgData, 'PNG', 20, yPos, imgWidth, imgHeight);
-                
-                // Update yPos for content after the chart
-                yPos += imgHeight + 15;
-                
-                console.log("Chart image added to PDF");
-            } catch (chartError) {
-                console.error("Error capturing chart image:", chartError);
-                doc.setFontSize(10);
-                doc.setTextColor(255, 0, 0);
-                doc.text("Chart image could not be captured.", 20, yPos);
-                doc.setTextColor(0);
-                yPos += 15;
-            }
-        } else {
-            console.warn("Chart element not found");
-        }
-
-        // Mutation Table
-        const mutationTable = document.getElementById('mutationTable');
-        if (mutationTable) {
-            // Check if we need a new page for the table
-            if (yPos > doc.internal.pageSize.height - 100) {
-                doc.addPage();
-                yPos = 20;
+                document.getElementById('pdfMutationTable').appendChild(tableClone);
             }
             
-            doc.autoTable({
-                html: '#mutationTable',
-                startY: yPos,
-                styles: { fontSize: 8 },
-                margin: { top: 20, bottom: 40 }, // Ensure space for citations
-                didDrawPage: function(data) {
-                    // Save the final Y position after the table
-                    yPos = data.cursor.y;
+            // Add the mutation distribution chart if available
+            if (window.pdfChartImageUrl) {
+                // Insert the high-quality image into the container
+                document.getElementById('pdfChartImageContainer').innerHTML = `<img src="${window.pdfChartImageUrl}" alt="Mutation Distribution Chart" style="max-width:100%;max-height:230px;">`;
+            } else if (window.chartData && window.chartData.data) {
+                // Fallback: Create a simple text representation of the chart data
+                const chartData = window.chartData.data;
+                const chartLabels = window.chartData.labels || Array.from({length: chartData.length}, (_, i) => `Region ${i+1}`);
+                
+                let chartHtml = '<div style="text-align:center;color:#333;"><p style="margin-bottom:10px;"><b>Mutation Distribution:</b></p>';
+                chartHtml += '<div style="display:flex;justify-content:center;flex-wrap:wrap;">';
+                
+                for (let i = 0; i < chartData.length; i++) {
+                    chartHtml += `<div style="margin:5px;text-align:center;width:60px;">
+                        <div style="height:60px;display:flex;flex-direction:column;justify-content:flex-end;">
+                            <div style="background-color:rgba(66,133,244,0.7);width:40px;margin:0 auto;height:${Math.min(chartData[i] * 5, 50)}px;"></div>
+                        </div>
+                        <div style="font-size:8pt;margin-top:5px;">${chartLabels[i]}: ${chartData[i]}</div>
+                    </div>`;
                 }
-            });
-        }
-
-        // Get citation info from API if possible
-        let citationInfo;
-        try {
-            const response = await fetch('/api/citation-config');
-            citationInfo = await response.json();
-        } catch (error) {
-            console.error('Error fetching citation config:', error);
-            // Use default values if API fails
-            citationInfo = {
-                author: 'Priyam, J.',
-                title: 'Jyotsna\'s NCBI Tools',
-                year: '2025',
-                doi: '10.5281/zenodo.15069907',
-                url: window.location.href
+                
+                chartHtml += '</div></div>';
+                document.getElementById('pdfChartImageContainer').innerHTML = chartHtml;
+            } else if (comparisonResults && comparisonResults.mutations) {
+                // Generate chart data from mutations and create text representation
+                const regionCount = 10;
+                const chartLabels = Array.from({length: regionCount}, (_, i) => `Region ${i+1}`);
+                const chartData = Array(regionCount).fill(0);
+                
+                const sequenceLength = comparisonResults.metadata.referenceLength;
+                const regionSize = Math.ceil(sequenceLength / regionCount);
+                
+                comparisonResults.mutations.forEach(mutation => {
+                    const regionIndex = Math.min(Math.floor(mutation.position / regionSize), regionCount - 1);
+                    chartData[regionIndex]++;
+                });
+                
+                let chartHtml = '<div style="text-align:center;color:#333;"><p style="margin-bottom:10px;"><b>Mutation Distribution:</b></p>';
+                chartHtml += '<div style="display:flex;justify-content:center;flex-wrap:wrap;">';
+                
+                for (let i = 0; i < chartData.length; i++) {
+                    chartHtml += `<div style="margin:5px;text-align:center;width:60px;">
+                        <div style="height:60px;display:flex;flex-direction:column;justify-content:flex-end;">
+                            <div style="background-color:rgba(66,133,244,0.7);width:40px;margin:0 auto;height:${Math.min(chartData[i] * 5, 50)}px;"></div>
+                        </div>
+                        <div style="font-size:8pt;margin-top:5px;">${chartLabels[i]}: ${chartData[i]}</div>
+                    </div>`;
+                }
+                
+                chartHtml += '</div></div>';
+                document.getElementById('pdfChartImageContainer').innerHTML = chartHtml;
+            } else {
+                document.getElementById('pdfChartContainer').innerHTML = 
+                    '<div style="text-align:center;padding:20px;color:#666;">No mutation data available for visualization</div>';
+            }
+            
+            // Use html2pdf to generate PDF
+            const pdfOptions = {
+                margin: 10,
+                filename: 'sequence-comparison-report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    letterRendering: true,
+                    allowTaint: true
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait' 
+                }
             };
-        }
-        
-        const currentDate = new Date();
-        const formattedDate = currentDate.toLocaleDateString('en-US', {
-            day: 'numeric', 
-            month: 'long', 
-            year: 'numeric'
-        });
-
-        // Add footer to all pages with citation
-        const totalPages = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
             
-            // Add footer line
-            doc.setDrawColor(100, 100, 100);
-            doc.setLineWidth(0.5);
-            const footerY = doc.internal.pageSize.height - 15;
-            doc.line(20, footerY, doc.internal.pageSize.width - 20, footerY);
+            // Wait for chart to render
+            await new Promise(resolve => setTimeout(resolve, 500));
             
-            // Add citation text in footer
-            doc.setFontSize(8);
-            doc.setTextColor(80, 80, 80);
-            const shortCitation = `${citationInfo.author} (${citationInfo.year}). ${citationInfo.title}`;
-            doc.text(shortCitation, 20, footerY + 7);
+            // Generate and download PDF
+            const pdf = await html2pdf().from(pdfContainer).set(pdfOptions).save();
             
-            // Add page number
-            doc.text(`Page ${i} of ${totalPages + 1}`, doc.internal.pageSize.width - 20, footerY + 7, { align: 'right' });
+            // Clean up
+            document.body.removeChild(pdfContainer);
+            document.body.removeChild(document.getElementById('pdfLoadingOverlay'));
+            document.body.classList.remove('loading');
+            document.head.removeChild(styleEl);
+            
+        } catch (error) {
+            console.error('PDF Generation Error:', error);
+            alert('Error generating PDF: ' + error.message);
+            
+            // Clean up on error
+            const overlay = document.getElementById('pdfLoadingOverlay');
+            if (overlay) document.body.removeChild(overlay);
+            document.body.classList.remove('loading');
+            
+            const pdfContainer = document.querySelector('div[style*="visibility: hidden"][style*="position: absolute"]');
+            if (pdfContainer) document.body.removeChild(pdfContainer);
         }
-
-        // Add a dedicated citation page at the end
-        doc.addPage();
-        
-        // Title for citation page
-        doc.setFontSize(16);
-        doc.setTextColor(0);
-        doc.text('Citation Information', doc.internal.pageSize.width / 2, 30, { align: 'center' });
-        
-        // Separator line
-        doc.setDrawColor(66, 133, 244);
-        doc.setLineWidth(0.5);
-        doc.line(50, 35, doc.internal.pageSize.width - 50, 35);
-        
-        // Citation formats
-        doc.setFontSize(12);
-        doc.text('How to Cite This Tool:', 20, 50);
-        
-        // APA Style
-        doc.setFontSize(11);
-        doc.text('APA Format:', 20, 60);
-        doc.setFontSize(10);
-        const apaText = `${citationInfo.author} (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool. DOI: ${citationInfo.doi}`;
-        const apaWrapped = doc.splitTextToSize(apaText, 170);
-        doc.text(apaWrapped, 30, 70);
-        
-        // MLA Style
-        doc.setFontSize(11);
-        doc.text('MLA Format:', 20, 85);
-        doc.setFontSize(10);
-        const mlaText = `${citationInfo.author} "${citationInfo.title} - Sequence Comparison Tool." ${citationInfo.year}, DOI: ${citationInfo.doi}. Accessed ${formattedDate}.`;
-        const mlaWrapped = doc.splitTextToSize(mlaText, 170);
-        doc.text(mlaWrapped, 30, 95);
-        
-        // Chicago Style
-        doc.setFontSize(11);
-        doc.text('Chicago Format:', 20, 110);
-        doc.setFontSize(10);
-        const chicagoText = `${citationInfo.author}. "${citationInfo.title} - Sequence Comparison Tool." Last modified ${citationInfo.year}. DOI: ${citationInfo.doi}.`;
-        const chicagoWrapped = doc.splitTextToSize(chicagoText, 170);
-        doc.text(chicagoWrapped, 30, 120);
-        
-        // BibTeX Style
-        doc.setFontSize(11);
-        doc.text('BibTeX:', 20, 135);
-        doc.setFontSize(9);
-        const bibtexId = citationInfo.doi.replace(/\./g, '_').replace(/\//g, '_');
-        const bibtexText = [
-            `@software{${bibtexId},`,
-            `  title = {{${citationInfo.title} - Sequence Comparison Tool}},`,
-            `  author = {${citationInfo.author}},`,
-            `  year = {${citationInfo.year}},`,
-            `  doi = {${citationInfo.doi}},`,
-            `  url = {${citationInfo.url}},`,
-            `  note = {Accessed: ${formattedDate}}`,
-            `}`
-        ];
-        doc.text(bibtexText, 30, 145);
-        
-        // Usage notes
-        doc.setFontSize(11);
-        doc.text('Usage Notes:', 20, 185);
-        doc.setFontSize(10);
-        const usageText = [
-            '1. When citing this tool in academic publications, please use the citation formats provided above.',
-            '2. Include the DOI to ensure others can locate the exact version of the tool you used.',
-            '3. For reproducibility purposes, consider including the date of access and any specific settings used.',
-            '4. If you find this tool useful in your research, please consider citing it to support further development.'
-        ];
-        let usageY = 195;
-        usageText.forEach(line => {
-            doc.text(line, 30, usageY);
-            usageY += 10;
-        });
-        
-        // Contact information
-        doc.setFontSize(11);
-        doc.text('Contact Information:', 20, 240);
-        doc.setFontSize(10);
-        doc.text('For questions, bug reports, or feature requests, please contact:', 30, 250);
-        doc.text('Email: support@jyotsnas-ncbi-tools.example.com', 30, 260);
-        doc.text('GitHub: https://github.com/priyamjyotsna/JyotsnaNCBI', 30, 270);
-
-        // Add a dedicated comprehensive citation examples page
-        doc.addPage();
-        
-        // Title for the comprehensive citation page
-        doc.setFontSize(16);
-        doc.setTextColor(0);
-        doc.text('Academic Citation Examples', doc.internal.pageSize.width / 2, 30, { align: 'center' });
-        
-        // Separator line
-        doc.setDrawColor(66, 133, 244);
-        doc.setLineWidth(0.5);
-        doc.line(50, 35, doc.internal.pageSize.width - 50, 35);
-        
-        // Introduction text
-        doc.setFontSize(10);
-        doc.setTextColor(0);
-        const introText = "This page provides examples of how to cite this tool in various types of academic publications. Using the correct citation format helps ensure proper attribution and allows other researchers to find and use this tool.";
-        const introWrapped = doc.splitTextToSize(introText, 170);
-        doc.text(introWrapped, 20, 50);
-        
-        // Example 1: Journal Article
-        doc.setFontSize(12);
-        doc.setTextColor(0);
-        doc.text('In a Journal Article:', 20, 70);
-        
-        doc.setFontSize(10);
-        doc.setDrawColor(200, 200, 200);
-        doc.setFillColor(245, 245, 245);
-        doc.roundedRect(20, 75, 170, 30, 3, 3, 'F');
-        
-        doc.setTextColor(0);
-        const journalText = `In our analysis of genetic mutations across multiple Vibrio strains, we utilized Jyotsna's NCBI Tools (Priyam, ${citationInfo.year}) for sequence comparison, which revealed a 1.19% mutation rate concentrated primarily in regions 3 and 4 of the genome.`;
-        const journalWrapped = doc.splitTextToSize(journalText, 160);
-        doc.text(journalWrapped, 25, 85);
-        
-        doc.setTextColor(80, 80, 80);
-        doc.setFontSize(9);
-        const journalCitation = `Reference: ${citationInfo.author} (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool. DOI: ${citationInfo.doi}`;
-        const journalCitationWrapped = doc.splitTextToSize(journalCitation, 160);
-        doc.text(journalCitationWrapped, 25, 100);
-        
-        // Example 2: Dissertation/Thesis
-        doc.setFontSize(12);
-        doc.setTextColor(0);
-        doc.text('In a Dissertation or Thesis:', 20, 120);
-        
-        doc.setFontSize(10);
-        doc.setDrawColor(200, 200, 200);
-        doc.setFillColor(245, 245, 245);
-        doc.roundedRect(20, 125, 170, 30, 3, 3, 'F');
-        
-        doc.setTextColor(0);
-        const thesisText = `For the comparative analysis of the modified gene sequences, I employed the Sequence Comparison Tool from Jyotsna's NCBI Tools suite, which provided detailed visualization of mutation patterns and statistical analysis of sequence variations (Priyam, ${citationInfo.year}).`;
-        const thesisWrapped = doc.splitTextToSize(thesisText, 160);
-        doc.text(thesisWrapped, 25, 135);
-        
-        doc.setTextColor(80, 80, 80);
-        doc.setFontSize(9);
-        const thesisCitation = `In bibliography: ${citationInfo.author}. (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool [Software]. DOI: ${citationInfo.doi}`;
-        const thesisCitationWrapped = doc.splitTextToSize(thesisCitation, 160);
-        doc.text(thesisCitationWrapped, 25, 150);
-        
-        // Example 3: Research Report
-        doc.setFontSize(12);
-        doc.setTextColor(0);
-        doc.text('In a Research Report or White Paper:', 20, 170);
-        
-        doc.setFontSize(10);
-        doc.setDrawColor(200, 200, 200);
-        doc.setFillColor(245, 245, 245);
-        doc.roundedRect(20, 175, 170, 30, 3, 3, 'F');
-        
-        doc.setTextColor(0);
-        const reportText = `The mutation analysis was performed using the Sequence Comparison Tool^1, which identified 8 substitution mutations primarily concentrated in regions 3-5. The tool's statistical output provided the basis for our conclusion regarding the 1.19% mutation rate.`;
-        const reportWrapped = doc.splitTextToSize(reportText, 160);
-        doc.text(reportWrapped, 25, 185);
-        
-        doc.setTextColor(80, 80, 80);
-        doc.setFontSize(9);
-        const reportCitation = `Footnote 1: ${citationInfo.title} - Sequence Comparison Tool (v1.0), developed by ${citationInfo.author}, ${citationInfo.year}. Available at: ${citationInfo.doi}`;
-        const reportCitationWrapped = doc.splitTextToSize(reportCitation, 160);
-        doc.text(reportCitationWrapped, 25, 200);
-        
-        // Example 4: Data Sharing
-        doc.setFontSize(12);
-        doc.setTextColor(0);
-        doc.text('When Sharing Data or Results:', 20, 220);
-        
-        doc.setFontSize(10);
-        doc.setDrawColor(200, 200, 200);
-        doc.setFillColor(245, 245, 245);
-        doc.roundedRect(20, 225, 170, 35, 3, 3, 'F');
-        
-        doc.setTextColor(0);
-        const dataText = `The attached mutation report was generated using Jyotsna's NCBI Tools - Sequence Comparison Tool (Priyam, ${citationInfo.year}). To reproduce these results, please access the tool at the DOI below and use the same reference and query sequences provided in the supplementary materials.`;
-        const dataWrapped = doc.splitTextToSize(dataText, 160);
-        doc.text(dataWrapped, 25, 235);
-        
-        doc.setTextColor(80, 80, 80);
-        doc.setFontSize(9);
-        const dataCitation = `Tool: ${citationInfo.author} (${citationInfo.year}). ${citationInfo.title} - Sequence Comparison Tool. DOI: ${citationInfo.doi}\nAccessed on: ${formattedDate}\nSettings used: Default parameters, all mutation types included`;
-        const dataCitationWrapped = doc.splitTextToSize(dataCitation, 160);
-        doc.text(dataCitationWrapped, 25, 255);
-        
-        // Update all page numbers to account for the new page
-        for (let i = 1; i <= totalPages + 1; i++) {
-            doc.setPage(i);
-            const footerY = doc.internal.pageSize.height - 15;
-            doc.setFontSize(8);
-            doc.setTextColor(80, 80, 80);
-            doc.text(`Page ${i} of ${totalPages + 1}`, doc.internal.pageSize.width - 20, footerY + 7, { align: 'right' });
-        }
-
-        // Save the PDF
-        doc.save('sequence-comparison-report.pdf');
-
-    } catch (error) {
-        console.error('PDF Generation Error:', error);
-        alert('Error generating PDF: ' + error.message);
-    } finally {
-        // Remove loading indicator
-        document.body.removeChild(loadingModal);
     }
-}
-
-// Add this button to trigger PDF generation
-document.getElementById('resultsSection').innerHTML += `
-    <div style="text-align: center; margin: 20px 0;">
-        <button onclick="generatePDF()" class="primary-btn">
-            <i class="fas fa-file-pdf"></i> Download PDF Report
-        </button>
-    </div>
-`;
-
-function validateSequence(sequence) {
-    // Remove whitespace and non-sequence characters
-    sequence = sequence.replace(/\s+/g, '');
-    
-    // Check if sequence only contains valid nucleotides
-    const validSequence = sequence.match(/^[ATCG\-]+$/i);
-    
-    if (!validSequence) {
-        throw new Error('Invalid sequence. Only A, T, C, G characters and gaps (-) are allowed.');
-    }
-    
-    return sequence.toUpperCase();
-}
-
-function cleanSequence(sequence) {
-    // Remove any citation text that might have been copied
-    sequence = sequence.replace(/DNA\s*Analysis\s*Tool.*?localhost:[0-9]+\/[a-zA-Z-]+/g, '');
-    // Remove any non-sequence characters, keeping only valid nucleotides and gaps
-    sequence = sequence.replace(/[^ATCG\-]/gi, '');
-    return sequence.toUpperCase();
-}
-
-function compareSequences() {
-    try {
-        let seq1 = document.getElementById('referenceSequence').value;
-        let seq2 = document.getElementById('querySequence').value;
-        
-        // Clean sequences before comparison
-        seq1 = cleanSequence(seq1);
-        seq2 = cleanSequence(seq2);
-        
-        // Rest of your comparison code...
-    } catch (error) {
-        console.error('Comparison error:', error);
-        alert('Error comparing sequences: ' + error.message);
-    }
-}
+});
