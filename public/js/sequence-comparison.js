@@ -1681,254 +1681,38 @@ function processSequenceData(data, type) {
         compareBtn.disabled = true;
     }
     
-    // Function to generate PDF with our high-quality chart
-    async function generatePDF() {
+    // Function to generate PDF using the print-friendly window approach
+    function generatePDF() {
         try {
-            // Show loading indicator
-            document.body.classList.add('loading');
-            document.body.insertAdjacentHTML('beforeend', 
-                '<div id="pdfLoadingOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;justify-content:center;align-items:center;">' +
-                '<div style="background:white;padding:20px;border-radius:5px;text-align:center;">' +
-                '<div style="border:5px solid #f3f3f3;border-top:5px solid #3498db;border-radius:50%;width:50px;height:50px;margin:0 auto 15px;animation:spin 2s linear infinite;"></div>' +
-                '<p>Generating PDF... Please wait...</p></div></div>'
-            );
+            // Show an alert to indicate we're starting
+            alert("Generating PDF using browser print dialog. Click OK to continue.");
             
-            // Add animation style
-            const styleEl = document.createElement('style');
-            styleEl.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
-            document.head.appendChild(styleEl);
-            
-            // Get data from the page
-            const titleText = 'Sequence Comparison Report';
-            const dateText = new Date().toLocaleString();
+            // Get the data we need for the PDF
             const totalMutations = document.getElementById('totalMutations')?.textContent || '0';
             const sequenceLength = document.getElementById('sequenceLength')?.textContent || '0';
             const mutationRate = document.getElementById('mutationRate')?.textContent || '0%';
             
-            // Create a temporary container for PDF content
-            const pdfContainer = document.createElement('div');
-            pdfContainer.style.width = '210mm';
-            pdfContainer.style.padding = '10mm';
-            pdfContainer.style.visibility = 'hidden';
-            pdfContainer.style.position = 'absolute';
-            pdfContainer.style.top = '-9999px';
-            pdfContainer.style.background = 'white';
-            pdfContainer.style.fontSize = '10pt';
-            pdfContainer.style.fontFamily = 'Arial, Helvetica, sans-serif';
-            document.body.appendChild(pdfContainer);
+            // Get filtered and sorted mutations
+            const mutations = getFilteredMutations().sort((a, b) => a.position - b.position);
             
-            // Build PDF content with styled HTML
-            pdfContainer.innerHTML = `
-                <div style="text-align:center;margin-bottom:20px;">
-                    <h1 style="font-size:18pt;margin-bottom:5px;">${titleText}</h1>
-                    <p style="font-size:9pt;color:#666;">Generated: ${dateText}</p>
-                </div>
-                
-                <div style="background:#f5f8ff;padding:15px;border-radius:5px;margin-bottom:20px;">
-                    <h2 style="font-size:14pt;margin-top:0;margin-bottom:10px;">Summary</h2>
-                    <table style="width:100%;border-collapse:collapse;">
-                        <tr>
-                            <td style="padding:5px 10px;width:33%;"><b>Total Mutations:</b> ${totalMutations}</td>
-                            <td style="padding:5px 10px;width:33%;"><b>Sequence Length:</b> ${sequenceLength}</td>
-                            <td style="padding:5px 10px;width:33%;"><b>Mutation Rate:</b> ${mutationRate}</td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <div style="margin-bottom:20px;">
-                    <h2 style="font-size:14pt;margin-bottom:10px;">Sequence Information</h2>
-                    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;">
-                        <div style="width:48%;background:#f9f9f9;padding:10px;border-radius:5px;">
-                            <h3 style="font-size:12pt;margin-top:0;margin-bottom:5px;">Reference Sequence</h3>
-                            <div id="pdfRefMetadata"></div>
-                        </div>
-                        <div style="width:48%;background:#f9f9f9;padding:10px;border-radius:5px;">
-                            <h3 style="font-size:12pt;margin-top:0;margin-bottom:5px;">Query Sequence</h3>
-                            <div id="pdfQueryMetadata"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="margin-bottom:20px;">
-                    <h2 style="font-size:14pt;margin-bottom:10px;">Mutation Distribution</h2>
-                    <div id="pdfChartContainer" style="width:100%;height:250px;background:#f9f9f9;padding:10px;border-radius:5px;">
-                        <div id="pdfChartImageContainer" style="width:100%;height:230px;display:flex;justify-content:center;align-items:center;"></div>
-                    </div>
-                </div>
-                
-                <div style="page-break-before:always;">
-                    <h2 style="font-size:14pt;margin-top:0;margin-bottom:10px;">Detailed Mutation List</h2>
-                    <div id="pdfMutationTable"></div>
-                </div>
-                
-                <div id="pdfCitation" style="page-break-before:always;">
-                    <h2 style="font-size:14pt;margin-bottom:10px;text-align:center;">Citation Information</h2>
-                    <hr style="border:none;border-top:2px solid #4285f4;width:70%;margin:0 auto 20px;">
-                    
-                    <h3 style="font-size:12pt;margin-bottom:5px;">How to Cite This Tool</h3>
-                    
-                    <div style="margin-bottom:15px;">
-                        <h4 style="font-size:11pt;margin-bottom:5px;">APA Format:</h4>
-                        <p style="background:#f9f9f9;padding:10px;border-radius:5px;font-size:9pt;">
-                            Priyam, J. (2025). Jyotsna's NCBI Tools - Sequence Comparison Tool. DOI: 10.5281/zenodo.15069907
-                        </p>
-                    </div>
-                    
-                    <div style="margin-bottom:15px;">
-                        <h4 style="font-size:11pt;margin-bottom:5px;">MLA Format:</h4>
-                        <p style="background:#f9f9f9;padding:10px;border-radius:5px;font-size:9pt;">
-                            Priyam, J. "Jyotsna's NCBI Tools - Sequence Comparison Tool." 2025, DOI: 10.5281/zenodo.15069907.
-                            Accessed ${new Date().toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'})}.
-                        </p>
-                    </div>
-                    
-                    <div style="margin-bottom:15px;">
-                        <h4 style="font-size:11pt;margin-bottom:5px;">Chicago Format:</h4>
-                        <p style="background:#f9f9f9;padding:10px;border-radius:5px;font-size:9pt;">
-                            Priyam, J. "Jyotsna's NCBI Tools - Sequence Comparison Tool." Last modified 2025. DOI: 10.5281/zenodo.15069907.
-                        </p>
-                    </div>
-                    
-                    <div style="margin-top:20px;">
-                        <h3 style="font-size:12pt;margin-bottom:10px;">Academic Citation Examples</h3>
-                        
-                        <div style="margin-bottom:15px;">
-                            <h4 style="font-size:11pt;margin-bottom:5px;">In a Journal Article:</h4>
-                            <p style="background:#f5f5f5;padding:10px;border-radius:5px;font-size:9pt;">
-                                In our analysis of genetic mutations across multiple Vibrio strains, we utilized Jyotsna's NCBI 
-                                Tools (Priyam, 2025) for sequence comparison, which revealed a 1.19% mutation rate concentrated 
-                                primarily in regions 3 and 4 of the genome.
-                            </p>
-                        </div>
-                        
-                        <div style="margin-bottom:15px;">
-                            <h4 style="font-size:11pt;margin-bottom:5px;">In a Research Report:</h4>
-                            <p style="background:#f5f5f5;padding:10px;border-radius:5px;font-size:9pt;">
-                                The mutation analysis was performed using the Sequence Comparison Tool<sup>1</sup>, which identified 
-                                8 substitution mutations primarily concentrated in regions 3-5.
-                                <br><br>
-                                <sup>1</sup>Jyotsna's NCBI Tools - Sequence Comparison Tool (v1.0), developed by Priyam, J., 2025. 
-                                Available at: 10.5281/zenodo.15069907
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Add reference metadata
-            const refMeta = document.getElementById('referenceMetadata');
-            if (refMeta) {
-                document.getElementById('pdfRefMetadata').innerHTML = refMeta.innerHTML;
-            } else {
-                document.getElementById('pdfRefMetadata').textContent = 'N/A';
-            }
-            
-            // Add query metadata
-            const queryMeta = document.getElementById('queryMetadata');
-            if (queryMeta) {
-                document.getElementById('pdfQueryMetadata').innerHTML = queryMeta.innerHTML;
-            } else {
-                document.getElementById('pdfQueryMetadata').textContent = 'N/A';
-            }
-            
-            // Clone mutation table
-            const mutationTable = document.getElementById('mutationTable');
-            if (mutationTable) {
-                const tableClone = mutationTable.cloneNode(true);
-                tableClone.style.width = '100%';
-                tableClone.style.borderCollapse = 'collapse';
-                tableClone.style.fontSize = '9pt';
-                
-                // Style the table headers and cells
-                Array.from(tableClone.querySelectorAll('th')).forEach(th => {
-                    th.style.backgroundColor = '#4285f4';
-                    th.style.color = 'white';
-                    th.style.padding = '8px';
-                    th.style.textAlign = 'left';
-                    th.style.border = '1px solid #ddd';
-                });
-                
-                Array.from(tableClone.querySelectorAll('td')).forEach(td => {
-                    td.style.padding = '6px';
-                    td.style.border = '1px solid #ddd';
-                    
-                    // Style mutation types
-                    if (td.textContent.trim() === 'Substitution') {
-                        td.style.color = '#007bff';
-                    } else if (td.textContent.trim() === 'Insertion') {
-                        td.style.color = '#28a745';
-                    } else if (td.textContent.trim() === 'Deletion') {
-                        td.style.color = '#dc3545';
-                    }
-                });
-                
-                // Add alternating row colors
-                Array.from(tableClone.querySelectorAll('tr:nth-child(even)')).forEach(tr => {
-                    tr.style.backgroundColor = '#f9f9f9';
-                });
-                
-                document.getElementById('pdfMutationTable').appendChild(tableClone);
-            }
-            
-            // Add the mutation distribution chart if available
-            // Instead of the chart, add a placeholder message
-            const pdfChartContainer = document.getElementById('pdfChartContainer');
-            if (pdfChartContainer) {
-                pdfChartContainer.innerHTML = 
-                    '<div style="text-align:center;padding:20px;color:#666;">Chart rendering temporarily disabled</div>';
-            } else {
-                console.error('PDF chart container element not found');
-            }
-            
-            // Add debug console logs to check if elements exist
-            console.log('PDF Container exists:', !!pdfContainer);
-            console.log('PDF Container HTML length:', pdfContainer.innerHTML.length);
-            console.log('PDF Chart Container exists:', !!document.getElementById('pdfChartContainer'));
-            console.log('PDF Mutation Table exists:', !!document.getElementById('pdfMutationTable'));
-            console.log('PDF Ref Metadata exists:', !!document.getElementById('pdfRefMetadata'));
-            console.log('PDF Citation exists:', !!document.getElementById('pdfCitation'));
-            
-            // Use html2pdf to generate PDF
-            const pdfOptions = {
-                margin: 10,
-                filename: 'sequence-comparison-report.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2,
-                    useCORS: true,
-                    letterRendering: true,
-                    allowTaint: true
-                },
-                jsPDF: { 
-                    unit: 'mm', 
-                    format: 'a4', 
-                    orientation: 'portrait' 
-                }
+            // Prepare data for the PDF export
+            const pdfData = {
+                totalMutations,
+                sequenceLength,
+                mutationRate,
+                refHeader: comparisonResults?.metadata?.referenceHeader || 'N/A',
+                queryHeader: comparisonResults?.metadata?.queryHeader || 'N/A',
+                refLength: comparisonResults?.metadata?.referenceLength || '0',
+                queryLength: comparisonResults?.metadata?.queryLength || '0',
+                mutations
             };
             
-            // Wait for chart to render
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            // Generate and download PDF
-            const pdf = await html2pdf().from(pdfContainer).set(pdfOptions).save();
-            
-            // Clean up
-            document.body.removeChild(pdfContainer);
-            document.body.removeChild(document.getElementById('pdfLoadingOverlay'));
-            document.body.classList.remove('loading');
-            document.head.removeChild(styleEl);
+            // Use the exportToPDF function from pdf-export.js
+            exportToPDF(pdfData);
             
         } catch (error) {
-            console.error('PDF Generation Error:', error);
+            console.error('Error generating PDF:', error);
             alert('Error generating PDF: ' + error.message);
-            
-            // Clean up on error
-            const overlay = document.getElementById('pdfLoadingOverlay');
-            if (overlay) document.body.removeChild(overlay);
-            document.body.classList.remove('loading');
-            
-            const pdfContainer = document.querySelector('div[style*="visibility: hidden"][style*="position: absolute"]');
-            if (pdfContainer) document.body.removeChild(pdfContainer);
         }
     }
 });
