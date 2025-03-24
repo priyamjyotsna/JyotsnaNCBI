@@ -751,8 +751,8 @@ function processSequenceData(data, type) {
             if (pdfButton) {
                 pdfButton.addEventListener('click', async () => {
                     try {
-                        await exportAsPDF();
-        } catch (error) {
+                        await generatePDF();
+                    } catch (error) {
                         console.error('PDF export error:', error);
                         alert('Failed to generate PDF. Please try again.');
                     }
@@ -1582,6 +1582,53 @@ function processSequenceData(data, type) {
 
 // Add this function to handle PDF generation
 async function generatePDF() {
+    // Show loading indicator
+    const loadingModal = document.createElement('div');
+    loadingModal.className = 'loading-modal';
+    loadingModal.innerHTML = `
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Generating PDF... Please wait...</p>
+        </div>
+    `;
+    loadingModal.style.position = 'fixed';
+    loadingModal.style.top = '0';
+    loadingModal.style.left = '0';
+    loadingModal.style.width = '100%';
+    loadingModal.style.height = '100%';
+    loadingModal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    loadingModal.style.display = 'flex';
+    loadingModal.style.justifyContent = 'center';
+    loadingModal.style.alignItems = 'center';
+    loadingModal.style.zIndex = '9999';
+
+    const loadingContent = loadingModal.querySelector('.loading-content');
+    loadingContent.style.backgroundColor = 'white';
+    loadingContent.style.padding = '20px';
+    loadingContent.style.borderRadius = '5px';
+    loadingContent.style.textAlign = 'center';
+
+    const spinner = loadingModal.querySelector('.spinner');
+    spinner.style.border = '5px solid #f3f3f3';
+    spinner.style.borderTop = '5px solid #3498db';
+    spinner.style.borderRadius = '50%';
+    spinner.style.width = '50px';
+    spinner.style.height = '50px';
+    spinner.style.animation = 'spin 2s linear infinite';
+    spinner.style.margin = '0 auto 15px auto';
+
+    document.body.appendChild(loadingModal);
+
+    // Add the spin animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+
     try {
         // Create new jsPDF instance
         const { jsPDF } = window.jspdf;
@@ -1626,70 +1673,50 @@ async function generatePDF() {
         });
         yPos += 5;
         
-        // Add chart if available
-        if (window.chartData && window.chartData.data && window.chartData.data.length > 0) {
+        // Capture chart image using html2canvas
+        const chartElement = document.getElementById('mutationChart');
+        if (chartElement) {
+            console.log("Capturing chart as image...");
+            
+            // First add a heading for the chart section
             doc.setFontSize(12);
             doc.text('Mutation Distribution:', 20, yPos);
             yPos += 10;
             
-            // Set up chart dimensions
-            const chartWidth = 170; // mm
-            const chartHeight = 80; // mm
-            const margin = { left: 20, right: 10, top: 5, bottom: 15 };
-            const graphWidth = chartWidth - margin.left - margin.right;
-            const graphHeight = chartHeight - margin.top - margin.bottom;
-            
-            // Get chart data
-            const { labels, data } = window.chartData;
-            const maxValue = Math.max(...data, 1);
-            
-            // Draw chart background
-            doc.setFillColor(245, 245, 245);
-            doc.rect(20, yPos, chartWidth, chartHeight, 'F');
-            doc.setDrawColor(200, 200, 200);
-            doc.setLineWidth(0.1);
-            
-            // Draw grid lines
-            for (let i = 0; i <= 4; i++) {
-                const yLevel = yPos + margin.top + graphHeight - (i / 4) * graphHeight;
-                doc.line(20 + margin.left, yLevel, 20 + margin.left + graphWidth, yLevel);
-            }
-            
-            // Draw bars
-            const barWidth = graphWidth / data.length * 0.8;
-            const barSpacing = graphWidth / data.length * 0.2;
-            
-            doc.setFillColor(66, 133, 244);
-            doc.setDrawColor(50, 100, 200);
-            
-            for (let i = 0; i < data.length; i++) {
-                const value = data[i];
-                const barHeight = (value / maxValue) * graphHeight;
-                const x = 20 + margin.left + (i * (barWidth + barSpacing)) + barSpacing / 2;
-                const y = yPos + margin.top + graphHeight - barHeight;
+            try {
+                // Capture the chart using html2canvas
+                const canvas = await html2canvas(chartElement, {
+                    scale: 2, // Higher scale for better quality
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: "#ffffff"
+                });
                 
-                // Draw simple bars without text
-                doc.rect(x, y, barWidth, barHeight, 'FD');
+                // Convert the canvas to an image
+                const imgData = canvas.toDataURL('image/png');
                 
-                // Draw simple labels below x-axis
-                if (i % Math.ceil(data.length / 10) === 0) { // Show only 10 labels max
-                    doc.setFontSize(8);
-                    doc.text(labels[i].toString(), x + barWidth / 2, yPos + margin.top + graphHeight + 10, { align: 'center' });
-                }
+                // Calculate image dimensions to fit in PDF
+                const imgWidth = 170; // mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                // Add the image to the PDF
+                doc.addImage(imgData, 'PNG', 20, yPos, imgWidth, imgHeight);
+                
+                // Update yPos for content after the chart
+                yPos += imgHeight + 15;
+                
+                console.log("Chart image added to PDF");
+            } catch (chartError) {
+                console.error("Error capturing chart image:", chartError);
+                doc.setFontSize(10);
+                doc.setTextColor(255, 0, 0);
+                doc.text("Chart image could not be captured.", 20, yPos);
+                doc.setTextColor(0);
+                yPos += 15;
             }
-            
-            // Draw axes
-            doc.setDrawColor(100, 100, 100);
-            doc.setLineWidth(0.3);
-            doc.line(20 + margin.left, yPos + margin.top, 20 + margin.left, yPos + margin.top + graphHeight); // Y-axis
-            doc.line(20 + margin.left, yPos + margin.top + graphHeight, 20 + margin.left + graphWidth, yPos + margin.top + graphHeight); // X-axis
-            
-            // Add axis titles
-            doc.setFontSize(9);
-            doc.text('Mutations', 10, yPos + chartHeight / 2, { angle: 90 });
-            doc.text('Regions', 20 + chartWidth / 2, yPos + chartHeight - 2, { align: 'center' });
-            
-            yPos += chartHeight + 15;
+        } else {
+            console.warn("Chart element not found");
         }
 
         // Mutation Table
@@ -1755,7 +1782,7 @@ async function generatePDF() {
             doc.text(shortCitation, 20, footerY + 7);
             
             // Add page number
-            doc.text(`Page ${i} of ${totalPages}`, doc.internal.pageSize.width - 20, footerY + 7, { align: 'right' });
+            doc.text(`Page ${i} of ${totalPages + 1}`, doc.internal.pageSize.width - 20, footerY + 7, { align: 'right' });
         }
 
         // Add a dedicated citation page at the end
@@ -1959,6 +1986,9 @@ async function generatePDF() {
     } catch (error) {
         console.error('PDF Generation Error:', error);
         alert('Error generating PDF: ' + error.message);
+    } finally {
+        // Remove loading indicator
+        document.body.removeChild(loadingModal);
     }
 }
 
