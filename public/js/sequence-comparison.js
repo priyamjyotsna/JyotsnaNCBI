@@ -1269,9 +1269,9 @@ function processSequenceData(data, type) {
             pdfCtx.lineTo(pdfCanvas.width - pdfMargin.right, pdfCanvas.height - pdfMargin.bottom);
             pdfCtx.stroke();
             
-            // Draw Y-axis title
+            // Draw Y-axis title - use only web-safe fonts
             pdfCtx.save();
-            pdfCtx.font = 'bold 24px Arial, Helvetica, sans-serif';
+            pdfCtx.font = 'bold 24px Arial';
             pdfCtx.fillStyle = '#333';
             pdfCtx.translate(25, pdfCanvas.height/2);
             pdfCtx.rotate(-Math.PI/2);
@@ -1279,15 +1279,15 @@ function processSequenceData(data, type) {
             pdfCtx.fillText('Mutations', 0, 0);
             pdfCtx.restore();
             
-            // Draw X-axis title
-            pdfCtx.font = 'bold 24px Arial, Helvetica, sans-serif';
+            // Draw X-axis title - use only web-safe fonts
+            pdfCtx.font = 'bold 24px Arial';
             pdfCtx.fillStyle = '#333';
             pdfCtx.textAlign = 'center';
             pdfCtx.fillText('Regions', pdfCanvas.width/2, pdfCanvas.height - 20);
             
             // Draw grid lines and Y-axis labels
             pdfCtx.textAlign = 'right';
-            pdfCtx.font = '18px Arial, Helvetica, sans-serif';
+            pdfCtx.font = '18px Arial';
             
             for (let i = 0; i <= 5; i++) {
                 const value = (maxValue / 5) * i;
@@ -1328,15 +1328,18 @@ function processSequenceData(data, type) {
                 if (value > 0) {
                     pdfCtx.fillStyle = '#333';
                     pdfCtx.textAlign = 'center';
-                    pdfCtx.font = '16px Arial, Helvetica, sans-serif';
+                    pdfCtx.font = '16px Arial';
                     pdfCtx.fillText(value.toString(), x + pdfBarWidth/2, y - 10);
                 }
                 
-                // X-axis label
+                // X-axis label - use simple numeric labels with web-safe font
                 pdfCtx.fillStyle = '#333';
                 pdfCtx.textAlign = 'center';
-                pdfCtx.font = '18px Arial, Helvetica, sans-serif';
-                pdfCtx.fillText(labels[i], x + pdfBarWidth/2, pdfCanvas.height - pdfMargin.bottom + 25);
+                pdfCtx.font = '18px Arial';
+                
+                // Use only the region number without "Region" text to avoid font issues
+                const simpleLabel = `${i+1}`;
+                pdfCtx.fillText(simpleLabel, x + pdfBarWidth/2, pdfCanvas.height - pdfMargin.bottom + 25);
                 
                 // Tick mark
                 pdfCtx.strokeStyle = '#333';
@@ -1346,8 +1349,8 @@ function processSequenceData(data, type) {
                 pdfCtx.stroke();
             }
             
-            // Add title
-            pdfCtx.font = 'bold 28px Arial, Helvetica, sans-serif';
+            // Add title with web-safe font
+            pdfCtx.font = 'bold 28px Arial';
             pdfCtx.fillStyle = '#333';
             pdfCtx.textAlign = 'center';
             pdfCtx.fillText('Mutation Distribution by Region', pdfCanvas.width/2, 30);
@@ -1874,7 +1877,7 @@ function processSequenceData(data, type) {
             } else if (window.chartData && window.chartData.data) {
                 // Fallback: Create a simple text representation of the chart data
                 const chartData = window.chartData.data;
-                const chartLabels = window.chartData.labels || Array.from({length: chartData.length}, (_, i) => `Region ${i+1}`);
+                const chartLabels = Array.from({length: chartData.length}, (_, i) => `${i+1}`);
                 
                 let chartHtml = '<div style="text-align:center;color:#333;"><p style="margin-bottom:10px;"><b>Mutation Distribution:</b></p>';
                 chartHtml += '<div style="display:flex;justify-content:center;flex-wrap:wrap;">';
@@ -1893,7 +1896,7 @@ function processSequenceData(data, type) {
             } else if (comparisonResults && comparisonResults.mutations) {
                 // Generate chart data from mutations and create text representation
                 const regionCount = 10;
-                const chartLabels = Array.from({length: regionCount}, (_, i) => `Region ${i+1}`);
+                const chartLabels = Array.from({length: regionCount}, (_, i) => `${i+1}`);
                 const chartData = Array(regionCount).fill(0);
                 
                 const sequenceLength = comparisonResults.metadata.referenceLength;
