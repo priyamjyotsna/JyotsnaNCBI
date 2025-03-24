@@ -1243,120 +1243,8 @@ function processSequenceData(data, type) {
                 data: data
             };
             
-            // Create a high-quality static image for PDF export
-            // Create a hidden higher-quality canvas for PDF
-            const pdfCanvas = document.createElement('canvas');
-            pdfCanvas.width = 1200; // High resolution for PDF
-            pdfCanvas.height = 600;
-            pdfCanvas.style.display = 'none';
-            document.body.appendChild(pdfCanvas);
-            
-            const pdfCtx = pdfCanvas.getContext('2d');
-            pdfCtx.fillStyle = 'white';
-            pdfCtx.fillRect(0, 0, pdfCanvas.width, pdfCanvas.height);
-            
-            // Define margins and dimensions
-            const pdfMargin = { top: 50, right: 50, bottom: 80, left: 80 };
-            const pdfGraphWidth = pdfCanvas.width - pdfMargin.left - pdfMargin.right;
-            const pdfGraphHeight = pdfCanvas.height - pdfMargin.top - pdfMargin.bottom;
-            
-            // Draw axes
-            pdfCtx.strokeStyle = '#333';
-            pdfCtx.lineWidth = 2;
-            pdfCtx.beginPath();
-            pdfCtx.moveTo(pdfMargin.left, pdfMargin.top);
-            pdfCtx.lineTo(pdfMargin.left, pdfCanvas.height - pdfMargin.bottom);
-            pdfCtx.lineTo(pdfCanvas.width - pdfMargin.right, pdfCanvas.height - pdfMargin.bottom);
-            pdfCtx.stroke();
-            
-            // Draw Y-axis title - use only web-safe fonts
-            pdfCtx.save();
-            pdfCtx.font = 'bold 24px Arial';
-            pdfCtx.fillStyle = '#333';
-            pdfCtx.translate(25, pdfCanvas.height/2);
-            pdfCtx.rotate(-Math.PI/2);
-            pdfCtx.textAlign = 'center';
-            pdfCtx.fillText('Mutations', 0, 0);
-            pdfCtx.restore();
-            
-            // Draw X-axis title - use only web-safe fonts
-            pdfCtx.font = 'bold 24px Arial';
-            pdfCtx.fillStyle = '#333';
-            pdfCtx.textAlign = 'center';
-            pdfCtx.fillText('Regions', pdfCanvas.width/2, pdfCanvas.height - 20);
-            
-            // Draw grid lines and Y-axis labels
-            pdfCtx.textAlign = 'right';
-            pdfCtx.font = '18px Arial';
-            
-            for (let i = 0; i <= 5; i++) {
-                const value = (maxValue / 5) * i;
-                const y = pdfCanvas.height - pdfMargin.bottom - (i / 5) * pdfGraphHeight;
-                
-                // Grid line
-                pdfCtx.strokeStyle = '#ddd';
-                pdfCtx.beginPath();
-                pdfCtx.moveTo(pdfMargin.left, y);
-                pdfCtx.lineTo(pdfCanvas.width - pdfMargin.right, y);
-                pdfCtx.stroke();
-                
-                // Y-axis label
-                pdfCtx.fillStyle = '#333';
-                pdfCtx.fillText(Math.round(value).toString(), pdfMargin.left - 10, y + 6);
-            }
-            
-            // Draw bars
-            const pdfBarWidth = pdfGraphWidth / data.length * 0.7;
-            const pdfBarSpacing = pdfGraphWidth / data.length * 0.3;
-            
-            for (let i = 0; i < data.length; i++) {
-                const value = data[i];
-                const barHeight = (value / maxValue) * pdfGraphHeight;
-                const x = pdfMargin.left + (i * (pdfBarWidth + pdfBarSpacing)) + pdfBarSpacing/2;
-                const y = pdfCanvas.height - pdfMargin.bottom - barHeight;
-                
-                // Draw bar
-                pdfCtx.fillStyle = 'rgba(66, 133, 244, 0.8)';
-                pdfCtx.fillRect(x, y, pdfBarWidth, barHeight);
-                
-                // Draw border
-                pdfCtx.strokeStyle = 'rgba(66, 133, 244, 1)';
-                pdfCtx.lineWidth = 1;
-                pdfCtx.strokeRect(x, y, pdfBarWidth, barHeight);
-                
-                // Draw value on top if not zero
-                if (value > 0) {
-                    pdfCtx.fillStyle = '#333';
-                    pdfCtx.textAlign = 'center';
-                    pdfCtx.font = '16px Arial';
-                    pdfCtx.fillText(value.toString(), x + pdfBarWidth/2, y - 10);
-                }
-                
-                // X-axis label - use simple numeric labels with web-safe font
-                pdfCtx.fillStyle = '#333';
-                pdfCtx.textAlign = 'center';
-                pdfCtx.font = '18px Arial';
-                
-                // Use only the region number without "Region" text to avoid font issues
-                const simpleLabel = `${i+1}`;
-                pdfCtx.fillText(simpleLabel, x + pdfBarWidth/2, pdfCanvas.height - pdfMargin.bottom + 25);
-                
-                // Tick mark
-                pdfCtx.strokeStyle = '#333';
-                pdfCtx.beginPath();
-                pdfCtx.moveTo(x + pdfBarWidth/2, pdfCanvas.height - pdfMargin.bottom);
-                pdfCtx.lineTo(x + pdfBarWidth/2, pdfCanvas.height - pdfMargin.bottom + 8);
-                pdfCtx.stroke();
-            }
-            
-            // Add title with web-safe font
-            pdfCtx.font = 'bold 28px Arial';
-            pdfCtx.fillStyle = '#333';
-            pdfCtx.textAlign = 'center';
-            pdfCtx.fillText('Mutation Distribution by Region', pdfCanvas.width/2, 30);
-            
-            // Store the PDF image URL for use in generatePDF
-            window.pdfChartImageUrl = pdfCanvas.toDataURL('image/png');
+            // Set pdfChartImageUrl to null to indicate no chart should be included
+            window.pdfChartImageUrl = null;
             
         } catch (error) {
             console.error('Error creating chart:', error);
@@ -1871,6 +1759,7 @@ function processSequenceData(data, type) {
             }
             
             // Add the mutation distribution chart if available
+            /*
             if (window.pdfChartImageUrl) {
                 // Insert the high-quality image into the container
                 document.getElementById('pdfChartImageContainer').innerHTML = `<img src="${window.pdfChartImageUrl}" alt="Mutation Distribution Chart" style="max-width:100%;max-height:230px;">`;
@@ -1925,6 +1814,11 @@ function processSequenceData(data, type) {
                 document.getElementById('pdfChartContainer').innerHTML = 
                     '<div style="text-align:center;padding:20px;color:#666;">No mutation data available for visualization</div>';
             }
+            */
+            
+            // Instead of the chart, add a placeholder message
+            document.getElementById('pdfChartContainer').innerHTML = 
+                '<div style="text-align:center;padding:20px;color:#666;">Chart rendering temporarily disabled</div>';
             
             // Use html2pdf to generate PDF
             const pdfOptions = {
