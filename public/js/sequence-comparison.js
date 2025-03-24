@@ -1871,66 +1871,22 @@ function processSequenceData(data, type) {
             }
             
             // Add the mutation distribution chart if available
-            /*
-            if (window.pdfChartImageUrl) {
-                // Insert the high-quality image into the container
-                document.getElementById('pdfChartImageContainer').innerHTML = `<img src="${window.pdfChartImageUrl}" alt="Mutation Distribution Chart" style="max-width:100%;max-height:230px;">`;
-            } else if (window.chartData && window.chartData.data) {
-                // Fallback: Create a simple text representation of the chart data
-                const chartData = window.chartData.data;
-                const chartLabels = Array.from({length: chartData.length}, (_, i) => `${i+1}`);
-                
-                let chartHtml = '<div style="text-align:center;color:#333;"><p style="margin-bottom:10px;"><b>Mutation Distribution:</b></p>';
-                chartHtml += '<div style="display:flex;justify-content:center;flex-wrap:wrap;">';
-                
-                for (let i = 0; i < chartData.length; i++) {
-                    chartHtml += `<div style="margin:5px;text-align:center;width:60px;">
-                        <div style="height:60px;display:flex;flex-direction:column;justify-content:flex-end;">
-                            <div style="background-color:rgba(66,133,244,0.7);width:40px;margin:0 auto;height:${Math.min(chartData[i] * 5, 50)}px;"></div>
-                        </div>
-                        <div style="font-size:8pt;margin-top:5px;">${chartLabels[i]}: ${chartData[i]}</div>
-                    </div>`;
-                }
-                
-                chartHtml += '</div></div>';
-                document.getElementById('pdfChartImageContainer').innerHTML = chartHtml;
-            } else if (comparisonResults && comparisonResults.mutations) {
-                // Generate chart data from mutations and create text representation
-                const regionCount = 10;
-                const chartLabels = Array.from({length: regionCount}, (_, i) => `${i+1}`);
-                const chartData = Array(regionCount).fill(0);
-                
-                const sequenceLength = comparisonResults.metadata.referenceLength;
-                const regionSize = Math.ceil(sequenceLength / regionCount);
-                
-                comparisonResults.mutations.forEach(mutation => {
-                    const regionIndex = Math.min(Math.floor(mutation.position / regionSize), regionCount - 1);
-                    chartData[regionIndex]++;
-                });
-                
-                let chartHtml = '<div style="text-align:center;color:#333;"><p style="margin-bottom:10px;"><b>Mutation Distribution:</b></p>';
-                chartHtml += '<div style="display:flex;justify-content:center;flex-wrap:wrap;">';
-                
-                for (let i = 0; i < chartData.length; i++) {
-                    chartHtml += `<div style="margin:5px;text-align:center;width:60px;">
-                        <div style="height:60px;display:flex;flex-direction:column;justify-content:flex-end;">
-                            <div style="background-color:rgba(66,133,244,0.7);width:40px;margin:0 auto;height:${Math.min(chartData[i] * 5, 50)}px;"></div>
-                        </div>
-                        <div style="font-size:8pt;margin-top:5px;">${chartLabels[i]}: ${chartData[i]}</div>
-                    </div>`;
-                }
-                
-                chartHtml += '</div></div>';
-                document.getElementById('pdfChartImageContainer').innerHTML = chartHtml;
-            } else {
-                document.getElementById('pdfChartContainer').innerHTML = 
-                    '<div style="text-align:center;padding:20px;color:#666;">No mutation data available for visualization</div>';
-            }
-            */
-            
             // Instead of the chart, add a placeholder message
-            document.getElementById('pdfChartContainer').innerHTML = 
-                '<div style="text-align:center;padding:20px;color:#666;">Chart rendering temporarily disabled</div>';
+            const pdfChartContainer = document.getElementById('pdfChartContainer');
+            if (pdfChartContainer) {
+                pdfChartContainer.innerHTML = 
+                    '<div style="text-align:center;padding:20px;color:#666;">Chart rendering temporarily disabled</div>';
+            } else {
+                console.error('PDF chart container element not found');
+            }
+            
+            // Add debug console logs to check if elements exist
+            console.log('PDF Container exists:', !!pdfContainer);
+            console.log('PDF Container HTML length:', pdfContainer.innerHTML.length);
+            console.log('PDF Chart Container exists:', !!document.getElementById('pdfChartContainer'));
+            console.log('PDF Mutation Table exists:', !!document.getElementById('pdfMutationTable'));
+            console.log('PDF Ref Metadata exists:', !!document.getElementById('pdfRefMetadata'));
+            console.log('PDF Citation exists:', !!document.getElementById('pdfCitation'));
             
             // Use html2pdf to generate PDF
             const pdfOptions = {
