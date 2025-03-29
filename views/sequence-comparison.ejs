@@ -45,6 +45,88 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 
+    <!-- Structured Data for SoftwareApplication and HowTo -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "DNA Sequence Comparison Tool",
+          "applicationCategory": "Scientific Tool",
+          "operatingSystem": "Web-based",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "description": "An online tool for comparing DNA/RNA sequences to identify mutations, substitutions, insertions, and deletions with interactive visualizations and comprehensive analysis reports.",
+          "featureList": [
+            "DNA/RNA sequence comparison",
+            "Mutation identification and analysis",
+            "Visualization of sequence changes",
+            "PDF report generation",
+            "NCBI database integration"
+          ],
+          "softwareVersion": "1.0",
+          "softwareRequirements": "Modern web browser with JavaScript enabled",
+          "author": {
+            "@type": "Person",
+            "name": "Dr. Jyotsna Priyam",
+            "sameAs": "https://orcid.org/0000-0001-8782-9783"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Jyotsna's NCBI Tools",
+            "url": "https://ncbi.jyotsnapriyam.com/"
+          }
+        },
+        {
+          "@type": "HowTo",
+          "name": "How to Compare DNA Sequences and Identify Mutations",
+          "description": "Step-by-step guide to using the Sequence Comparison Tool for identifying mutations between reference and query DNA/RNA sequences.",
+          "totalTime": "PT5M",
+          "tool": {
+            "@type": "HowToTool",
+            "name": "DNA Sequence Comparison Tool"
+          },
+          "step": [
+            {
+              "@type": "HowToStep",
+              "name": "Upload Reference Sequence",
+              "text": "Upload a FASTA/TXT file or enter an NCBI Accession ID for your reference sequence.",
+              "url": "https://ncbi.jyotsnapriyam.com/sequence-comparison#reference-panel"
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Upload Query Sequence",
+              "text": "Upload a FASTA/TXT file or enter an NCBI Accession ID for your query sequence.",
+              "url": "https://ncbi.jyotsnapriyam.com/sequence-comparison#query-panel"
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Compare Sequences",
+              "text": "Click the Compare button to analyze the sequences and identify mutations.",
+              "url": "https://ncbi.jyotsnapriyam.com/sequence-comparison#compare-btn"
+            },
+            {
+              "@type": "HowToStep",
+              "name": "View Results",
+              "text": "Examine the detailed mutation report with statistical analysis and visualizations.",
+              "url": "https://ncbi.jyotsnapriyam.com/sequence-comparison#results-section"
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Generate PDF Report",
+              "text": "Download a comprehensive PDF report of your analysis for documentation or publication.",
+              "url": "https://ncbi.jyotsnapriyam.com/sequence-comparison#download-btn"
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+
     <style>
         .mutation-list table {
             width: 100%;
@@ -160,6 +242,23 @@
                 <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
             </div>
         </header>
+        
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="Breadcrumb" class="breadcrumb-nav" style="margin: 10px 0 20px; padding: 8px 15px; background-color: #f5f5f5; border-radius: 4px;">
+            <ol style="list-style: none; padding: 0; margin: 0; display: flex; font-size: 0.9em;" itemscope itemtype="https://schema.org/BreadcrumbList">
+                <li style="display: inline-block;" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <a href="/" itemprop="item" style="color: #3498db; text-decoration: none;">
+                        <span itemprop="name">Home</span>
+                    </a>
+                    <meta itemprop="position" content="1" />
+                    <span style="margin: 0 5px; color: #ccc;">></span>
+                </li>
+                <li style="display: inline-block;" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <span itemprop="name" style="color: #666;">Sequence Comparison Tool</span>
+                    <meta itemprop="position" content="2" />
+                </li>
+            </ol>
+        </nav>
 
         <div class="tool-container">
             <div class="input-section">
@@ -243,10 +342,9 @@
             <div class="results-section" id="resultsSection" style="display: none;">
                 <div class="results-header">
                     <h2>Comparison Results</h2>
-                    
                 </div>
 
-                <div class="summary-stats">
+                <section class="summary-stats">
                     <div class="stat-card">
                         <h4>Total Mutations</h4>
                         <div class="stat-value" id="totalMutations">0</div>
@@ -259,9 +357,9 @@
                         <h4>Mutation Rate</h4>
                         <div class="stat-value" id="mutationRate">0%</div>
                     </div>
-                </div>
+                </section>
 
-                <div class="sequence-metadata">
+                <section class="sequence-metadata">
                     <div class="metadata-card">
                         <h4>Reference Sequence</h4>
                         <div id="referenceMetadata"></div>
@@ -270,23 +368,23 @@
                         <h4>Query Sequence</h4>
                         <div id="queryMetadata"></div>
                     </div>
-                </div>
+                </section>
 
-                <div class="visualization-section">
+                <section class="visualization-section">
                     <div class="chart-container">
                         <h4>Mutation Distribution</h4>
                         <canvas id="mutationChart" style="width: 100%; height: 300px;"></canvas>
                     </div>
-                </div>
+                </section>
 
-                <div class="sequence-display">
+                <section class="sequence-display">
                     <h4>Sequence Alignment with Mutations Highlighted</h4>
                     <div class="sequence-viewer" id="sequenceViewer">
                         <!-- Sequence alignment will be displayed here -->
                     </div>
-                </div>
+                </section>
 
-                <div class="mutation-list">
+                <section class="mutation-list">
                     <h4>Detailed Mutation List</h4>
                     <table id="mutationTable">
                         <thead>
@@ -301,7 +399,7 @@
                             <!-- Mutation details will be added here -->
                         </tbody>
                     </table>
-                </div>
+                </section>
 
                 <div class="pdf-export" style="text-align: center; margin: 20px 0;">
                     <button onclick="generatePDF()" class="primary-btn">
@@ -317,7 +415,119 @@
 
     <script src="/js/sequence-comparison.js"></script>
     
-    <%- include('partials/citation') %>
+    <section class="citation-section">
+        <h3>How to Cite This Tool</h3>
+        <div class="citation-formats">
+            <div class="citation-box">
+                <h4>APA Format</h4>
+                <div class="citation-text" id="apa-citation">
+                    Priyam, J. (2025). Jyotsna's NCBI Tools - Sequence Comparison Tool. DOI: 10.5281/zenodo.15069907
+                </div>
+                <button class="copy-btn" data-citation="apa-citation">Copy Citation</button>
+            </div>
+            <div class="citation-box">
+                <h4>MLA Format</h4>
+                <div class="citation-text" id="mla-citation">
+                    Priyam, J. "Jyotsna's NCBI Tools - Sequence Comparison Tool." 2025, DOI: 10.5281/zenodo.15069907. Accessed <%= new Date().toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'}) %>.
+                </div>
+                <button class="copy-btn" data-citation="mla-citation">Copy Citation</button>
+            </div>
+        </div>
+    </section>
+    
+    <!-- FAQ Section optimized for AI searches -->
+    <section class="faq-section" style="margin: 40px auto; max-width: 800px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px;">Frequently Asked Questions</h2>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What types of sequences can I compare with this tool?</h3>
+            <p style="color: #555; line-height: 1.5;">This tool can compare DNA and RNA sequences in various formats, including FASTA and plain text. You can directly upload sequence files or fetch sequences from NCBI using their accession IDs.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">How does the sequence comparison algorithm work?</h3>
+            <p style="color: #555; line-height: 1.5;">The tool performs a pairwise alignment between your reference and query sequences to identify differences. It categorizes mutations as substitutions (base changes), insertions (added bases), or deletions (removed bases). The algorithm also calculates statistics like mutation rate and distribution across different regions.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">Can I filter the mutation results?</h3>
+            <p style="color: #555; line-height: 1.5;">Yes, you can filter results by mutation type (substitution, insertion, deletion) and by specific positions or regions of interest. This helps you focus on the most relevant changes for your research.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What information is included in the PDF report?</h3>
+            <p style="color: #555; line-height: 1.5;">The PDF report includes comprehensive analysis details: summary statistics, sequence metadata, a visualization of mutation distribution, a complete table of all mutations with their positions and types, and citation information for academic use.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">How can I cite this tool in my research?</h3>
+            <p style="color: #555; line-height: 1.5;">You can cite this tool using standard academic formats (APA, MLA, Chicago) with the DOI: 10.5281/zenodo.15069907. Citation formats are provided at the bottom of the results page and included in the generated PDF reports.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What is the maximum sequence length this tool can handle?</h3>
+            <p style="color: #555; line-height: 1.5;">The tool is optimized for sequences up to 1 million base pairs. Larger sequences can be processed but may take longer. For very large genomic sequences (>10 million bp), we recommend using specialized desktop software.</p>
+        </div>
+    </section>
+
+    <!-- Add FAQPage structured data for the FAQ section -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What types of sequences can I compare with this tool?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "This tool can compare DNA and RNA sequences in various formats, including FASTA and plain text. You can directly upload sequence files or fetch sequences from NCBI using their accession IDs."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the sequence comparison algorithm work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The tool performs a pairwise alignment between your reference and query sequences to identify differences. It categorizes mutations as substitutions (base changes), insertions (added bases), or deletions (removed bases). The algorithm also calculates statistics like mutation rate and distribution across different regions."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I filter the mutation results?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, you can filter results by mutation type (substitution, insertion, deletion) and by specific positions or regions of interest. This helps you focus on the most relevant changes for your research."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What information is included in the PDF report?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The PDF report includes comprehensive analysis details: summary statistics, sequence metadata, a visualization of mutation distribution, a complete table of all mutations with their positions and types, and citation information for academic use."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How can I cite this tool in my research?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can cite this tool using standard academic formats (APA, MLA, Chicago) with the DOI: 10.5281/zenodo.15069907. Citation formats are provided at the bottom of the results page and included in the generated PDF reports."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the maximum sequence length this tool can handle?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The tool is optimized for sequences up to 1 million base pairs. Larger sequences can be processed but may take longer. For very large genomic sequences (>10 million bp), we recommend using specialized desktop software."
+          }
+        }
+      ]
+    }
+    </script>
+
     <%- include('partials/footer') %>
     
 </body>

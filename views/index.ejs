@@ -194,6 +194,57 @@
     
     <script src="/js/index.js"></script>
     
+    <!-- Structured Data for Organization and WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://ncbi.jyotsnapriyam.com/#organization",
+          "name": "Jyotsna's NCBI Tools",
+          "url": "https://ncbi.jyotsnapriyam.com/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://ncbi.jyotsnapriyam.com/images/jyotsna-profile.jpg"
+          },
+          "description": "Biotechnology researcher specializing in computational genomics and NCBI data integration, providing free bioinformatics tools for researchers.",
+          "founder": {
+            "@type": "Person",
+            "name": "Dr. Jyotsna Priyam",
+            "jobTitle": "Biotechnology Researcher",
+            "sameAs": [
+              "https://www.linkedin.com/in/dr-jyotsna-priyam-87793b1b3/",
+              "https://orcid.org/0000-0001-8782-9783",
+              "https://github.com/priyamjyotsna",
+              "https://scholar.google.com/citations?user=kpizk-8AAAAJ"
+            ]
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "priyam.jyotsna@gmail.com",
+            "contactType": "customer service"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://ncbi.jyotsnapriyam.com/#website",
+          "url": "https://ncbi.jyotsnapriyam.com/",
+          "name": "Jyotsna's NCBI Tools",
+          "description": "Comprehensive biotech analysis suite for genomic sequence analysis",
+          "publisher": {
+            "@id": "https://ncbi.jyotsnapriyam.com/#organization"
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://ncbi.jyotsnapriyam.com/search?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
+    
     <%- include('partials/citation') %>
     <%- include('partials/footer') %>
     
