@@ -166,11 +166,11 @@
         }
 
         .citation-section {
-            margin: 20px auto;
-            padding: 15px;
+            margin: 40px auto;
+            padding: 20px;
             background: white;
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             max-width: 1000px;
         }
 
@@ -191,7 +191,7 @@
         .citation-box {
             flex: 1;
             min-width: 250px;
-            padding: 10px;
+            padding: 15px;
             border: 1px solid #eee;
             border-radius: 4px;
             background: #f9f9f9;
@@ -205,31 +205,38 @@
 
         .citation-text {
             margin: 8px 0;
-            padding: 8px;
+            padding: 12px;
             background: white;
             border: 1px solid #eee;
             border-radius: 4px;
-            font-size: 0.8em;
-            line-height: 1.4;
+            font-size: 0.9em;
+            line-height: 1.5;
             height: 80px;
             overflow-y: auto;
+            word-break: break-word;
         }
 
         .copy-btn {
-            background: #4a90e2;
+            background: #2196F3;
             color: white;
             border: none;
-            padding: 4px 12px;
+            padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 0.8em;
+            font-size: 0.9em;
             transition: background 0.3s;
             width: 100%;
-            margin-top: 5px;
+            margin-top: 8px;
         }
 
         .copy-btn:hover {
-            background: #357abd;
+            background: #0d8aee;
+        }
+
+        @media (max-width: 768px) {
+            .citation-formats {
+                flex-direction: column;
+            }
         }
     </style>
 </head>

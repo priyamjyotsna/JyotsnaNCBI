@@ -1077,15 +1077,23 @@ function processSequenceData(data, type) {
                 throw new Error('Chart container not found');
             }
             
-            // Clear previous chart
-            chartContainer.innerHTML = '<h4>Mutation Distribution</h4>';
-            
-            // Create new canvas
-            const canvas = document.createElement('canvas');
-            canvas.id = 'mutationChart';
-            canvas.style.width = '100%';
-            canvas.style.height = '300px';
-            chartContainer.appendChild(canvas);
+            // Get existing canvas or create a new one
+            let canvas = document.getElementById('mutationChart');
+            if (!canvas) {
+                // Clear previous chart content
+                chartContainer.innerHTML = '<h4>Mutation Distribution</h4>';
+                
+                // Create new canvas
+                canvas = document.createElement('canvas');
+                canvas.id = 'mutationChart';
+                canvas.style.width = '100%';
+                canvas.style.height = '300px';
+                chartContainer.appendChild(canvas);
+            } else {
+                // If canvas exists, clear it
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
             
             // Set canvas dimensions properly for high-DPI displays
             const dpr = window.devicePixelRatio || 1;
