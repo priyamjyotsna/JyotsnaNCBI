@@ -3,22 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gene Map Visualizer - Jyotsna's NCBI Tools</title>
+    <title>Gene Map Visualizer | Interactive Genetic Variant Visualization Tool</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Visualize genetic variants and their locations with interactive linear and circular gene maps. Plot variant densities, impact levels, and clinical significance in customizable formats.">
+    <meta name="keywords" content="gene map visualizer, variant visualization, genomic data visualization, mutation mapping, bioinformatics tool, variant location plot, genomic coordinates">
+    <meta name="author" content="Dr. Jyotsna Priyam">
+    
+    <!-- Open Graph Meta Tags for social sharing -->
+    <meta property="og:title" content="Gene Map Visualizer - Interactive Genetic Variant Mapping">
+    <meta property="og:description" content="Free online tool to create interactive visualizations of genetic variants and their locations on genomic coordinates with customizable display options">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ncbi.jyotsnapriyam.com/gene-map">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://ncbi.jyotsnapriyam.com/gene-map">
+    
     <link rel="stylesheet" href="/styles/gene-map.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Replace the old Plotly script with this -->
+    
+    <!-- Plotly for visualizations -->
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    
+    <!-- Structured Data for SoftwareApplication and HowTo -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Gene Map Visualizer",
+          "applicationCategory": "Scientific Tool",
+          "operatingSystem": "Web-based",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "description": "An online tool for visualizing genetic variants and their locations on genomic coordinates with interactive linear and circular views and customizable display options.",
+          "featureList": [
+            "Linear and circular visualization modes",
+            "Variant type, significance, and impact color coding",
+            "Customizable marker sizes",
+            "Interactive zooming and panning",
+            "PNG and SVG export options"
+          ],
+          "softwareVersion": "1.0",
+          "softwareRequirements": "Modern web browser with JavaScript enabled",
+          "author": {
+            "@type": "Person",
+            "name": "Dr. Jyotsna Priyam",
+            "sameAs": "https://orcid.org/0000-0001-8782-9783"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Jyotsna's NCBI Tools",
+            "url": "https://ncbi.jyotsnapriyam.com/"
+          }
+        },
+        {
+          "@type": "HowTo",
+          "name": "How to Visualize Genetic Variants on a Gene Map",
+          "description": "Step-by-step guide to creating interactive visualizations of genetic variants and their locations on a gene map.",
+          "totalTime": "PT3M",
+          "tool": {
+            "@type": "HowToTool",
+            "name": "Gene Map Visualizer"
+          },
+          "step": [
+            {
+              "@type": "HowToStep",
+              "name": "Upload Variant Data",
+              "text": "Upload a TSV (tab-separated values) file containing variant information including IDs, locations, types, gene names, impact levels, and clinical significance."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Select View Mode",
+              "text": "Choose between linear view (traditional coordinate system) or circular view (chromosome-like visualization)."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Choose Color Coding",
+              "text": "Select how to color your variants: by variant type, clinical significance, or impact level."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Adjust Marker Size",
+              "text": "Use the slider to adjust the size of variant markers for optimal visibility."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Generate Visualization",
+              "text": "Click the 'Generate Visualization' button to create your interactive gene map."
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+    
+    <style>
+    /* Citation styles */
+    .citation-section {
+        margin: 40px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-width: 1000px;
+    }
+
+    .citation-section h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+        text-align: left;
+    }
+
+    .citation-formats {
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .citation-box {
+        flex: 1;
+        min-width: 250px;
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        background: #f9f9f9;
+    }
+
+    .citation-box h4 {
+        color: #444;
+        margin-bottom: 8px;
+        font-size: 0.9em;
+    }
+
+    .citation-text {
+        margin: 8px 0;
+        padding: 12px;
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        font-size: 0.9em;
+        line-height: 1.5;
+        height: 80px;
+        overflow-y: auto;
+        word-break: break-word;
+    }
+
+    .copy-btn {
+        background: #2196F3;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: background 0.3s;
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .copy-btn:hover {
+        background: #0d8aee;
+    }
+
+    @media (max-width: 768px) {
+        .citation-formats {
+            flex-direction: column;
+        }
+    }
+    </style>
 </head>
 <body>
     <div class="container">
-        <nav class="top-nav">
-            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="Breadcrumb" class="breadcrumb-nav" style="margin: 10px 0 20px; padding: 8px 15px; background-color: #f5f5f5; border-radius: 4px;">
+            <ol style="list-style: none; padding: 0; margin: 0; display: flex; font-size: 0.9em;" itemscope itemtype="https://schema.org/BreadcrumbList">
+                <li style="display: inline-block;" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <a href="/" itemprop="item" style="color: #3498db; text-decoration: none;">
+                        <span itemprop="name">Home</span>
+                    </a>
+                    <meta itemprop="position" content="1" />
+                    <span style="margin: 0 5px; color: #ccc;">></span>
+                </li>
+                <li style="display: inline-block;" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <span itemprop="name" style="color: #666;">Gene Map Visualizer</span>
+                    <meta itemprop="position" content="2" />
+                </li>
+            </ol>
         </nav>
 
         <header>
             <h1>Gene Map Visualizer</h1>
             <p class="subtitle">Visualize variant locations and amino acid changes</p>
+            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
             
             <!-- Add help section -->
             <div class="help-section">
@@ -29,7 +213,7 @@
         </header>
 
         <!-- Add modal for help content -->
-        <div id="helpModal" class="modal">
+        <section id="helpModal" class="modal">
             <div class="modal-content">
                 <span class="close" onclick="document.getElementById('helpModal').style.display='none'">&times;</span>
                 <h2>Input File Guide</h2>
@@ -68,9 +252,9 @@
                     </ul>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="input-section">
+        <section class="input-section">
             <div class="file-upload">
                 <label for="variantFile" class="file-label">
                     <i class="fas fa-upload"></i>
@@ -80,7 +264,6 @@
                 <p class="file-name" id="fileName">No file chosen</p>
             </div>
             
-            <!-- Remove this duplicate controls-section -->
             <div class="visualization-options">
                 <div class="option-group">
                     <label for="viewMode">View Mode:</label>
@@ -106,19 +289,14 @@
                 </div>
             </div>
             
-            <!-- Remove this duplicate section -->
-            <!-- <div class="controls-section">
-                <div class="zoom-controls">...</div>
-            </div> -->
-            
             <button id="visualizeBtn" class="primary-button" disabled>
                 <i class="fas fa-chart-bar"></i> Generate Visualization
             </button>
-        </div>
+        </section>
 
-        <div id="status" class="status-section"></div>
+        <section id="status" class="status-section"></section>
 
-        <div class="visualization-section">
+        <section class="visualization-section">
             <div id="geneMap"></div>
             <div class="controls">
                 <div class="zoom-controls">
@@ -141,12 +319,150 @@
                     </button>
                 </div>
             </div>
-        </div>
+        </section>
     </div>
+
+    <!-- FAQ Section optimized for AI searches -->
+    <section class="faq-section" style="margin: 40px auto; max-width: 800px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px;">Frequently Asked Questions</h2>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What file format do I need for the Gene Map Visualizer?</h3>
+            <p style="color: #555; line-height: 1.5;">The Gene Map Visualizer accepts TSV (tab-separated values) files with specific column requirements. Your file should include columns for Variant ID, Chromosomal Location, Variant Type, Gene Name, Impact Level, and Clinical Significance. The first row should contain column headers, and each subsequent row represents one variant.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What's the difference between linear and circular view modes?</h3>
+            <p style="color: #555; line-height: 1.5;">Linear view displays variants along a straight line, similar to traditional genome browsers, making it easier to see precise distances between variants. Circular view arranges variants in a circular format, resembling a chromosome, which can be helpful for visualizing variant distribution patterns and density across the entire sequence.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">How do the different color coding options work?</h3>
+            <p style="color: #555; line-height: 1.5;">The tool offers three color coding options: (1) By variant type - colors variants based on their mutation type (SNV, insertion, deletion, etc.); (2) By clinical significance - uses color to indicate pathogenicity (benign to pathogenic); (3) By impact level - colors variants according to their predicted functional impact (low, moderate, high).</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">Can I download or save my gene map visualizations?</h3>
+            <p style="color: #555; line-height: 1.5;">Yes, you can download your visualizations in two formats: PNG (raster image suitable for presentations) or SVG (vector format ideal for publication and scalable graphics). Use the download buttons beneath the visualization after it's generated.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">How do I navigate the gene map once it's created?</h3>
+            <p style="color: #555; line-height: 1.5;">The visualization is interactive. You can hover over any variant to see its details, zoom in/out using the controls provided, and in linear mode, you can click and drag to pan across the visualization. Double-clicking on the map will also reset the zoom level.</p>
+        </div>
+    </section>
+
+    <!-- Add FAQPage structured data for the FAQ section -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What file format do I need for the Gene Map Visualizer?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The Gene Map Visualizer accepts TSV (tab-separated values) files with specific column requirements. Your file should include columns for Variant ID, Chromosomal Location, Variant Type, Gene Name, Impact Level, and Clinical Significance. The first row should contain column headers, and each subsequent row represents one variant."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What's the difference between linear and circular view modes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Linear view displays variants along a straight line, similar to traditional genome browsers, making it easier to see precise distances between variants. Circular view arranges variants in a circular format, resembling a chromosome, which can be helpful for visualizing variant distribution patterns and density across the entire sequence."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do the different color coding options work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The tool offers three color coding options: (1) By variant type - colors variants based on their mutation type (SNV, insertion, deletion, etc.); (2) By clinical significance - uses color to indicate pathogenicity (benign to pathogenic); (3) By impact level - colors variants according to their predicted functional impact (low, moderate, high)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I download or save my gene map visualizations?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, you can download your visualizations in two formats: PNG (raster image suitable for presentations) or SVG (vector format ideal for publication and scalable graphics). Use the download buttons beneath the visualization after it's generated."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I navigate the gene map once it's created?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The visualization is interactive. You can hover over any variant to see its details, zoom in/out using the controls provided, and in linear mode, you can click and drag to pan across the visualization. Double-clicking on the map will also reset the zoom level."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <section class="citation-section">
+        <h3>How to Cite This Tool</h3>
+        <div class="citation-formats">
+            <div class="citation-box">
+                <h4>APA Format</h4>
+                <div class="citation-text" id="apa-citation">
+                    Priyam, J. (2025). Jyotsna's NCBI Tools - Gene Map Visualizer. DOI: 10.5281/zenodo.15069907
+                </div>
+                <button class="copy-btn" data-citation="apa-citation">Copy Citation</button>
+            </div>
+            <div class="citation-box">
+                <h4>MLA Format</h4>
+                <div class="citation-text" id="mla-citation">
+                    Priyam, J. "Jyotsna's NCBI Tools - Gene Map Visualizer." 2025, DOI: 10.5281/zenodo.15069907. Accessed <%= new Date().toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'}) %>.
+                </div>
+                <button class="copy-btn" data-citation="mla-citation">Copy Citation</button>
+            </div>
+            <div class="citation-box">
+                <h4>BibTeX Format</h4>
+                <div class="citation-text" id="bibtex-citation">
+@software{10_5281_zenodo_15069907,
+    author = {Priyam, J.},
+    title = {Jyotsna's NCBI Tools - Gene Map Visualizer},
+    year = {2025},
+    version = {1.0.0},
+    doi = {10.5281/zenodo.15069907},
+    url = {https://ncbi.jyotsnapriyam.com/gene-map},
+    note = {Accessed: <%= new Date().toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'}) %>}
+}
+                </div>
+                <button class="copy-btn" data-citation="bibtex-citation">Copy Citation</button>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Add script to handle citation copying -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners to all copy buttons
+            document.querySelectorAll('.copy-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const citationId = this.getAttribute('data-citation');
+                    const citationText = document.getElementById(citationId).textContent;
+                    
+                    navigator.clipboard.writeText(citationText.trim()).then(() => {
+                        const originalText = this.textContent;
+                        this.textContent = 'Copied!';
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        alert('Failed to copy citation. Please try selecting and copying manually.');
+                    });
+                });
+            });
+        });
+    </script>
 
     <script src="/js/gene-map.js"></script>
     
-    <%- include('partials/citation') %>
     <%- include('partials/footer') %>
     
 </body>
