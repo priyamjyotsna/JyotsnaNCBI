@@ -3,10 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sequence Fetch Tool - Jyotsna's NCBI Tools</title>
+    <title>Sequence Fetch Tool | Retrieve Nucleotide Sequences from NCBI</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Download and analyze nucleotide sequences from NCBI databases with batch processing capabilities. Fetch multiple sequences by accession ID and export results.">
+    <meta name="keywords" content="sequence fetch tool, NCBI sequence download, nucleotide sequence retrieval, bioinformatics tool, GenBank sequence, batch sequence download">
+    <meta name="author" content="Dr. Jyotsna Priyam">
+    
+    <!-- Open Graph Meta Tags for social sharing -->
+    <meta property="og:title" content="Sequence Fetch Tool - Batch Nucleotide Download">
+    <meta property="og:description" content="Free online tool to fetch multiple nucleotide sequences from NCBI databases with batch processing and customizable export options">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ncbi.jyotsnapriyam.com/sequence-fetch">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://ncbi.jyotsnapriyam.com/sequence-fetch">
+    
     <link rel="stylesheet" href="/styles/sequence-fetch.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Structured Data for SoftwareApplication and HowTo -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Sequence Fetch Tool",
+          "applicationCategory": "Scientific Tool",
+          "operatingSystem": "Web-based",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "description": "An online tool for retrieving nucleotide sequences from NCBI databases, with batch processing capabilities and customizable export options.",
+          "featureList": [
+            "Batch sequence retrieval",
+            "Custom preview lengths",
+            "Sequence metadata extraction",
+            "Streamlined downloads",
+            "Multiple export formats"
+          ],
+          "softwareVersion": "1.0",
+          "softwareRequirements": "Modern web browser with JavaScript enabled",
+          "author": {
+            "@type": "Person",
+            "name": "Dr. Jyotsna Priyam",
+            "sameAs": "https://orcid.org/0000-0001-8782-9783"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Jyotsna's NCBI Tools",
+            "url": "https://ncbi.jyotsnapriyam.com/"
+          }
+        },
+        {
+          "@type": "HowTo",
+          "name": "How to Fetch Multiple Nucleotide Sequences from NCBI",
+          "description": "Step-by-step guide to using the Sequence Fetch Tool for retrieving multiple nucleotide sequences from NCBI databases.",
+          "totalTime": "PT3M",
+          "tool": {
+            "@type": "HowToTool",
+            "name": "Sequence Fetch Tool"
+          },
+          "step": [
+            {
+              "@type": "HowToStep",
+              "name": "Enter Starting Accession ID",
+              "text": "Enter the first accession ID in your sequence range."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Enter Ending Accession ID",
+              "text": "Enter the last accession ID in your sequence range."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Select Preview Length",
+              "text": "Choose how much of each sequence to preview (50bp to full sequence)."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Choose Additional Fields",
+              "text": "Select which metadata to include (organism, length, molecule type, update date)."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Fetch Sequences",
+              "text": "Click the 'Fetch Sequences' button to retrieve the data from NCBI."
+            }
+          ]
+        }
+      ]
+    }
+    </script>
     <style>
     .citation-section {
         margin: 20px auto;
@@ -80,16 +172,30 @@
 </head>
 <body>
     <div class="container">
-        <nav class="top-nav">
-            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="Breadcrumb" class="breadcrumb-nav" style="margin: 10px 0 20px; padding: 8px 15px; background-color: #f5f5f5; border-radius: 4px;">
+            <ol style="list-style: none; padding: 0; margin: 0; display: flex; font-size: 0.9em;" itemscope itemtype="https://schema.org/BreadcrumbList">
+                <li style="display: inline-block;" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <a href="/" itemprop="item" style="color: #3498db; text-decoration: none;">
+                        <span itemprop="name">Home</span>
+                    </a>
+                    <meta itemprop="position" content="1" />
+                    <span style="margin: 0 5px; color: #ccc;">></span>
+                </li>
+                <li style="display: inline-block;" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <span itemprop="name" style="color: #666;">Sequence Fetch Tool</span>
+                    <meta itemprop="position" content="2" />
+                </li>
+            </ol>
         </nav>
 
         <header>
             <h1>Sequence Fetch Tool</h1>
             <p class="subtitle">Fetch and analyze nucleotide sequences from NCBI database</p>
+            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
         </header>
 
-        <div class="input-section">
+        <section class="input-section">
             <div class="range-input">
                 <div class="input-group">
                     <label for="startId">Start Accession:</label>
@@ -127,11 +233,11 @@
             <button id="fetchBtn" class="primary-button">
                 <i class="fas fa-download"></i> Fetch Sequences
             </button>
-        </div>
+        </section>
         
-        <div id="status" class="status-section"></div>
+        <section id="status" class="status-section"></section>
         
-        <div class="preview-section">
+        <section class="preview-section">
             <h2>Results Preview</h2>
             <div class="table-container">
                 <table id="previewTable">
@@ -148,22 +254,156 @@
                     <tbody></tbody>
                 </table>
             </div>
+        </section>
+
+        <section id="results" class="results-section">
+            <h2>Results</h2>
+            <div id="resultsContainer"></div>
+        </section>
+    </div>
+
+    <!-- FAQ Section optimized for AI searches -->
+    <section class="faq-section" style="margin: 40px auto; max-width: 800px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px;">Frequently Asked Questions</h2>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What is the Sequence Fetch Tool used for?</h3>
+            <p style="color: #555; line-height: 1.5;">The Sequence Fetch Tool allows you to retrieve multiple nucleotide sequences from NCBI databases by specifying a range of accession IDs. It's useful for batch downloading sequences for research, comparison, or analysis purposes.</p>
         </div>
-    </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">How do I fetch sequences in a batch?</h3>
+            <p style="color: #555; line-height: 1.5;">Enter the starting and ending accession IDs to define your sequence range. The tool will fetch all sequences within that range. For example, entering GU339067 to GU339071 will retrieve 5 sequences (GU339067, GU339068, GU339069, GU339070, and GU339071).</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What metadata can I retrieve with each sequence?</h3>
+            <p style="color: #555; line-height: 1.5;">You can retrieve organism name, sequence length, molecule type, and update date by checking the corresponding options in the "Additional Fields" section.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">Can I control how much of each sequence is displayed?</h3>
+            <p style="color: #555; line-height: 1.5;">Yes, the "Preview Length" dropdown lets you select how many base pairs to display for each sequence, ranging from 50bp to the full sequence. This helps manage loading times when working with very long sequences.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">How can I export or save the sequences I've fetched?</h3>
+            <p style="color: #555; line-height: 1.5;">After fetching sequences, you can download them in various formats including FASTA and tabular formats. The tool also supports copying sequences directly to your clipboard for use in other applications.</p>
+        </div>
+    </section>
 
-    <div id="results" class="results-section">
-        <h2>Results</h2>
-        <div id="resultsContainer"></div>
-    </div>
+    <!-- Add FAQPage structured data for the FAQ section -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the Sequence Fetch Tool used for?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The Sequence Fetch Tool allows you to retrieve multiple nucleotide sequences from NCBI databases by specifying a range of accession IDs. It's useful for batch downloading sequences for research, comparison, or analysis purposes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I fetch sequences in a batch?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Enter the starting and ending accession IDs to define your sequence range. The tool will fetch all sequences within that range. For example, entering GU339067 to GU339071 will retrieve 5 sequences (GU339067, GU339068, GU339069, GU339070, and GU339071)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What metadata can I retrieve with each sequence?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can retrieve organism name, sequence length, molecule type, and update date by checking the corresponding options in the 'Additional Fields' section."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I control how much of each sequence is displayed?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, the 'Preview Length' dropdown lets you select how many base pairs to display for each sequence, ranging from 50bp to the full sequence. This helps manage loading times when working with very long sequences."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How can I export or save the sequences I've fetched?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "After fetching sequences, you can download them in various formats including FASTA and tabular formats. The tool also supports copying sequences directly to your clipboard for use in other applications."
+          }
+        }
+      ]
+    }
+    </script>
 
-    <!-- Remove existing citation section -->
+    <section class="citation-section">
+        <h3>How to Cite This Tool</h3>
+        <div class="citation-formats">
+            <div class="citation-box">
+                <h4>APA Format</h4>
+                <div class="citation-text" id="apa-citation">
+                    Priyam, J. (2025). Jyotsna's NCBI Tools - Sequence Fetch Tool. DOI: 10.5281/zenodo.15069907
+                </div>
+                <button class="copy-btn" data-citation="apa-citation">Copy Citation</button>
+            </div>
+            <div class="citation-box">
+                <h4>MLA Format</h4>
+                <div class="citation-text" id="mla-citation">
+                    Priyam, J. "Jyotsna's NCBI Tools - Sequence Fetch Tool." 2025, DOI: 10.5281/zenodo.15069907. Accessed <%= new Date().toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'}) %>.
+                </div>
+                <button class="copy-btn" data-citation="mla-citation">Copy Citation</button>
+            </div>
+            <div class="citation-box">
+                <h4>BibTeX Format</h4>
+                <div class="citation-text" id="bibtex-citation">
+@software{10_5281_zenodo_15069907,
+    author = {Priyam, J.},
+    title = {Jyotsna's NCBI Tools - Sequence Fetch Tool},
+    year = {2025},
+    version = {1.0.0},
+    doi = {10.5281/zenodo.15069907},
+    url = {https://ncbi.jyotsnapriyam.com/sequence-fetch},
+    note = {Accessed: <%= new Date().toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'}) %>}
+}
+                </div>
+                <button class="copy-btn" data-citation="bibtex-citation">Copy Citation</button>
+            </div>
+        </div>
+    </section>
     
-    <%- include('partials/citation') %>
+    <!-- Add script to handle citation copying -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners to all copy buttons
+            document.querySelectorAll('.copy-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const citationId = this.getAttribute('data-citation');
+                    const citationText = document.getElementById(citationId).textContent;
+                    
+                    navigator.clipboard.writeText(citationText.trim()).then(() => {
+                        const originalText = this.textContent;
+                        this.textContent = 'Copied!';
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        alert('Failed to copy citation. Please try selecting and copying manually.');
+                    });
+                });
+            });
+        });
+    </script>
     
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="/js/sequence-fetch.js"></script>
 
-    <%- include('partials/citation') %>
     <%- include('partials/footer') %>
     
 </body>

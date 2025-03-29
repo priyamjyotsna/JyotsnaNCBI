@@ -3,23 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Variant Analysis Tool - Jyotsna's NCBI Tools</title>
+    <title>Variant Analysis Tool | Genetic Variant Annotation & Impact Analysis</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Analyze genetic variants and SNPs with comprehensive annotation using Ensembl REST API. Get clinical significance, population frequencies, and protein impact predictions.">
+    <meta name="keywords" content="variant analysis tool, genetic variant annotation, SNP analysis, mutation impact, clinical significance, bioinformatics tool, Ensembl API">
+    <meta name="author" content="Dr. Jyotsna Priyam">
+    
+    <!-- Open Graph Meta Tags for social sharing -->
+    <meta property="og:title" content="Variant Analysis Tool - Genetic Variant Annotation">
+    <meta property="og:description" content="Free online tool to analyze genetic variants with annotation of clinical significance, population frequencies, and protein impact predictions">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ncbi.jyotsnapriyam.com/variant-analysis">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://ncbi.jyotsnapriyam.com/variant-analysis">
+    
     <link rel="stylesheet" href="/styles/variant-analysis.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Structured Data for SoftwareApplication and HowTo -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Variant Analysis Tool",
+          "applicationCategory": "Scientific Tool",
+          "operatingSystem": "Web-based",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "description": "An online tool for analyzing genetic variants using Ensembl REST API to determine clinical significance, population frequencies, and protein impact predictions.",
+          "featureList": [
+            "Clinical significance assessment",
+            "Population frequency analysis",
+            "Protein impact prediction",
+            "Publication references",
+            "Batch processing capabilities"
+          ],
+          "softwareVersion": "1.0",
+          "softwareRequirements": "Modern web browser with JavaScript enabled",
+          "author": {
+            "@type": "Person",
+            "name": "Dr. Jyotsna Priyam",
+            "sameAs": "https://orcid.org/0000-0001-8782-9783"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Jyotsna's NCBI Tools",
+            "url": "https://ncbi.jyotsnapriyam.com/"
+          }
+        },
+        {
+          "@type": "HowTo",
+          "name": "How to Analyze Genetic Variants",
+          "description": "Step-by-step guide to using the Variant Analysis Tool for determining clinical significance and impact of genetic variants.",
+          "totalTime": "PT5M",
+          "tool": {
+            "@type": "HowToTool",
+            "name": "Variant Analysis Tool"
+          },
+          "step": [
+            {
+              "@type": "HowToStep",
+              "name": "Upload TSV File",
+              "text": "Upload a TSV file containing your variant IDs (e.g., rs IDs) or variant descriptions."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Select Analysis Options",
+              "text": "Choose which analysis options to include: clinical significance, population frequency, protein impact, and publications."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Set Batch Size",
+              "text": "Select the batch size for processing variants (10, 25, 50, or 100 variants per batch)."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Analyze Variants",
+              "text": "Click the 'Analyze Variants' button to start the analysis process."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Review Results",
+              "text": "Examine the detailed results table showing the analysis for each variant."
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+    
+    <style>
+    /* Citation styles */
+    .citation-section {
+        margin: 40px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-width: 1000px;
+    }
+
+    .citation-section h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+        text-align: left;
+    }
+
+    .citation-formats {
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .citation-box {
+        flex: 1;
+        min-width: 250px;
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        background: #f9f9f9;
+    }
+
+    .citation-box h4 {
+        color: #444;
+        margin-bottom: 8px;
+        font-size: 0.9em;
+    }
+
+    .citation-text {
+        margin: 8px 0;
+        padding: 12px;
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        font-size: 0.9em;
+        line-height: 1.5;
+        height: 80px;
+        overflow-y: auto;
+        word-break: break-word;
+    }
+
+    .copy-btn {
+        background: #2196F3;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: background 0.3s;
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .copy-btn:hover {
+        background: #0d8aee;
+    }
+
+    @media (max-width: 768px) {
+        .citation-formats {
+            flex-direction: column;
+        }
+    }
+    </style>
 </head>
 <body>
     <div class="container">
-        <nav class="top-nav">
-            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="Breadcrumb" class="breadcrumb-nav" style="margin: 10px 0 20px; padding: 8px 15px; background-color: #f5f5f5; border-radius: 4px;">
+            <ol style="list-style: none; padding: 0; margin: 0; display: flex; font-size: 0.9em;" itemscope itemtype="https://schema.org/BreadcrumbList">
+                <li style="display: inline-block;" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <a href="/" itemprop="item" style="color: #3498db; text-decoration: none;">
+                        <span itemprop="name">Home</span>
+                    </a>
+                    <meta itemprop="position" content="1" />
+                    <span style="margin: 0 5px; color: #ccc;">></span>
+                </li>
+                <li style="display: inline-block;" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <span itemprop="name" style="color: #666;">Variant Analysis Tool</span>
+                    <meta itemprop="position" content="2" />
+                </li>
+            </ol>
         </nav>
 
         <header>
             <h1>Variant Analysis Tool</h1>
             <p class="subtitle">Analyze genetic variants using Ensembl REST API</p>
+            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
         </header>
 
-        <div class="input-section">
+        <section class="input-section">
             <div class="file-upload">
                 <label for="variantFile" class="file-label">
                     <i class="fas fa-upload"></i>
@@ -66,11 +249,11 @@
             <button id="analyzeBtn" class="primary-button" disabled>
                 <i class="fas fa-dna"></i> Analyze Variants
             </button>
-        </div>
+        </section>
 
-        <div id="status" class="status-section"></div>
+        <section id="status" class="status-section"></section>
 
-        <div class="results-section">
+        <section class="results-section">
             <h2>Analysis Results</h2>
             <div class="table-container">
                 <table id="resultsTable">
@@ -89,12 +272,150 @@
                     <tbody></tbody>
                 </table>
             </div>
-        </div>
+        </section>
     </div>
+
+    <!-- FAQ Section optimized for AI searches -->
+    <section class="faq-section" style="margin: 40px auto; max-width: 800px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px;">Frequently Asked Questions</h2>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What file format should I use for variant analysis?</h3>
+            <p style="color: #555; line-height: 1.5;">This tool accepts TSV (tab-separated values) files containing variant IDs. Each variant should be on a separate line, and you can include rs IDs (e.g., rs6025) or specific variant descriptions in standard format (e.g., 1:g.69134A>G).</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What information does the clinical significance analysis provide?</h3>
+            <p style="color: #555; line-height: 1.5;">The clinical significance analysis retrieves data from ClinVar and other clinical databases to indicate whether a variant is classified as benign, likely benign, uncertain significance, likely pathogenic, or pathogenic. It also provides information on associated conditions when available.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What is population frequency and why is it important?</h3>
+            <p style="color: #555; line-height: 1.5;">Population frequency shows how common a variant is in different populations around the world based on data from gnomAD, 1000 Genomes, and other population databases. This information helps researchers determine if a variant is rare or common, which can be useful in determining its potential impact.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">How is protein impact calculated?</h3>
+            <p style="color: #555; line-height: 1.5;">Protein impact is assessed using multiple algorithms including SIFT, PolyPhen, and CADD scores. These algorithms predict whether amino acid changes might affect protein function. The tool aggregates these scores to provide a comprehensive view of potential functional impact.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">Why should I select a batch size?</h3>
+            <p style="color: #555; line-height: 1.5;">The batch size determines how many variants are processed at once. Smaller batch sizes provide faster initial results but may take longer overall. Larger batch sizes are more efficient for many variants but require longer processing time before showing any results. Choose based on your dataset size and how quickly you need initial results.</p>
+        </div>
+    </section>
+
+    <!-- Add FAQPage structured data for the FAQ section -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What file format should I use for variant analysis?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "This tool accepts TSV (tab-separated values) files containing variant IDs. Each variant should be on a separate line, and you can include rs IDs (e.g., rs6025) or specific variant descriptions in standard format (e.g., 1:g.69134A>G)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What information does the clinical significance analysis provide?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The clinical significance analysis retrieves data from ClinVar and other clinical databases to indicate whether a variant is classified as benign, likely benign, uncertain significance, likely pathogenic, or pathogenic. It also provides information on associated conditions when available."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is population frequency and why is it important?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Population frequency shows how common a variant is in different populations around the world based on data from gnomAD, 1000 Genomes, and other population databases. This information helps researchers determine if a variant is rare or common, which can be useful in determining its potential impact."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How is protein impact calculated?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Protein impact is assessed using multiple algorithms including SIFT, PolyPhen, and CADD scores. These algorithms predict whether amino acid changes might affect protein function. The tool aggregates these scores to provide a comprehensive view of potential functional impact."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why should I select a batch size?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The batch size determines how many variants are processed at once. Smaller batch sizes provide faster initial results but may take longer overall. Larger batch sizes are more efficient for many variants but require longer processing time before showing any results. Choose based on your dataset size and how quickly you need initial results."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <section class="citation-section">
+        <h3>How to Cite This Tool</h3>
+        <div class="citation-formats">
+            <div class="citation-box">
+                <h4>APA Format</h4>
+                <div class="citation-text" id="apa-citation">
+                    Priyam, J. (2025). Jyotsna's NCBI Tools - Variant Analysis Tool. DOI: 10.5281/zenodo.15069907
+                </div>
+                <button class="copy-btn" data-citation="apa-citation">Copy Citation</button>
+            </div>
+            <div class="citation-box">
+                <h4>MLA Format</h4>
+                <div class="citation-text" id="mla-citation">
+                    Priyam, J. "Jyotsna's NCBI Tools - Variant Analysis Tool." 2025, DOI: 10.5281/zenodo.15069907. Accessed <%= new Date().toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'}) %>.
+                </div>
+                <button class="copy-btn" data-citation="mla-citation">Copy Citation</button>
+            </div>
+            <div class="citation-box">
+                <h4>BibTeX Format</h4>
+                <div class="citation-text" id="bibtex-citation">
+@software{10_5281_zenodo_15069907,
+    author = {Priyam, J.},
+    title = {Jyotsna's NCBI Tools - Variant Analysis Tool},
+    year = {2025},
+    version = {1.0.0},
+    doi = {10.5281/zenodo.15069907},
+    url = {https://ncbi.jyotsnapriyam.com/variant-analysis},
+    note = {Accessed: <%= new Date().toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'}) %>}
+}
+                </div>
+                <button class="copy-btn" data-citation="bibtex-citation">Copy Citation</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Add script to handle citation copying -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners to all copy buttons
+            document.querySelectorAll('.copy-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const citationId = this.getAttribute('data-citation');
+                    const citationText = document.getElementById(citationId).textContent;
+                    
+                    navigator.clipboard.writeText(citationText.trim()).then(() => {
+                        const originalText = this.textContent;
+                        this.textContent = 'Copied!';
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        alert('Failed to copy citation. Please try selecting and copying manually.');
+                    });
+                });
+            });
+        });
+    </script>
 
     <script src="/js/variant-analysis.js"></script>
     
-    <%- include('partials/citation') %>
     <%- include('partials/footer') %>
     
 </body>
