@@ -1,0 +1,18 @@
+/* TEAM */
+	Developer & Researcher: Dr. Jyotsna Priyam
+	Contact: priyam.jyotsna@gmail.com
+	LinkedIn: https://www.linkedin.com/in/dr-jyotsna-priyam-87793b1b3/
+	ORCID: https://orcid.org/0000-0001-8782-9783
+	GitHub: https://github.com/priyamjyotsna
+	From: New Delhi, India
+
+/* SITE */
+	Last update: 2024-05-29
+	Language: English
+	Doctype: HTML5
+	Tools: Node.js, Express, JavaScript, Chart.js, NCBI API
+	IDE: Visual Studio Code
+	
+/* THANKS */
+	NCBI for providing the APIs and database access
+	Open source community for the various libraries used 

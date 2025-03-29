@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sitemap - Jyotsna's NCBI Tools</title>
+    <meta name="description" content="Site navigation map for Jyotsna's NCBI Tools, offering biotech and genomic sequence analysis tools for researchers.">
+    <meta name="robots" content="noindex, follow">
+    <link rel="stylesheet" href="/styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sitemap-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .sitemap-section {
+            margin-bottom: 30px;
+        }
+        
+        .sitemap-section h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .sitemap-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .sitemap-list li {
+            margin-bottom: 10px;
+        }
+        
+        .sitemap-list a {
+            display: block;
+            padding: 8px 15px;
+            background-color: #f8f9fa;
+            color: #333;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 4px solid #3498db;
+        }
+        
+        .sitemap-list a:hover {
+            background-color: #e9ecef;
+            transform: translateX(5px);
+        }
+        
+        .sitemap-list a i {
+            margin-right: 8px;
+            color: #3498db;
+        }
+        
+        .sitemap-description {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+            margin-left: 27px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>Sitemap</h1>
+                <p class="header-subtitle">Navigation Guide to Jyotsna's NCBI Tools</p>
+                <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
+            </div>
+        </header>
+        
+        <div class="sitemap-container">
+            <div class="sitemap-section">
+                <h2>Main Pages</h2>
+                <ul class="sitemap-list">
+                    <li>
+                        <a href="/"><i class="fas fa-home"></i> Home</a>
+                        <p class="sitemap-description">Main page with access to all bioinformatics and sequence analysis tools</p>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="sitemap-section">
+                <h2>Analysis Tools</h2>
+                <ul class="sitemap-list">
+                    <li>
+                        <a href="/sequence-comparison"><i class="fas fa-dna"></i> Sequence Comparison Tool</a>
+                        <p class="sitemap-description">Compare DNA/RNA sequences to identify mutations and generate analysis reports</p>
+                    </li>
+                    <li>
+                        <a href="/dna-analysis"><i class="fas fa-microscope"></i> DNA Sequence Analysis</a>
+                        <p class="sitemap-description">Analyze nucleotide composition of DNA sequences from NCBI</p>
+                    </li>
+                    <li>
+                        <a href="/blast-wrapper"><i class="fas fa-search"></i> BLAST Sequence Search</a>
+                        <p class="sitemap-description">Search nucleotide and protein databases using NCBI BLAST</p>
+                    </li>
+                    <li>
+                        <a href="/nucleotide-download"><i class="fas fa-download"></i> Nucleotide Sequence Downloads</a>
+                        <p class="sitemap-description">Download and export nucleotide sequences from NCBI</p>
+                    </li>
+                    <li>
+                        <a href="/sequence-fetch"><i class="fas fa-file-download"></i> Sequence Fetch Tool</a>
+                        <p class="sitemap-description">Fetch and analyze nucleotide sequences from NCBI database</p>
+                    </li>
+                    <li>
+                        <a href="/variant-analysis"><i class="fas fa-project-diagram"></i> Variant Analysis Tool</a>
+                        <p class="sitemap-description">Analyze genetic variants using Ensembl REST API</p>
+                    </li>
+                    <li>
+                        <a href="/design-primers"><i class="fas fa-edit"></i> SNP Primer Designer</a>
+                        <p class="sitemap-description">Design PCR primers for SNP genotyping with optimized parameters</p>
+                    </li>
+                    <li>
+                        <a href="/sequence-indexer"><i class="fas fa-sort-numeric-up"></i> Sequence Character Indexer</a>
+                        <p class="sitemap-description">Index and analyze character distribution in sequences</p>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="sitemap-section">
+                <h2>Additional Resources</h2>
+                <ul class="sitemap-list">
+                    <li>
+                        <a href="https://github.com/priyamjyotsna" target="_blank"><i class="fab fa-github"></i> GitHub Repository</a>
+                        <p class="sitemap-description">Source code and development information</p>
+                    </li>
+                    <li>
+                        <a href="https://orcid.org/0000-0001-8782-9783" target="_blank"><i class="fab fa-orcid"></i> ORCID Profile</a>
+                        <p class="sitemap-description">Research and publication information</p>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <%- include('partials/footer') %>
+    </div>
+</body>
+</html> 

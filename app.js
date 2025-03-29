@@ -101,6 +101,11 @@ app.get('/design-primers', (req, res) => {
     res.render('design-primers');
 });
 
+// Sitemap HTML route
+app.get('/sitemap', (req, res) => {
+    res.render('sitemap');
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err);

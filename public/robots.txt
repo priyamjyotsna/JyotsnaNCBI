@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /auth/
+Disallow: /admin/
+
+# Sitemap location
+Sitemap: https://ncbi.jyotsnapriyam.com/sitemap.xml 
