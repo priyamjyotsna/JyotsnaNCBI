@@ -3,19 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DNA Sequence Analysis - Jyotsna's NCBI Tools</title>
+    <title>DNA Sequence Analysis | Nucleotide Composition Analysis Tool</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Analyze nucleotide composition and visualize distribution patterns in DNA sequences. Fetch sequences directly from NCBI or upload your own FASTA files.">
+    <meta name="keywords" content="DNA sequence analysis, nucleotide composition, GC content calculator, sequence visualization, bioinformatics tool, FASTA analysis, nucleotide distribution">
+    <meta name="author" content="Dr. Jyotsna Priyam">
+    
+    <!-- Open Graph Meta Tags for social sharing -->
+    <meta property="og:title" content="DNA Sequence Analysis - Nucleotide Composition Analysis Tool">
+    <meta property="og:description" content="Free online tool to analyze nucleotide composition and visualize distribution patterns in DNA and RNA sequences">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ncbi.jyotsnapriyam.com/dna-analysis">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://ncbi.jyotsnapriyam.com/dna-analysis">
+    
     <link rel="stylesheet" href="/styles/main.css">
     <link rel="stylesheet" href="/styles/dna-analysis.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Add Google Scholar metadata -->
-    <meta name="citation_title" content="DNA Sequence Analysis and Visualization Tool">
-    <meta name="citation_author" content="DNA Analysis Tool">
-    <meta name="citation_publication_date" content="2024">
-    <meta name="citation_online_date" content="2024">
+    
+    <!-- Structured Data for SoftwareApplication and HowTo -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "DNA Sequence Analysis Tool",
+          "applicationCategory": "Scientific Tool",
+          "operatingSystem": "Web-based",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "description": "An online tool for analyzing nucleotide composition and distribution patterns in DNA and RNA sequences, with visualization capabilities and support for NCBI database retrieval.",
+          "featureList": [
+            "Nucleotide composition analysis",
+            "Direct NCBI sequence retrieval",
+            "FASTA file upload capability",
+            "Visualization of nucleotide distribution",
+            "Export reports as PDF"
+          ],
+          "softwareVersion": "1.0",
+          "softwareRequirements": "Modern web browser with JavaScript enabled",
+          "author": {
+            "@type": "Person",
+            "name": "Dr. Jyotsna Priyam",
+            "sameAs": "https://orcid.org/0000-0001-8782-9783"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Jyotsna's NCBI Tools",
+            "url": "https://ncbi.jyotsnapriyam.com/"
+          }
+        },
+        {
+          "@type": "HowTo",
+          "name": "How to Analyze DNA Sequence Composition",
+          "description": "Step-by-step guide to analyzing nucleotide composition and visualizing distribution patterns in DNA sequences.",
+          "totalTime": "PT2M",
+          "tool": {
+            "@type": "HowToTool",
+            "name": "DNA Sequence Analysis Tool"
+          },
+          "step": [
+            {
+              "@type": "HowToStep",
+              "name": "Enter NCBI Accession Number",
+              "text": "Enter an NCBI accession number (e.g., NC_000001.11) in the input field, or alternatively upload a FASTA file."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Select Sequence Type",
+              "text": "Choose whether your sequence is DNA or RNA from the dropdown menu."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Analyze Sequence",
+              "text": "Click the 'Analyze Sequence' button to fetch the sequence from NCBI and process it."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "View Results",
+              "text": "Review the nucleotide count report showing the frequency and percentage of each nucleotide."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Visualize Distribution",
+              "text": "Examine the graphical representation of nucleotide distribution in your sequence."
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+    
+    <style>
+    /* Citation styles */
+    .citation-section {
+        margin: 40px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-width: 1000px;
+    }
+
+    .citation-section h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+        text-align: left;
+    }
+
+    .citation-formats {
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .citation-box {
+        flex: 1;
+        min-width: 250px;
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        background: #f9f9f9;
+    }
+
+    .citation-box h4 {
+        color: #444;
+        margin-bottom: 8px;
+        font-size: 0.9em;
+    }
+
+    .citation-text {
+        margin: 8px 0;
+        padding: 12px;
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        font-size: 0.9em;
+        line-height: 1.5;
+        height: 80px;
+        overflow-y: auto;
+        word-break: break-word;
+    }
+
+    .copy-btn {
+        background: #2196F3;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: background 0.3s;
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .copy-btn:hover {
+        background: #0d8aee;
+    }
+
+    @media (max-width: 768px) {
+        .citation-formats {
+            flex-direction: column;
+        }
+    }
+    </style>
 </head>
 <body>
     <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="Breadcrumb" class="breadcrumb-nav" style="margin: 10px 0 20px; padding: 8px 15px; background-color: #f5f5f5; border-radius: 4px;">
+            <ol style="list-style: none; padding: 0; margin: 0; display: flex; font-size: 0.9em;" itemscope itemtype="https://schema.org/BreadcrumbList">
+                <li style="display: inline-block;" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <a href="/" itemprop="item" style="color: #3498db; text-decoration: none;">
+                        <span itemprop="name">Home</span>
+                    </a>
+                    <meta itemprop="position" content="1" />
+                    <span style="margin: 0 5px; color: #ccc;">></span>
+                </li>
+                <li style="display: inline-block;" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <span itemprop="name" style="color: #666;">DNA Sequence Analysis</span>
+                    <meta itemprop="position" content="2" />
+                </li>
+            </ol>
+        </nav>
+
         <header>
             <div class="header-content">
                 <h1>DNA Sequence Analysis Tool</h1>
@@ -25,7 +206,7 @@
         </header>
 
         <div class="tool-container">
-            <div class="input-section">
+            <section class="input-section">
                 <div class="accession-input">
                     <h3>NCBI Accession Number</h3>
                     <div class="input-group">
@@ -74,13 +255,13 @@
                         <p>Maximum file size: 20MB. For large datasets and commercial use, please contact <a href="mailto:priyam.jyotsna@gmail.com">priyam.jyotsna@gmail.com</a></p>
                     </div>
                 </div>
-            </div>
+            </section>
 
             <div id="loadingSpinner" class="loading-spinner" style="display: none;">
                 <i class="fas fa-spinner fa-spin"></i> Fetching sequence...
             </div>
 
-            <div id="resultsSection" class="results-section" style="display: none;">
+            <section id="resultsSection" class="results-section" style="display: none;">
                 <div class="report-container">
                     <h3>Sequence Retrieval Report</h3>
                     <table id="retrievalReport" class="report-table">
@@ -111,19 +292,158 @@
                         <tbody></tbody>
                     </table>
                 </div>
-            </div>
+            </section>
         </div>
     </div>
 
     <!-- Add after the results section -->
-    <div id="chartSection" class="chart-section" style="display: none;">
+    <section id="chartSection" class="chart-section" style="display: none;">
         <div class="report-container">
             <h3>Nucleotide Distribution</h3>
             <div class="chart-container">
                 <canvas id="nucleotideChart"></canvas>
             </div>
         </div>
-    </div>
+    </section>
+    
+    <!-- FAQ Section optimized for AI searches -->
+    <section class="faq-section" style="margin: 40px auto; max-width: 800px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px;">Frequently Asked Questions</h2>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What is nucleotide composition analysis?</h3>
+            <p style="color: #555; line-height: 1.5;">Nucleotide composition analysis is the process of determining the frequency and distribution of nucleotides (A, T, G, C for DNA; A, U, G, C for RNA) within a biological sequence. This analysis provides insights into the GC content, sequence bias, and structural characteristics of genetic material. The results can help identify functional regions, evolutionary patterns, and taxonomic relationships between organisms.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">Why is GC content important in DNA analysis?</h3>
+            <p style="color: #555; line-height: 1.5;">GC content (the percentage of guanine and cytosine bases) is an important parameter in molecular biology because it affects DNA stability, melting temperature, and gene expression. DNA with higher GC content forms stronger bonds due to the three hydrogen bonds between G and C (compared to two between A and T), making it more thermally stable. GC content varies across organisms, genomic regions, and can indicate horizontally transferred genes, CpG islands, or coding regions.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">How do I find an NCBI accession number for my analysis?</h3>
+            <p style="color: #555; line-height: 1.5;">NCBI accession numbers can be found by searching the NCBI databases like GenBank, RefSeq, or Nucleotide. Visit the NCBI website (www.ncbi.nlm.nih.gov) and search for your gene, organism, or sequence of interest. The accession number typically appears in the format of letters followed by numbers (e.g., NC_000001.11 for human chromosome 1). You can copy this accession number and paste it into our tool to retrieve and analyze the sequence.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What file formats are supported for uploading sequences?</h3>
+            <p style="color: #555; line-height: 1.5;">Our tool supports FASTA format (.fasta, .fa) and plain text (.txt) files. The FASTA format begins with a description line starting with '>' followed by sequence data. Plain text files should contain only the sequence characters without any header. Both formats should contain valid nucleotide characters: A, T, G, C (for DNA) or A, U, G, C (for RNA). Other characters like N (any nucleotide) are also recognized but counted separately.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What is the maximum sequence size for analysis?</h3>
+            <p style="color: #555; line-height: 1.5;">The tool can process sequences up to 20MB in size within the browser. For larger sequences, you'll be provided with a direct download link to retrieve the sequence from NCBI. Processing very large sequences in the browser may affect performance. If you regularly work with larger genomic sequences or need custom analysis, please contact us for specialized solutions tailored to your research needs.</p>
+        </div>
+    </section>
+
+    <!-- Add FAQPage structured data for the FAQ section -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is nucleotide composition analysis?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Nucleotide composition analysis is the process of determining the frequency and distribution of nucleotides (A, T, G, C for DNA; A, U, G, C for RNA) within a biological sequence. This analysis provides insights into the GC content, sequence bias, and structural characteristics of genetic material. The results can help identify functional regions, evolutionary patterns, and taxonomic relationships between organisms."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why is GC content important in DNA analysis?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "GC content (the percentage of guanine and cytosine bases) is an important parameter in molecular biology because it affects DNA stability, melting temperature, and gene expression. DNA with higher GC content forms stronger bonds due to the three hydrogen bonds between G and C (compared to two between A and T), making it more thermally stable. GC content varies across organisms, genomic regions, and can indicate horizontally transferred genes, CpG islands, or coding regions."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I find an NCBI accession number for my analysis?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "NCBI accession numbers can be found by searching the NCBI databases like GenBank, RefSeq, or Nucleotide. Visit the NCBI website (www.ncbi.nlm.nih.gov) and search for your gene, organism, or sequence of interest. The accession number typically appears in the format of letters followed by numbers (e.g., NC_000001.11 for human chromosome 1). You can copy this accession number and paste it into our tool to retrieve and analyze the sequence."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What file formats are supported for uploading sequences?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Our tool supports FASTA format (.fasta, .fa) and plain text (.txt) files. The FASTA format begins with a description line starting with '>' followed by sequence data. Plain text files should contain only the sequence characters without any header. Both formats should contain valid nucleotide characters: A, T, G, C (for DNA) or A, U, G, C (for RNA). Other characters like N (any nucleotide) are also recognized but counted separately."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the maximum sequence size for analysis?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The tool can process sequences up to 20MB in size within the browser. For larger sequences, you'll be provided with a direct download link to retrieve the sequence from NCBI. Processing very large sequences in the browser may affect performance. If you regularly work with larger genomic sequences or need custom analysis, please contact us for specialized solutions tailored to your research needs."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <section class="citation-section">
+        <h3>How to Cite This Tool</h3>
+        <div class="citation-formats">
+            <div class="citation-box">
+                <h4>APA Format</h4>
+                <div class="citation-text" id="apa-citation">
+                    Priyam, J. (2025). Jyotsna's NCBI Tools - DNA Sequence Analysis Tool. DOI: 10.5281/zenodo.15069907
+                </div>
+                <button class="copy-btn" data-citation="apa-citation">Copy Citation</button>
+            </div>
+            <div class="citation-box">
+                <h4>MLA Format</h4>
+                <div class="citation-text" id="mla-citation">
+                    Priyam, J. "Jyotsna's NCBI Tools - DNA Sequence Analysis Tool." 2025, DOI: 10.5281/zenodo.15069907. Accessed <%= new Date().toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'}) %>.
+                </div>
+                <button class="copy-btn" data-citation="mla-citation">Copy Citation</button>
+            </div>
+            <div class="citation-box">
+                <h4>BibTeX Format</h4>
+                <div class="citation-text" id="bibtex-citation">
+@software{10_5281_zenodo_15069907,
+    author = {Priyam, J.},
+    title = {Jyotsna's NCBI Tools - DNA Sequence Analysis Tool},
+    year = {2025},
+    version = {1.0.0},
+    doi = {10.5281/zenodo.15069907},
+    url = {https://ncbi.jyotsnapriyam.com/dna-analysis},
+    note = {Accessed: <%= new Date().toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'}) %>}
+}
+                </div>
+                <button class="copy-btn" data-citation="bibtex-citation">Copy Citation</button>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Add script to handle citation copying -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners to all copy buttons
+            document.querySelectorAll('.copy-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const citationId = this.getAttribute('data-citation');
+                    const citationText = document.getElementById(citationId).textContent;
+                    
+                    navigator.clipboard.writeText(citationText.trim()).then(() => {
+                        const originalText = this.textContent;
+                        this.textContent = 'Copied!';
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        alert('Failed to copy citation. Please try selecting and copying manually.');
+                    });
+                });
+            });
+        });
+    </script>
     
     <!-- PDF Generation Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -132,7 +452,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/dna-analysis.js"></script>
     
-    <%- include('partials/citation') %>
     <%- include('partials/footer') %>
     
 </body>

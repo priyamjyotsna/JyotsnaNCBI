@@ -3,23 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SNP Primer Designer - Jyotsna's NCBI Tools</title>
+    <title>SNP Primer Designer | PCR Primer Design Tool for SNP Genotyping</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Design optimal PCR primers for SNP genotyping with automatic calculation of melting temperature, GC content, and primer positioning around target SNPs.">
+    <meta name="keywords" content="SNP primer design, PCR primer generator, SNP genotyping, primer design tool, bioinformatics tool, primer melting temperature, GC content calculator">
+    <meta name="author" content="Dr. Jyotsna Priyam">
+    
+    <!-- Open Graph Meta Tags for social sharing -->
+    <meta property="og:title" content="SNP Primer Designer - PCR Primer Design for SNP Genotyping">
+    <meta property="og:description" content="Free online tool to design optimal PCR primers for SNP genotyping with automatic calculation of primer properties">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ncbi.jyotsnapriyam.com/design-primers">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://ncbi.jyotsnapriyam.com/design-primers">
+    
     <link rel="stylesheet" href="/styles/design-primers.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Structured Data for SoftwareApplication and HowTo -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "SNP Primer Designer",
+          "applicationCategory": "Scientific Tool",
+          "operatingSystem": "Web-based",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "description": "An online tool for designing optimal PCR primers for SNP genotyping, with automatic calculation of melting temperature, GC content, and primer positioning.",
+          "featureList": [
+            "Automatic primer design around SNPs",
+            "Calculation of melting temperature (Tm)",
+            "GC content analysis",
+            "Customizable amplicon length",
+            "Adjustable primer length parameters"
+          ],
+          "softwareVersion": "1.0",
+          "softwareRequirements": "Modern web browser with JavaScript enabled",
+          "author": {
+            "@type": "Person",
+            "name": "Dr. Jyotsna Priyam",
+            "sameAs": "https://orcid.org/0000-0001-8782-9783"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Jyotsna's NCBI Tools",
+            "url": "https://ncbi.jyotsnapriyam.com/"
+          }
+        },
+        {
+          "@type": "HowTo",
+          "name": "How to Design PCR Primers for SNP Genotyping",
+          "description": "Step-by-step guide to designing optimal PCR primers for amplification and genotyping of single nucleotide polymorphisms (SNPs).",
+          "totalTime": "PT2M",
+          "tool": {
+            "@type": "HowToTool",
+            "name": "SNP Primer Designer"
+          },
+          "step": [
+            {
+              "@type": "HowToStep",
+              "name": "Enter DNA Sequence",
+              "text": "Enter the DNA sequence containing the SNP of interest in the text area."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Specify SNP Position",
+              "text": "Enter the 0-based position of the SNP within your input sequence."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Set Amplicon Length",
+              "text": "Specify your desired amplicon length (PCR product size)."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Set Primer Length",
+              "text": "Adjust the primer length parameter (typically 18-25 nucleotides)."
+            },
+            {
+              "@type": "HowToStep",
+              "name": "Generate Primers",
+              "text": "Click the 'Design Primers' button to generate optimal forward and reverse primers."
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+    
+    <style>
+    /* Citation styles */
+    .citation-section {
+        margin: 40px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-width: 1000px;
+    }
+
+    .citation-section h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+        text-align: left;
+    }
+
+    .citation-formats {
+        display: flex;
+        flex-direction: row;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .citation-box {
+        flex: 1;
+        min-width: 250px;
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        background: #f9f9f9;
+    }
+
+    .citation-box h4 {
+        color: #444;
+        margin-bottom: 8px;
+        font-size: 0.9em;
+    }
+
+    .citation-text {
+        margin: 8px 0;
+        padding: 12px;
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        font-size: 0.9em;
+        line-height: 1.5;
+        height: 80px;
+        overflow-y: auto;
+        word-break: break-word;
+    }
+
+    .copy-btn {
+        background: #2196F3;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: background 0.3s;
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .copy-btn:hover {
+        background: #0d8aee;
+    }
+
+    @media (max-width: 768px) {
+        .citation-formats {
+            flex-direction: column;
+        }
+    }
+    </style>
 </head>
 <body>
     <div class="container">
-        <nav class="top-nav">
-            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="Breadcrumb" class="breadcrumb-nav" style="margin: 10px 0 20px; padding: 8px 15px; background-color: #f5f5f5; border-radius: 4px;">
+            <ol style="list-style: none; padding: 0; margin: 0; display: flex; font-size: 0.9em;" itemscope itemtype="https://schema.org/BreadcrumbList">
+                <li style="display: inline-block;" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <a href="/" itemprop="item" style="color: #3498db; text-decoration: none;">
+                        <span itemprop="name">Home</span>
+                    </a>
+                    <meta itemprop="position" content="1" />
+                    <span style="margin: 0 5px; color: #ccc;">></span>
+                </li>
+                <li style="display: inline-block;" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <span itemprop="name" style="color: #666;">SNP Primer Designer</span>
+                    <meta itemprop="position" content="2" />
+                </li>
+            </ol>
         </nav>
 
         <header>
             <h1>SNP Primer Designer</h1>
             <p class="subtitle">Design PCR primers for SNP genotyping</p>
+            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Tools</a>
         </header>
 
-        <div class="input-section">
+        <section class="input-section">
             <div class="form-group">
                 <label for="sequence">DNA Sequence:</label>
                 <textarea id="sequence" rows="4" placeholder="Enter DNA sequence (A, T, G, C only)"></textarea>
@@ -45,11 +228,11 @@
             <button id="designBtn" class="primary-button">
                 <i class="fas fa-dna"></i> Design Primers
             </button>
-        </div>
+        </section>
 
-        <div id="status" class="status-section"></div>
+        <section id="status" class="status-section"></section>
 
-        <div id="results" class="results-section" style="display: none;">
+        <section id="results" class="results-section" style="display: none;">
             <h2>Primer Design Results</h2>
             
             <div class="primer-results">
@@ -75,12 +258,150 @@
             <button id="copyBtn" class="secondary-button">
                 <i class="fas fa-copy"></i> Copy Results
             </button>
-        </div>
+        </section>
     </div>
+    
+    <!-- FAQ Section optimized for AI searches -->
+    <section class="faq-section" style="margin: A0px auto; max-width: 800px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px;">Frequently Asked Questions</h2>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What is SNP genotyping and why do I need primers for it?</h3>
+            <p style="color: #555; line-height: 1.5;">SNP genotyping is the process of determining which DNA sequence variants (alleles) are present at specific SNP positions in an individual's genome. PCR primers are needed to amplify the region containing the SNP before genotyping methods like Sanger sequencing, RFLP analysis, or allele-specific PCR can be applied. Well-designed primers ensure efficient and specific amplification of the target region.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">How do I determine the SNP position for the primer designer?</h3>
+            <p style="color: #555; line-height: 1.5;">The SNP position should be specified as a 0-based index within your input sequence. For example, if your SNP is the 21st nucleotide in your input sequence, you would enter "20" as the SNP position (counting starts from 0). The tool will design primers that flank this position while optimizing for parameters like melting temperature and GC content.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What is an optimal primer length for SNP genotyping?</h3>
+            <p style="color: #555; line-height: 1.5;">For most SNP genotyping applications, primers between 18-25 nucleotides in length work well. This range provides a good balance between specificity (longer primers are more specific) and annealing efficiency (shorter primers anneal more easily). The default value of 20 nucleotides is suitable for most standard PCR conditions, but you can adjust based on your specific requirements.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What amplicon length should I choose?</h3>
+            <p style="color: #555; line-height: 1.5;">The optimal amplicon length depends on your specific application. For standard PCR and Sanger sequencing, amplicons of 150-500 bp generally work well. For allele-specific PCR or RFLP analysis, you might prefer shorter amplicons (100-300 bp). For next-generation sequencing applications, even shorter amplicons (70-200 bp) may be preferred. The default value of 200 bp is a good starting point for most applications.</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #333; font-size: 1.1em; margin-bottom: 10px;">What do the Tm and GC% values mean?</h3>
+            <p style="color: #555; line-height: 1.5;">Tm (melting temperature) is the temperature at which half of the DNA strands are denatured. Primers with similar Tm values (within 5°C of each other) perform best in PCR. Ideally, primers should have Tm between 55-65°C. GC% refers to the percentage of G and C nucleotides in the primer. Primers with 40-60% GC content generally perform well, providing balanced binding strength and specificity. Extremely high or low GC content can lead to PCR problems.</p>
+        </div>
+    </section>
+
+    <!-- Add FAQPage structured data for the FAQ section -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is SNP genotyping and why do I need primers for it?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "SNP genotyping is the process of determining which DNA sequence variants (alleles) are present at specific SNP positions in an individual's genome. PCR primers are needed to amplify the region containing the SNP before genotyping methods like Sanger sequencing, RFLP analysis, or allele-specific PCR can be applied. Well-designed primers ensure efficient and specific amplification of the target region."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I determine the SNP position for the primer designer?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The SNP position should be specified as a 0-based index within your input sequence. For example, if your SNP is the 21st nucleotide in your input sequence, you would enter '20' as the SNP position (counting starts from 0). The tool will design primers that flank this position while optimizing for parameters like melting temperature and GC content."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is an optimal primer length for SNP genotyping?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "For most SNP genotyping applications, primers between 18-25 nucleotides in length work well. This range provides a good balance between specificity (longer primers are more specific) and annealing efficiency (shorter primers anneal more easily). The default value of 20 nucleotides is suitable for most standard PCR conditions, but you can adjust based on your specific requirements."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What amplicon length should I choose?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The optimal amplicon length depends on your specific application. For standard PCR and Sanger sequencing, amplicons of 150-500 bp generally work well. For allele-specific PCR or RFLP analysis, you might prefer shorter amplicons (100-300 bp). For next-generation sequencing applications, even shorter amplicons (70-200 bp) may be preferred. The default value of 200 bp is a good starting point for most applications."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What do the Tm and GC% values mean?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Tm (melting temperature) is the temperature at which half of the DNA strands are denatured. Primers with similar Tm values (within 5°C of each other) perform best in PCR. Ideally, primers should have Tm between 55-65°C. GC% refers to the percentage of G and C nucleotides in the primer. Primers with 40-60% GC content generally perform well, providing balanced binding strength and specificity. Extremely high or low GC content can lead to PCR problems."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <section class="citation-section">
+        <h3>How to Cite This Tool</h3>
+        <div class="citation-formats">
+            <div class="citation-box">
+                <h4>APA Format</h4>
+                <div class="citation-text" id="apa-citation">
+                    Priyam, J. (2025). Jyotsna's NCBI Tools - SNP Primer Designer. DOI: 10.5281/zenodo.15069907
+                </div>
+                <button class="copy-btn" data-citation="apa-citation">Copy Citation</button>
+            </div>
+            <div class="citation-box">
+                <h4>MLA Format</h4>
+                <div class="citation-text" id="mla-citation">
+                    Priyam, J. "Jyotsna's NCBI Tools - SNP Primer Designer." 2025, DOI: 10.5281/zenodo.15069907. Accessed <%= new Date().toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'}) %>.
+                </div>
+                <button class="copy-btn" data-citation="mla-citation">Copy Citation</button>
+            </div>
+            <div class="citation-box">
+                <h4>BibTeX Format</h4>
+                <div class="citation-text" id="bibtex-citation">
+@software{10_5281_zenodo_15069907,
+    author = {Priyam, J.},
+    title = {Jyotsna's NCBI Tools - SNP Primer Designer},
+    year = {2025},
+    version = {1.0.0},
+    doi = {10.5281/zenodo.15069907},
+    url = {https://ncbi.jyotsnapriyam.com/design-primers},
+    note = {Accessed: <%= new Date().toLocaleDateString('en-US', {month: 'long', day: 'numeric', year: 'numeric'}) %>}
+}
+                </div>
+                <button class="copy-btn" data-citation="bibtex-citation">Copy Citation</button>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Add script to handle citation copying -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners to all copy buttons
+            document.querySelectorAll('.copy-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const citationId = this.getAttribute('data-citation');
+                    const citationText = document.getElementById(citationId).textContent;
+                    
+                    navigator.clipboard.writeText(citationText.trim()).then(() => {
+                        const originalText = this.textContent;
+                        this.textContent = 'Copied!';
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        alert('Failed to copy citation. Please try selecting and copying manually.');
+                    });
+                });
+            });
+        });
+    </script>
 
     <script src="/js/design-primers.js"></script>
     
-    <%- include('partials/citation') %>
     <%- include('partials/footer') %>
     
 </body>
